@@ -1,0 +1,6262 @@
+{
+  "schema_name": "DoclingDocument",
+  "version": "1.10.0",
+  "name": "Reg - 18 MTU_Engine_Set_20V4000M53B_SN_528106066_528106062_Certificate_HAM_2152268_2152275",
+  "origin": {
+    "mimetype": "application/pdf",
+    "binary_hash": 9235084555498834967,
+    "filename": "Reg - 18 MTU_Engine_Set_20V4000M53B_SN_528106066_528106062_Certificate_HAM_2152268_2152275.pdf"
+  },
+  "furniture": {
+    "self_ref": "#/furniture",
+    "children": [],
+    "content_layer": "furniture",
+    "name": "_root_",
+    "label": "unspecified"
+  },
+  "body": {
+    "self_ref": "#/body",
+    "children": [
+      {
+        "$ref": "#/texts/0"
+      },
+      {
+        "$ref": "#/texts/1"
+      },
+      {
+        "$ref": "#/pictures/0"
+      },
+      {
+        "$ref": "#/texts/2"
+      },
+      {
+        "$ref": "#/texts/3"
+      },
+      {
+        "$ref": "#/texts/4"
+      },
+      {
+        "$ref": "#/texts/5"
+      },
+      {
+        "$ref": "#/groups/0"
+      },
+      {
+        "$ref": "#/texts/90"
+      },
+      {
+        "$ref": "#/texts/91"
+      },
+      {
+        "$ref": "#/texts/92"
+      },
+      {
+        "$ref": "#/texts/93"
+      },
+      {
+        "$ref": "#/texts/94"
+      },
+      {
+        "$ref": "#/pictures/6"
+      },
+      {
+        "$ref": "#/texts/95"
+      },
+      {
+        "$ref": "#/texts/96"
+      },
+      {
+        "$ref": "#/groups/1"
+      },
+      {
+        "$ref": "#/texts/179"
+      },
+      {
+        "$ref": "#/texts/180"
+      },
+      {
+        "$ref": "#/texts/181"
+      }
+    ],
+    "content_layer": "body",
+    "name": "_root_",
+    "label": "unspecified"
+  },
+  "groups": [
+    {
+      "self_ref": "#/groups/0",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/6"
+        },
+        {
+          "$ref": "#/texts/7"
+        },
+        {
+          "$ref": "#/texts/8"
+        },
+        {
+          "$ref": "#/texts/9"
+        },
+        {
+          "$ref": "#/texts/10"
+        },
+        {
+          "$ref": "#/texts/11"
+        },
+        {
+          "$ref": "#/texts/12"
+        },
+        {
+          "$ref": "#/texts/13"
+        },
+        {
+          "$ref": "#/texts/14"
+        },
+        {
+          "$ref": "#/texts/15"
+        },
+        {
+          "$ref": "#/texts/16"
+        },
+        {
+          "$ref": "#/texts/17"
+        },
+        {
+          "$ref": "#/texts/18"
+        },
+        {
+          "$ref": "#/texts/19"
+        },
+        {
+          "$ref": "#/texts/20"
+        },
+        {
+          "$ref": "#/texts/21"
+        },
+        {
+          "$ref": "#/texts/22"
+        },
+        {
+          "$ref": "#/texts/23"
+        },
+        {
+          "$ref": "#/texts/24"
+        },
+        {
+          "$ref": "#/texts/25"
+        },
+        {
+          "$ref": "#/texts/26"
+        },
+        {
+          "$ref": "#/texts/27"
+        },
+        {
+          "$ref": "#/texts/28"
+        },
+        {
+          "$ref": "#/texts/29"
+        },
+        {
+          "$ref": "#/texts/30"
+        },
+        {
+          "$ref": "#/texts/31"
+        },
+        {
+          "$ref": "#/texts/32"
+        },
+        {
+          "$ref": "#/texts/33"
+        },
+        {
+          "$ref": "#/texts/34"
+        },
+        {
+          "$ref": "#/texts/35"
+        },
+        {
+          "$ref": "#/texts/36"
+        },
+        {
+          "$ref": "#/texts/37"
+        },
+        {
+          "$ref": "#/texts/38"
+        },
+        {
+          "$ref": "#/texts/39"
+        },
+        {
+          "$ref": "#/texts/40"
+        },
+        {
+          "$ref": "#/texts/41"
+        },
+        {
+          "$ref": "#/texts/42"
+        },
+        {
+          "$ref": "#/texts/43"
+        },
+        {
+          "$ref": "#/texts/44"
+        },
+        {
+          "$ref": "#/texts/45"
+        },
+        {
+          "$ref": "#/texts/46"
+        },
+        {
+          "$ref": "#/texts/47"
+        },
+        {
+          "$ref": "#/texts/48"
+        },
+        {
+          "$ref": "#/texts/49"
+        },
+        {
+          "$ref": "#/texts/50"
+        },
+        {
+          "$ref": "#/texts/51"
+        },
+        {
+          "$ref": "#/texts/52"
+        },
+        {
+          "$ref": "#/texts/53"
+        },
+        {
+          "$ref": "#/texts/54"
+        },
+        {
+          "$ref": "#/texts/55"
+        },
+        {
+          "$ref": "#/texts/56"
+        },
+        {
+          "$ref": "#/texts/57"
+        },
+        {
+          "$ref": "#/texts/58"
+        },
+        {
+          "$ref": "#/texts/59"
+        },
+        {
+          "$ref": "#/texts/60"
+        },
+        {
+          "$ref": "#/texts/61"
+        },
+        {
+          "$ref": "#/texts/62"
+        },
+        {
+          "$ref": "#/pictures/1"
+        },
+        {
+          "$ref": "#/texts/63"
+        },
+        {
+          "$ref": "#/texts/64"
+        },
+        {
+          "$ref": "#/texts/65"
+        },
+        {
+          "$ref": "#/texts/66"
+        },
+        {
+          "$ref": "#/texts/67"
+        },
+        {
+          "$ref": "#/texts/68"
+        },
+        {
+          "$ref": "#/pictures/2"
+        },
+        {
+          "$ref": "#/texts/69"
+        },
+        {
+          "$ref": "#/texts/70"
+        },
+        {
+          "$ref": "#/texts/71"
+        },
+        {
+          "$ref": "#/texts/72"
+        },
+        {
+          "$ref": "#/texts/73"
+        },
+        {
+          "$ref": "#/pictures/3"
+        },
+        {
+          "$ref": "#/texts/74"
+        },
+        {
+          "$ref": "#/texts/75"
+        },
+        {
+          "$ref": "#/texts/76"
+        },
+        {
+          "$ref": "#/texts/77"
+        },
+        {
+          "$ref": "#/texts/78"
+        },
+        {
+          "$ref": "#/pictures/4"
+        },
+        {
+          "$ref": "#/texts/82"
+        },
+        {
+          "$ref": "#/texts/83"
+        },
+        {
+          "$ref": "#/pictures/5"
+        },
+        {
+          "$ref": "#/texts/85"
+        },
+        {
+          "$ref": "#/texts/86"
+        },
+        {
+          "$ref": "#/texts/87"
+        },
+        {
+          "$ref": "#/texts/88"
+        },
+        {
+          "$ref": "#/texts/89"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "form_area"
+    },
+    {
+      "self_ref": "#/groups/1",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/97"
+        },
+        {
+          "$ref": "#/texts/98"
+        },
+        {
+          "$ref": "#/texts/99"
+        },
+        {
+          "$ref": "#/texts/100"
+        },
+        {
+          "$ref": "#/texts/101"
+        },
+        {
+          "$ref": "#/texts/102"
+        },
+        {
+          "$ref": "#/texts/103"
+        },
+        {
+          "$ref": "#/texts/104"
+        },
+        {
+          "$ref": "#/texts/105"
+        },
+        {
+          "$ref": "#/texts/106"
+        },
+        {
+          "$ref": "#/texts/107"
+        },
+        {
+          "$ref": "#/texts/108"
+        },
+        {
+          "$ref": "#/texts/109"
+        },
+        {
+          "$ref": "#/texts/110"
+        },
+        {
+          "$ref": "#/texts/111"
+        },
+        {
+          "$ref": "#/texts/112"
+        },
+        {
+          "$ref": "#/texts/113"
+        },
+        {
+          "$ref": "#/texts/114"
+        },
+        {
+          "$ref": "#/texts/115"
+        },
+        {
+          "$ref": "#/texts/116"
+        },
+        {
+          "$ref": "#/texts/117"
+        },
+        {
+          "$ref": "#/texts/118"
+        },
+        {
+          "$ref": "#/texts/119"
+        },
+        {
+          "$ref": "#/texts/120"
+        },
+        {
+          "$ref": "#/texts/121"
+        },
+        {
+          "$ref": "#/texts/122"
+        },
+        {
+          "$ref": "#/texts/123"
+        },
+        {
+          "$ref": "#/texts/124"
+        },
+        {
+          "$ref": "#/texts/125"
+        },
+        {
+          "$ref": "#/texts/126"
+        },
+        {
+          "$ref": "#/texts/127"
+        },
+        {
+          "$ref": "#/texts/128"
+        },
+        {
+          "$ref": "#/texts/129"
+        },
+        {
+          "$ref": "#/texts/130"
+        },
+        {
+          "$ref": "#/texts/131"
+        },
+        {
+          "$ref": "#/texts/132"
+        },
+        {
+          "$ref": "#/texts/133"
+        },
+        {
+          "$ref": "#/texts/134"
+        },
+        {
+          "$ref": "#/texts/135"
+        },
+        {
+          "$ref": "#/texts/136"
+        },
+        {
+          "$ref": "#/texts/137"
+        },
+        {
+          "$ref": "#/texts/138"
+        },
+        {
+          "$ref": "#/texts/139"
+        },
+        {
+          "$ref": "#/texts/140"
+        },
+        {
+          "$ref": "#/texts/141"
+        },
+        {
+          "$ref": "#/texts/142"
+        },
+        {
+          "$ref": "#/texts/143"
+        },
+        {
+          "$ref": "#/texts/144"
+        },
+        {
+          "$ref": "#/texts/145"
+        },
+        {
+          "$ref": "#/texts/146"
+        },
+        {
+          "$ref": "#/texts/147"
+        },
+        {
+          "$ref": "#/texts/148"
+        },
+        {
+          "$ref": "#/texts/149"
+        },
+        {
+          "$ref": "#/texts/150"
+        },
+        {
+          "$ref": "#/texts/151"
+        },
+        {
+          "$ref": "#/texts/152"
+        },
+        {
+          "$ref": "#/texts/153"
+        },
+        {
+          "$ref": "#/texts/154"
+        },
+        {
+          "$ref": "#/pictures/7"
+        },
+        {
+          "$ref": "#/texts/155"
+        },
+        {
+          "$ref": "#/texts/156"
+        },
+        {
+          "$ref": "#/texts/157"
+        },
+        {
+          "$ref": "#/texts/158"
+        },
+        {
+          "$ref": "#/texts/159"
+        },
+        {
+          "$ref": "#/texts/160"
+        },
+        {
+          "$ref": "#/texts/161"
+        },
+        {
+          "$ref": "#/texts/162"
+        },
+        {
+          "$ref": "#/texts/163"
+        },
+        {
+          "$ref": "#/texts/164"
+        },
+        {
+          "$ref": "#/pictures/8"
+        },
+        {
+          "$ref": "#/texts/166"
+        },
+        {
+          "$ref": "#/texts/167"
+        },
+        {
+          "$ref": "#/pictures/9"
+        },
+        {
+          "$ref": "#/texts/170"
+        },
+        {
+          "$ref": "#/texts/171"
+        },
+        {
+          "$ref": "#/texts/172"
+        },
+        {
+          "$ref": "#/pictures/10"
+        },
+        {
+          "$ref": "#/texts/174"
+        },
+        {
+          "$ref": "#/texts/175"
+        },
+        {
+          "$ref": "#/texts/176"
+        },
+        {
+          "$ref": "#/texts/177"
+        },
+        {
+          "$ref": "#/texts/178"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "form_area"
+    }
+  ],
+  "texts": [
+    {
+      "self_ref": "#/texts/0",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "furniture",
+      "label": "page_header",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 360.42633056640625,
+            "t": 805.8145167032877,
+            "r": 411.7366129557292,
+            "b": 784.9415334065756,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            27
+          ]
+        }
+      ],
+      "orig": "Certificate no: Page 1 of 1",
+      "text": "Certificate no: Page 1 of 1"
+    },
+    {
+      "self_ref": "#/texts/1",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "furniture",
+      "label": "page_header",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 436.3333333333333,
+            "t": 806.0,
+            "r": 491.0,
+            "b": 796.0,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            21
+          ]
+        }
+      ],
+      "orig": "HAM2152268 HAM2152268",
+      "text": "HAM2152268 HAM2152268"
+    },
+    {
+      "self_ref": "#/texts/2",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.50446383158366,
+            "t": 733.7822621663412,
+            "r": 81.65401713053384,
+            "b": 722.7318623860677,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            9
+          ]
+        }
+      ],
+      "orig": "LR Office",
+      "text": "LR Office"
+    },
+    {
+      "self_ref": "#/texts/3",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "section_header",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 183.46651204427084,
+            "t": 781.258066813151,
+            "r": 349.921875,
+            "b": 735.0100809733073,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            38
+          ]
+        }
+      ],
+      "orig": "Engine Certificate (Quality Assurance)",
+      "text": "Engine Certificate (Quality Assurance)",
+      "level": 1
+    },
+    {
+      "self_ref": "#/texts/4",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 272.75445556640625,
+            "t": 733.7822621663412,
+            "r": 378.203125,
+            "b": 722.7318623860677,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            27
+          ]
+        }
+      ],
+      "orig": "Manufacturer's order number",
+      "text": "Manufacturer's order number"
+    },
+    {
+      "self_ref": "#/texts/5",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 45.696428298950195,
+            "t": 787.3971786499023,
+            "r": 105.49106852213542,
+            "b": 729.2802429199219,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            1
+          ]
+        }
+      ],
+      "orig": "R",
+      "text": "R"
+    },
+    {
+      "self_ref": "#/texts/6",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.50446383158366,
+            "t": 721.5040384928385,
+            "r": 86.09821065266928,
+            "b": 710.0443623860676,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            7
+          ]
+        }
+      ],
+      "orig": "Hamburg",
+      "text": "Hamburg"
+    },
+    {
+      "self_ref": "#/texts/7",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 273.96651204427087,
+            "t": 720.6854858398438,
+            "r": 346.28570556640625,
+            "b": 711.2721761067708,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            17
+          ]
+        }
+      ],
+      "orig": "1196054 / 3145306",
+      "text": "1196054 / 3145306"
+    },
+    {
+      "self_ref": "#/texts/8",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.90848159790039,
+            "t": 710.453633626302,
+            "r": 96.60267639160156,
+            "b": 698.5846761067708,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            12
+          ]
+        },
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 272.75445556640625,
+            "t": 710.0443623860676,
+            "r": 310.328125,
+            "b": 698.9939575195312,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            13,
+            22
+          ]
+        }
+      ],
+      "orig": "Manufacturer Purchaser",
+      "text": "Manufacturer Purchaser"
+    },
+    {
+      "self_ref": "#/texts/9",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 47.3125,
+            "t": 697.3568623860676,
+            "r": 153.56919352213544,
+            "b": 687.9435526529949,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            24
+          ]
+        }
+      ],
+      "orig": "MTU Friedrichshafen GmbH",
+      "text": "MTU Friedrichshafen GmbH"
+    },
+    {
+      "self_ref": "#/texts/10",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 273.5625,
+            "t": 696.9475809733074,
+            "r": 416.5847981770833,
+            "b": 687.5342814127605,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            33
+          ]
+        }
+      ],
+      "orig": "L\u00fcrssen-Kr\u00f6ger Werft GmbH & Co KG",
+      "text": "L\u00fcrssen-Kr\u00f6ger Werft GmbH & Co KG"
+    },
+    {
+      "self_ref": "#/texts/11",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 47.71651713053385,
+            "t": 685.4879048665365,
+            "r": 134.58035278320312,
+            "b": 676.0746053059896,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            23
+          ]
+        },
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 273.5625,
+            "t": 685.4879048665365,
+            "r": 364.0625,
+            "b": 676.0746053059896,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            24,
+            48
+          ]
+        }
+      ],
+      "orig": "Address of manufacturer Purchaser's order number",
+      "text": "Address of manufacturer Purchaser's order number"
+    },
+    {
+      "self_ref": "#/texts/12",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.90848159790039,
+            "t": 674.4375,
+            "r": 153.56919352213544,
+            "b": 664.2056477864584,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            24
+          ]
+        }
+      ],
+      "orig": "MTU Friedrichshafen GmbH",
+      "text": "MTU Friedrichshafen GmbH"
+    },
+    {
+      "self_ref": "#/texts/13",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 273.1584676106771,
+            "t": 673.6189575195312,
+            "r": 303.0557861328125,
+            "b": 663.796376546224,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            6
+          ]
+        }
+      ],
+      "orig": "385420",
+      "text": "385420"
+    },
+    {
+      "self_ref": "#/texts/14",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.90848159790039,
+            "t": 664.6149190266927,
+            "r": 140.23660278320312,
+            "b": 654.383066813151,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            23
+          ]
+        }
+      ],
+      "orig": "D-88040 Friedrichshafen",
+      "text": "D-88040 Friedrichshafen"
+    },
+    {
+      "self_ref": "#/texts/15",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.90848159790039,
+            "t": 654.383066813151,
+            "r": 84.078125,
+            "b": 643.3326619466146,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            7
+          ]
+        }
+      ],
+      "orig": "Germany",
+      "text": "Germany"
+    },
+    {
+      "self_ref": "#/texts/16",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.90848159790039,
+            "t": 633.9193522135416,
+            "r": 117.20758565266927,
+            "b": 623.2782389322916,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            18
+          ]
+        }
+      ],
+      "orig": "Engine Particulars",
+      "text": "Engine Particulars"
+    },
+    {
+      "self_ref": "#/texts/17",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.90848159790039,
+            "t": 622.4596761067709,
+            "r": 120.84375,
+            "b": 611.4092814127604,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            20
+          ]
+        },
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 272.75445556640625,
+            "t": 661.75,
+            "r": 380.6272379557292,
+            "b": 651.108876546224,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            21,
+            50
+          ]
+        },
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 413.7566731770833,
+            "t": 661.3407287597656,
+            "r": 481.6316731770833,
+            "b": 650.6996053059896,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            51,
+            67
+          ]
+        },
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 273.1584676106771,
+            "t": 649.062510172526,
+            "r": 397.5959879557292,
+            "b": 638.4213663736979,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            68,
+            98
+          ]
+        }
+      ],
+      "orig": "Engine serial number Intended for ship/yard number Known engine use L\u00fcrssen Kr\u00f6ger Werft / NB13759",
+      "text": "Engine serial number Intended for ship/yard number Known engine use L\u00fcrssen Kr\u00f6ger Werft / NB13759"
+    },
+    {
+      "self_ref": "#/texts/18",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 272.75445556640625,
+            "t": 622.8689575195312,
+            "r": 370.5267740885417,
+            "b": 611.0,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            26
+          ]
+        }
+      ],
+      "orig": "Manufacturer's designation",
+      "text": "Manufacturer's designation"
+    },
+    {
+      "self_ref": "#/texts/19",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 47.3125,
+            "t": 610.1814575195312,
+            "r": 89.734375,
+            "b": 600.35888671875,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            9
+          ]
+        }
+      ],
+      "orig": "528106062",
+      "text": "528106062"
+    },
+    {
+      "self_ref": "#/texts/20",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 273.5625,
+            "t": 609.7721761067709,
+            "r": 349.921875,
+            "b": 600.35888671875,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            15
+          ]
+        }
+      ],
+      "orig": "MTU 20V4000M53B",
+      "text": "MTU 20V4000M53B"
+    },
+    {
+      "self_ref": "#/texts/21",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 47.3125,
+            "t": 598.7217814127604,
+            "r": 146.296875,
+            "b": 588.0806477864584,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            26
+          ]
+        },
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 221.0401814778646,
+            "t": 597.9032389322916,
+            "r": 365.2745361328125,
+            "b": 588.4899291992188,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            27,
+            65
+          ]
+        }
+      ],
+      "orig": "Type Approval No. and Date Design Appraisal Document No. and date",
+      "text": "Type Approval No. and Date Design Appraisal Document No. and date"
+    },
+    {
+      "self_ref": "#/texts/22",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 416.5847981770833,
+            "t": 651.9274291992188,
+            "r": 566.8794352213541,
+            "b": 637.1935628255209,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            23
+          ]
+        }
+      ],
+      "orig": "Main AuxiliaryEmergency",
+      "text": "Main AuxiliaryEmergency"
+    },
+    {
+      "self_ref": "#/texts/23",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 397.1919352213542,
+            "t": 597.9032389322916,
+            "r": 450.9263102213542,
+            "b": 588.0806477864584,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            14
+          ]
+        }
+      ],
+      "orig": "Engine Control",
+      "text": "Engine Control"
+    },
+    {
+      "self_ref": "#/texts/24",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.90848159790039,
+            "t": 586.4435628255209,
+            "r": 151.54910278320312,
+            "b": 577.0302530924479,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            25
+          ]
+        }
+      ],
+      "orig": "LR2002664TA 02 April 2020",
+      "text": "LR2002664TA 02 April 2020"
+    },
+    {
+      "self_ref": "#/texts/25",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 220.23213704427084,
+            "t": 586.8528238932291,
+            "r": 326.48883056640625,
+            "b": 576.2117106119791,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            26
+          ]
+        }
+      ],
+      "orig": "ENS 23549-09 02 April 2020",
+      "text": "ENS 23549-09 02 April 2020"
+    },
+    {
+      "self_ref": "#/texts/26",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 396.3839111328125,
+            "t": 586.4435628255209,
+            "r": 484.0557861328125,
+            "b": 575.8024291992188,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            25
+          ]
+        }
+      ],
+      "orig": "Electronically controlled",
+      "text": "Electronically controlled"
+    },
+    {
+      "self_ref": "#/texts/27",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.50446383158366,
+            "t": 574.5746053059896,
+            "r": 91.35044352213541,
+            "b": 563.5242106119791,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            11
+          ]
+        }
+      ],
+      "orig": "Engine Type",
+      "text": "Engine Type"
+    },
+    {
+      "self_ref": "#/texts/28",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 47.3125,
+            "t": 563.9334716796875,
+            "r": 93.37053426106772,
+            "b": 552.883076985677,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            9
+          ]
+        }
+      ],
+      "orig": "\u25a12 Stroke",
+      "text": "\u25a12 Stroke"
+    },
+    {
+      "self_ref": "#/texts/29",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_selected",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 137.40847778320312,
+            "t": 565.9798380533854,
+            "r": 183.46651204427084,
+            "b": 552.0645345052083,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            8
+          ]
+        }
+      ],
+      "orig": "4 Stroke",
+      "text": "4 Stroke"
+    },
+    {
+      "self_ref": "#/texts/30",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 229.5245564778646,
+            "t": 565.9798380533854,
+            "r": 268.71427408854163,
+            "b": 552.0645345052083,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            8
+          ]
+        }
+      ],
+      "orig": "\u25a1In-Line",
+      "text": "\u25a1In-Line"
+    },
+    {
+      "self_ref": "#/texts/31",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_selected",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 322.4486490885417,
+            "t": 565.5705769856771,
+            "r": 352.34596761067706,
+            "b": 552.0645345052083,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            3
+          ]
+        }
+      ],
+      "orig": "Vee",
+      "text": "Vee"
+    },
+    {
+      "self_ref": "#/texts/32",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 414.1606852213542,
+            "t": 565.9798380533854,
+            "r": 453.3504231770833,
+            "b": 553.2923380533855,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            6
+          ]
+        }
+      ],
+      "orig": "Other:",
+      "text": "Other:"
+    },
+    {
+      "self_ref": "#/texts/33",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.50446383158366,
+            "t": 552.0645345052083,
+            "r": 238.4129435221354,
+            "b": 540.6048380533855,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            50
+          ]
+        }
+      ],
+      "orig": "Shaft power kW and rpm (maximum continuous rating)",
+      "text": "Shaft power kW and rpm (maximum continuous rating)"
+    },
+    {
+      "self_ref": "#/texts/34",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 263.8660685221354,
+            "t": 551.655253092448,
+            "r": 336.5892740885417,
+            "b": 541.0141194661458,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            19
+          ]
+        },
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 358.8102620442708,
+            "t": 551.2459716796875,
+            "r": 404.4642740885417,
+            "b": 540.195576985677,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            20,
+            31
+          ]
+        }
+      ],
+      "orig": "Number of cylinders Stroke (mm)",
+      "text": "Number of cylinders Stroke (mm)"
+    },
+    {
+      "self_ref": "#/texts/35",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 464.2589111328125,
+            "t": 551.655253092448,
+            "r": 556.7790120442709,
+            "b": 540.195576985677,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            25
+          ]
+        }
+      ],
+      "orig": "Diameter of cylinder (mm)",
+      "text": "Diameter of cylinder (mm)"
+    },
+    {
+      "self_ref": "#/texts/36",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.90848159790039,
+            "t": 539.7862955729167,
+            "r": 126.09597778320312,
+            "b": 529.1451619466145,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            19
+          ]
+        }
+      ],
+      "orig": "3015 kW at 1800 rpm",
+      "text": "3015 kW at 1800 rpm"
+    },
+    {
+      "self_ref": "#/texts/37",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 263.4620564778646,
+            "t": 539.7862955729167,
+            "r": 277.6026814778646,
+            "b": 528.3266194661458,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            2
+          ]
+        }
+      ],
+      "orig": "20",
+      "text": "20"
+    },
+    {
+      "self_ref": "#/texts/38",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 358.40625,
+            "t": 539.7862955729167,
+            "r": 376.1830240885417,
+            "b": 528.7359008789062,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            3
+          ]
+        }
+      ],
+      "orig": "210",
+      "text": "210"
+    },
+    {
+      "self_ref": "#/texts/39",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 464.2589111328125,
+            "t": 539.7862955729167,
+            "r": 481.6316731770833,
+            "b": 528.7359008789062,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            3
+          ]
+        }
+      ],
+      "orig": "170",
+      "text": "170"
+    },
+    {
+      "self_ref": "#/texts/40",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.50446383158366,
+            "t": 527.9173380533855,
+            "r": 176.1941935221354,
+            "b": 516.4576619466145,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            37
+          ]
+        },
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 358.8102620442708,
+            "t": 527.508076985677,
+            "r": 449.7142740885417,
+            "b": 518.0947672526042,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            38,
+            64
+          ]
+        }
+      ],
+      "orig": "Crankshaft ID (Serial No.) & markings Crankshaft Certificate No.",
+      "text": "Crankshaft ID (Serial No.) & markings Crankshaft Certificate No."
+    },
+    {
+      "self_ref": "#/texts/41",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.50446383158366,
+            "t": 515.2298380533855,
+            "r": 87.31026713053384,
+            "b": 505.4072672526042,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            7
+          ]
+        }
+      ],
+      "orig": "M394171",
+      "text": "M394171"
+    },
+    {
+      "self_ref": "#/texts/42",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 358.40625,
+            "t": 515.2298380533855,
+            "r": 411.3325602213542,
+            "b": 505.81654866536456,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            10
+          ]
+        }
+      ],
+      "orig": "HAM2152064",
+      "text": "HAM2152064"
+    },
+    {
+      "self_ref": "#/texts/43",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.10044606526693,
+            "t": 500.4959716796875,
+            "r": 98.62276713053384,
+            "b": 488.6270345052083,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            12
+          ]
+        }
+      ],
+      "orig": "Fuel Systems",
+      "text": "Fuel Systems"
+    },
+    {
+      "self_ref": "#/texts/44",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.10044606526693,
+            "t": 487.3992106119792,
+            "r": 95.390625,
+            "b": 476.3487955729167,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            14
+          ]
+        },
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 218.2120564778646,
+            "t": 487.3992106119792,
+            "r": 361.234375,
+            "b": 476.75807698567706,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            15,
+            59
+          ]
+        }
+      ],
+      "orig": "Injection type Fuel types (select all that are appropriate)",
+      "text": "Injection type Fuel types (select all that are appropriate)"
+    },
+    {
+      "self_ref": "#/texts/45",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 391.5356852213542,
+            "t": 488.21775309244794,
+            "r": 418.6048990885417,
+            "b": 476.75807698567706,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            7
+          ]
+        }
+      ],
+      "orig": "Details",
+      "text": "Details"
+    },
+    {
+      "self_ref": "#/texts/46",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.10044606526693,
+            "t": 474.7117106119792,
+            "r": 101.8549092610677,
+            "b": 464.8891194661458,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            16
+          ]
+        }
+      ],
+      "orig": "Direct injection",
+      "text": "Direct injection"
+    },
+    {
+      "self_ref": "#/texts/47",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 219.02008056640625,
+            "t": 475.53025309244794,
+            "r": 302.2477620442708,
+            "b": 464.8891194661458,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            20
+          ]
+        }
+      ],
+      "orig": "Marine residual fuel",
+      "text": "Marine residual fuel"
+    },
+    {
+      "self_ref": "#/texts/48",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 414.96875,
+            "t": 474.30242919921875,
+            "r": 547.890625,
+            "b": 464.8891194661458,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            38
+          ]
+        }
+      ],
+      "orig": "cSt (Max. kinematic viscosity at 50\u00b0C)",
+      "text": "cSt (Max. kinematic viscosity at 50\u00b0C)"
+    },
+    {
+      "self_ref": "#/texts/49",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.10044606526693,
+            "t": 411.2742106119792,
+            "r": 82.46205139160156,
+            "b": 400.2237955729167,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            7
+          ]
+        }
+      ],
+      "orig": "Remarks",
+      "text": "Remarks"
+    },
+    {
+      "self_ref": "#/texts/50",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.90848159790039,
+            "t": 400.2237955729167,
+            "r": 159.6294657389323,
+            "b": 390.8105061848958,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            29
+          ]
+        }
+      ],
+      "orig": "Serial nos. of ECU: 258536887",
+      "text": "Serial nos. of ECU: 258536887"
+    },
+    {
+      "self_ref": "#/texts/51",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 219.4240926106771,
+            "t": 463.2520345052083,
+            "r": 304.26784261067706,
+            "b": 452.6108805338542,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            22
+          ]
+        }
+      ],
+      "orig": "Marine distillate Fuel",
+      "text": "Marine distillate Fuel"
+    },
+    {
+      "self_ref": "#/texts/52",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 391.9397379557292,
+            "t": 465.2983805338542,
+            "r": 498.6004231770833,
+            "b": 452.2016194661458,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            16
+          ]
+        }
+      ],
+      "orig": "(\u25a1DMA/\u25a1DMB/\u25a1DMC)",
+      "text": "(\u25a1DMA/\u25a1DMB/\u25a1DMC)"
+    },
+    {
+      "self_ref": "#/texts/53",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 219.02008056640625,
+            "t": 450.9737955729167,
+            "r": 304.26784261067706,
+            "b": 440.3326822916667,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            22
+          ]
+        }
+      ],
+      "orig": "Marine distillate Fuel",
+      "text": "Marine distillate Fuel"
+    },
+    {
+      "self_ref": "#/texts/54",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 391.9397379557292,
+            "t": 452.2016194661458,
+            "r": 427.8972981770833,
+            "b": 439.5141194661458,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            6
+          ]
+        }
+      ],
+      "orig": "(\u25a1DMX)",
+      "text": "(\u25a1DMX)"
+    },
+    {
+      "self_ref": "#/texts/55",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 218.2120564778646,
+            "t": 439.5141194661458,
+            "r": 346.28570556640625,
+            "b": 427.2358805338542,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            32
+          ]
+        }
+      ],
+      "orig": "Low Flash Liquid and/or Gas Fuel",
+      "text": "Low Flash Liquid and/or Gas Fuel"
+    },
+    {
+      "self_ref": "#/texts/56",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 391.5356852213542,
+            "t": 438.695556640625,
+            "r": 436.7856852213542,
+            "b": 426.4173583984375,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            13
+          ]
+        }
+      ],
+      "orig": "Specify fuel:",
+      "text": "Specify fuel:"
+    },
+    {
+      "self_ref": "#/texts/57",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_selected",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 217.80802408854166,
+            "t": 428.054443359375,
+            "r": 254.16963704427084,
+            "b": 414.9576822916667,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            5
+          ]
+        }
+      ],
+      "orig": "Other",
+      "text": "Other"
+    },
+    {
+      "self_ref": "#/texts/58",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 392.34375,
+            "t": 425.5987955729167,
+            "r": 468.703125,
+            "b": 414.9576822916667,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            21
+          ]
+        }
+      ],
+      "orig": "Specify fuel: DIN 590",
+      "text": "Specify fuel: DIN 590"
+    },
+    {
+      "self_ref": "#/texts/59",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 232.7566935221354,
+            "t": 400.2237955729167,
+            "r": 297.3995361328125,
+            "b": 390.4012044270833,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            14
+          ]
+        }
+      ],
+      "orig": "EMU: 257536266",
+      "text": "EMU: 257536266"
+    },
+    {
+      "self_ref": "#/texts/60",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 357.59820556640625,
+            "t": 400.2237955729167,
+            "r": 419.0089111328125,
+            "b": 390.4012044270833,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            14
+          ]
+        }
+      ],
+      "orig": "EIM: 257532490",
+      "text": "EIM: 257532490"
+    },
+    {
+      "self_ref": "#/texts/61",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 463.8548990885417,
+            "t": 401.0423583984375,
+            "r": 561.627197265625,
+            "b": 389.1733805338542,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            25
+          ]
+        }
+      ],
+      "orig": "- Only multi plant engine",
+      "text": "- Only multi plant engine"
+    },
+    {
+      "self_ref": "#/texts/62",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.50446383158366,
+            "t": 374.0302734375,
+            "r": 295.37945556640625,
+            "b": 363.3891194661458,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            63
+          ]
+        }
+      ],
+      "orig": "Engine Identification Marks (QAM No, Engine Serial No and Date)",
+      "text": "Engine Identification Marks (QAM No, Engine Serial No and Date)"
+    },
+    {
+      "self_ref": "#/texts/63",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.50446383158366,
+            "t": 339.241943359375,
+            "r": 147.91294352213544,
+            "b": 329.82865397135424,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            24
+          ]
+        }
+      ],
+      "orig": "Manufacturer's Statement",
+      "text": "Manufacturer's Statement"
+    },
+    {
+      "self_ref": "#/texts/64",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 130.94419352213544,
+            "t": 362.9798583984375,
+            "r": 153.56919352213544,
+            "b": 338.4234212239583,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            1
+          ]
+        }
+      ],
+      "orig": "R",
+      "text": "R"
+    },
+    {
+      "self_ref": "#/texts/65",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 45.29241053263346,
+            "t": 329.41935221354174,
+            "r": 552.3347981770834,
+            "b": 308.54638671875,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            162
+          ]
+        }
+      ],
+      "orig": "This is to certify that the engine described above has been constructed and tested with satisfactory results in accordance with the current Rules and Regulations.",
+      "text": "This is to certify that the engine described above has been constructed and tested with satisfactory results in accordance with the current Rules and Regulations."
+    },
+    {
+      "self_ref": "#/texts/66",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 155.99329630533856,
+            "t": 307.31856282552076,
+            "r": 490.5200602213542,
+            "b": 297.08671061197913,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            94
+          ]
+        }
+      ],
+      "orig": "A copy of the applicable Design Appraisal Document and Type Approval Certificate are attached.",
+      "text": "A copy of the applicable Design Appraisal Document and Type Approval Certificate are attached."
+    },
+    {
+      "self_ref": "#/texts/67",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 156.39731852213544,
+            "t": 295.04032389322913,
+            "r": 359.2142740885417,
+            "b": 284.39921061197913,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            55
+          ]
+        }
+      ],
+      "orig": "Applicable Design Appraisal Document has been reviewed.",
+      "text": "Applicable Design Appraisal Document has been reviewed."
+    },
+    {
+      "self_ref": "#/texts/68",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.10044606526693,
+            "t": 281.5343017578125,
+            "r": 164.47767130533853,
+            "b": 270.89314778645837,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            32
+          ]
+        }
+      ],
+      "orig": "Signed on behalf of manufacturer",
+      "text": "Signed on behalf of manufacturer"
+    },
+    {
+      "self_ref": "#/texts/69",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.10044606526693,
+            "t": 269.25606282552087,
+            "r": 153.16517130533856,
+            "b": 258.61494954427087,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            24
+          ]
+        }
+      ],
+      "orig": "MTU Friedrichshafen GmbH",
+      "text": "MTU Friedrichshafen GmbH"
+    },
+    {
+      "self_ref": "#/texts/70",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.10044606526693,
+            "t": 257.38712565104163,
+            "r": 82.46205139160156,
+            "b": 247.56453450520837,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            9
+          ]
+        }
+      ],
+      "orig": "Signature",
+      "text": "Signature"
+    },
+    {
+      "self_ref": "#/texts/71",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 45.29241053263346,
+            "t": 233.64921061197913,
+            "r": 125.28794352213542,
+            "b": 221.7802734375,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            22
+          ]
+        },
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 271.9464314778646,
+            "t": 259.02421061197913,
+            "r": 292.55133056640625,
+            "b": 246.33671061197913,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            23,
+            27
+          ]
+        }
+      ],
+      "orig": "Name in block capitals Date",
+      "text": "Name in block capitals Date"
+    },
+    {
+      "self_ref": "#/texts/72",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 271.9464314778646,
+            "t": 247.1552734375,
+            "r": 321.640625,
+            "b": 235.28629557291663,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            12
+          ]
+        }
+      ],
+      "orig": "01 July 2021",
+      "text": "01 July 2021"
+    },
+    {
+      "self_ref": "#/texts/73",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 272.3504435221354,
+            "t": 232.42138671875,
+            "r": 345.0736490885417,
+            "b": 221.7802734375,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            19
+          ]
+        }
+      ],
+      "orig": "Position in company",
+      "text": "Position in company"
+    },
+    {
+      "self_ref": "#/texts/74",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 45.29241053263346,
+            "t": 220.96171061197913,
+            "r": 123.26785278320312,
+            "b": 208.6834716796875,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            18
+          ]
+        },
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 273.5625,
+            "t": 218.91532389322913,
+            "r": 340.22544352213544,
+            "b": 208.6834716796875,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            19,
+            34
+          ]
+        }
+      ],
+      "orig": "Mr. Stotz Wolfgang Quality Manager",
+      "text": "Mr. Stotz Wolfgang Quality Manager"
+    },
+    {
+      "self_ref": "#/texts/75",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 45.29241053263346,
+            "t": 208.27421061197913,
+            "r": 562.8392740885416,
+            "b": 188.21976725260413,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            175
+          ]
+        }
+      ],
+      "orig": "This certificate is issued by the manufacturer in accordance with the arrangements authorised by Lloyd's Register EMEA in Quality Assurance approval Certificate number QAM 030",
+      "text": "This certificate is issued by the manufacturer in accordance with the arrangements authorised by Lloyd's Register EMEA in Quality Assurance approval Certificate number QAM 030"
+    },
+    {
+      "self_ref": "#/texts/76",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 44.888392766316734,
+            "t": 184.12703450520837,
+            "r": 555.1629231770834,
+            "b": 163.25406901041663,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            157
+          ]
+        }
+      ],
+      "orig": "I certify that these arrangements are being kept under review by regular and systematic auditing of the approved Manufacturing and quality control procedures",
+      "text": "I certify that these arrangements are being kept under review by regular and systematic auditing of the approved Manufacturing and quality control procedures"
+    },
+    {
+      "self_ref": "#/texts/77",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 45.29241053263346,
+            "t": 162.84476725260413,
+            "r": 65.49330393473308,
+            "b": 152.20365397135413,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            4
+          ]
+        },
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 272.3504435221354,
+            "t": 162.84476725260413,
+            "r": 308.7120361328125,
+            "b": 151.79439290364587,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            5,
+            14
+          ]
+        }
+      ],
+      "orig": "Date Signature",
+      "text": "Date Signature"
+    },
+    {
+      "self_ref": "#/texts/78",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 45.29241053263346,
+            "t": 151.79439290364587,
+            "r": 94.17856852213541,
+            "b": 140.74397786458337,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            12
+          ]
+        }
+      ],
+      "orig": "01 July 2021",
+      "text": "01 July 2021"
+    },
+    {
+      "self_ref": "#/texts/79",
+      "parent": {
+        "$ref": "#/pictures/4"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 463.4508870442708,
+            "t": 157.11494954427087,
+            "r": 482.84375,
+            "b": 148.11092122395837,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            7
+          ]
+        }
+      ],
+      "orig": "Lloyd's",
+      "text": "Lloyd's"
+    },
+    {
+      "self_ref": "#/texts/80",
+      "parent": {
+        "$ref": "#/pictures/4"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 316.3883870442708,
+            "t": 150.15726725260413,
+            "r": 360.83034261067706,
+            "b": 140.74397786458337,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            13
+          ]
+        }
+      ],
+      "orig": "Vienna Office",
+      "text": "Vienna Office"
+    },
+    {
+      "self_ref": "#/texts/81",
+      "parent": {
+        "$ref": "#/pictures/4"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 463.4508870442708,
+            "t": 150.15726725260413,
+            "r": 485.671875,
+            "b": 141.56254069010413,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            8
+          ]
+        }
+      ],
+      "orig": "Register",
+      "text": "Register"
+    },
+    {
+      "self_ref": "#/texts/82",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 272.3504435221354,
+            "t": 128.875,
+            "r": 317.1964111328125,
+            "b": 119.05240885416663,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            11
+          ]
+        },
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 544.2544352213542,
+            "t": 129.693603515625,
+            "r": 562.8392740885416,
+            "b": 118.64314778645837,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            12,
+            15
+          ]
+        }
+      ],
+      "orig": "M.H. Santer mhs",
+      "text": "M.H. Santer mhs"
+    },
+    {
+      "self_ref": "#/texts/83",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 273.1584676106771,
+            "t": 117.82462565104163,
+            "r": 391.9397379557292,
+            "b": 108.41129557291663,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            33
+          ]
+        }
+      ],
+      "orig": "Surveyor to Lloyd's Register EMEA",
+      "text": "Surveyor to Lloyd's Register EMEA"
+    },
+    {
+      "self_ref": "#/texts/84",
+      "parent": {
+        "$ref": "#/pictures/5"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 428.3013102213542,
+            "t": 272.5302734375,
+            "r": 462.2388102213542,
+            "b": 259.4334716796875,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            7
+          ]
+        }
+      ],
+      "orig": "Quality",
+      "text": "Quality"
+    },
+    {
+      "self_ref": "#/texts/85",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 163.66963704427081,
+            "t": 357.25,
+            "r": 201.6473185221354,
+            "b": 347.4274495442708,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            7
+          ]
+        }
+      ],
+      "orig": "QAM 030",
+      "text": "QAM 030"
+    },
+    {
+      "self_ref": "#/texts/86",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 203.26338704427084,
+            "t": 357.6593017578125,
+            "r": 248.51338704427084,
+            "b": 347.8367106119792,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            9
+          ]
+        }
+      ],
+      "orig": "528106062",
+      "text": "528106062"
+    },
+    {
+      "self_ref": "#/texts/87",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 265.88614908854163,
+            "t": 357.25,
+            "r": 321.23659261067706,
+            "b": 347.4274495442708,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            12
+          ]
+        }
+      ],
+      "orig": "LLOYD'S TEST",
+      "text": "LLOYD'S TEST"
+    },
+    {
+      "self_ref": "#/texts/88",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 343.05356852213544,
+            "t": 357.25,
+            "r": 395.9798990885417,
+            "b": 347.4274495442708,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            10
+          ]
+        }
+      ],
+      "orig": "HAM2152268",
+      "text": "HAM2152268"
+    },
+    {
+      "self_ref": "#/texts/89",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 420.2209879557292,
+            "t": 357.25,
+            "r": 463.046875,
+            "b": 347.4274495442708,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            9
+          ]
+        }
+      ],
+      "orig": "06 MHS 21",
+      "text": "06 MHS 21"
+    },
+    {
+      "self_ref": "#/texts/90",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 271.54239908854163,
+            "t": 104.318603515625,
+            "r": 431.5334879557292,
+            "b": 94.08675130208337,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            46
+          ]
+        }
+      ],
+      "orig": "A subsidiary of Lloyd's Register Group Limited",
+      "text": "A subsidiary of Lloyd's Register Group Limited"
+    },
+    {
+      "self_ref": "#/texts/91",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 44.888392766316734,
+            "t": 89.17545572916663,
+            "r": 557.9910481770834,
+            "b": 61.34480794270837,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            399
+          ]
+        }
+      ],
+      "orig": "This engine will be accepted for fitting in ships classed or intended to be classed with Lloyd's Register subject to satisfactory integration testing of the complete engine with ancillary systems as detailed in Part B of either Form 2011 or 2013 as applicable, and installation under the usual conditions of survey and testing, and where required by the rules, approval of vibration characteristics.",
+      "text": "This engine will be accepted for fitting in ships classed or intended to be classed with Lloyd's Register subject to satisfactory integration testing of the complete engine with ancillary systems as detailed in Part B of either Form 2011 or 2013 as applicable, and installation under the usual conditions of survey and testing, and where required by the rules, approval of vibration characteristics."
+    },
+    {
+      "self_ref": "#/texts/92",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "footnote",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.50446383158366,
+            "t": 46.61092122395837,
+            "r": 552.3347981770834,
+            "b": 12.641194661458371,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            673
+          ]
+        }
+      ],
+      "orig": "* Delete as appropriateLloyd's Register Group Limited, its affiliates and subsidiaries and their respective officers, employees or agents are, individually and collectively, referred to in this clause as 'Lloyd's Register'. Lloyd's Register assumes no responsibility and shall not be liable to any person for any loss, damage or expense caused by reliance on the information or advice in this document or howsoever provided, unless that person has signed a contract with the relevant Lloyd's Register entity for the provision of this information or advice and in that case any responsibility or liability is exclusively on the terms and conditions set out in that contract.",
+      "text": "* Delete as appropriateLloyd's Register Group Limited, its affiliates and subsidiaries and their respective officers, employees or agents are, individually and collectively, referred to in this clause as 'Lloyd's Register'. Lloyd's Register assumes no responsibility and shall not be liable to any person for any loss, damage or expense caused by reliance on the information or advice in this document or howsoever provided, unless that person has signed a contract with the relevant Lloyd's Register entity for the provision of this information or advice and in that case any responsibility or liability is exclusively on the terms and conditions set out in that contract."
+    },
+    {
+      "self_ref": "#/texts/93",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "furniture",
+      "label": "page_header",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 359.8095296223958,
+            "t": 804.9848785400391,
+            "r": 411.6190592447917,
+            "b": 783.2666320800781,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            27
+          ]
+        }
+      ],
+      "orig": "Certificate no: Page 1 of 1",
+      "text": "Certificate no: Page 1 of 1"
+    },
+    {
+      "self_ref": "#/texts/94",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "furniture",
+      "label": "page_header",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 437.5238037109375,
+            "t": 804.9848785400391,
+            "r": 490.1428629557292,
+            "b": 795.5599797566732,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            10
+          ]
+        }
+      ],
+      "orig": "HAM2152275",
+      "text": "HAM2152275"
+    },
+    {
+      "self_ref": "#/texts/95",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 47.73809560139974,
+            "t": 786.5448582967123,
+            "r": 105.61904907226562,
+            "b": 727.9465738932291,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            1
+          ]
+        }
+      ],
+      "orig": "R",
+      "text": "R"
+    },
+    {
+      "self_ref": "#/texts/96",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "section_header",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 183.33333333333334,
+            "t": 780.8079630533854,
+            "r": 349.2857259114583,
+            "b": 733.6834665934244,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            38
+          ]
+        }
+      ],
+      "orig": "Engine Certificate (Quality Assurance)",
+      "text": "Engine Certificate (Quality Assurance)",
+      "level": 1
+    },
+    {
+      "self_ref": "#/texts/97",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 47.333333333333336,
+            "t": 732.8639068603516,
+            "r": 82.14285786946616,
+            "b": 721.3901163736979,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            9
+          ]
+        },
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 273.5952351888021,
+            "t": 732.0443522135416,
+            "r": 378.4285888671875,
+            "b": 721.3901163736979,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            10,
+            37
+          ]
+        }
+      ],
+      "orig": "LR Office Manufacturer's order number",
+      "text": "LR Office Manufacturer's order number"
+    },
+    {
+      "self_ref": "#/texts/98",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 47.333333333333336,
+            "t": 720.9803365071615,
+            "r": 85.78571573893228,
+            "b": 708.2772115071614,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            7
+          ]
+        }
+      ],
+      "orig": "Hamburg",
+      "text": "Hamburg"
+    },
+    {
+      "self_ref": "#/texts/99",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 273.5952351888021,
+            "t": 720.1607869466146,
+            "r": 346.04762776692706,
+            "b": 709.5065511067708,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            17
+          ]
+        }
+      ],
+      "orig": "1196054 / 3145306",
+      "text": "1196054 / 3145306"
+    },
+    {
+      "self_ref": "#/texts/100",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 47.333333333333336,
+            "t": 709.5065511067708,
+            "r": 97.52380879720053,
+            "b": 697.6229756673176,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            12
+          ]
+        },
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 273.19047037760413,
+            "t": 708.686991373698,
+            "r": 310.42856852213544,
+            "b": 697.6229756673176,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            13,
+            22
+          ]
+        }
+      ],
+      "orig": "Manufacturer Purchaser",
+      "text": "Manufacturer Purchaser"
+    },
+    {
+      "self_ref": "#/texts/101",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 47.73809560139974,
+            "t": 696.3936462402344,
+            "r": 153.38095092773438,
+            "b": 686.149190266927,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            24
+          ]
+        }
+      ],
+      "orig": "MTU Friedrichshafen GmbH",
+      "text": "MTU Friedrichshafen GmbH"
+    },
+    {
+      "self_ref": "#/texts/102",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 274.0,
+            "t": 695.5740865071614,
+            "r": 416.8809407552083,
+            "b": 686.149190266927,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            33
+          ]
+        }
+      ],
+      "orig": "L\u00fcrssen-Kr\u00f6ger Werft GmbH & Co KG",
+      "text": "L\u00fcrssen-Kr\u00f6ger Werft GmbH & Co KG"
+    },
+    {
+      "self_ref": "#/texts/103",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 48.14285786946615,
+            "t": 685.3296305338541,
+            "r": 134.76190185546875,
+            "b": 673.8558451334635,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            23
+          ]
+        },
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 273.5952351888021,
+            "t": 684.5100809733073,
+            "r": 363.85715738932294,
+            "b": 674.265625,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            24,
+            48
+          ]
+        }
+      ],
+      "orig": "Address of manufacturer Purchaser's order number",
+      "text": "Address of manufacturer Purchaser's order number"
+    },
+    {
+      "self_ref": "#/texts/104",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 48.14285786946615,
+            "t": 673.0362854003906,
+            "r": 153.38095092773438,
+            "b": 662.7918294270834,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            24
+          ]
+        }
+      ],
+      "orig": "MTU Friedrichshafen GmbH",
+      "text": "MTU Friedrichshafen GmbH"
+    },
+    {
+      "self_ref": "#/texts/105",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 273.5952351888021,
+            "t": 672.2167256673177,
+            "r": 303.1428629557292,
+            "b": 662.3820495605469,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            6
+          ]
+        }
+      ],
+      "orig": "385420",
+      "text": "385420"
+    },
+    {
+      "self_ref": "#/texts/106",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 46.92857106526693,
+            "t": 653.366933186849,
+            "r": 84.97619120279947,
+            "b": 641.4833577473959,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            7
+          ]
+        }
+      ],
+      "orig": "Germany",
+      "text": "Germany"
+    },
+    {
+      "self_ref": "#/texts/107",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 47.73809560139974,
+            "t": 663.2016092936198,
+            "r": 140.02381388346356,
+            "b": 652.9571533203125,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            23
+          ]
+        }
+      ],
+      "orig": "D-88040 Friedrichshafen",
+      "text": "D-88040 Friedrichshafen"
+    },
+    {
+      "self_ref": "#/texts/108",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 47.73809560139974,
+            "t": 632.4682413736979,
+            "r": 117.35714213053386,
+            "b": 621.8140055338541,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            18
+          ]
+        }
+      ],
+      "orig": "Engine Particulars",
+      "text": "Engine Particulars"
+    },
+    {
+      "self_ref": "#/texts/109",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 47.73809560139974,
+            "t": 620.5846761067709,
+            "r": 121.40476481119792,
+            "b": 609.9304402669271,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            20
+          ]
+        },
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 273.5952351888021,
+            "t": 659.9233805338541,
+            "r": 381.2619222005208,
+            "b": 649.2691446940104,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            21,
+            50
+          ]
+        },
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 413.6428629557292,
+            "t": 660.7429402669271,
+            "r": 481.2381184895833,
+            "b": 648.859375,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            51,
+            67
+          ]
+        },
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 274.0,
+            "t": 647.2202555338541,
+            "r": 397.452392578125,
+            "b": 637.7953491210938,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            68,
+            98
+          ]
+        }
+      ],
+      "orig": "Engine serial number Intended for ship/yard number Known engine use L\u00fcrssen Kr\u00f6ger Werft / NB13759",
+      "text": "Engine serial number Intended for ship/yard number Known engine use L\u00fcrssen Kr\u00f6ger Werft / NB13759"
+    },
+    {
+      "self_ref": "#/texts/110",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 430.6428629557292,
+            "t": 648.859375,
+            "r": 456.952392578125,
+            "b": 637.3855794270834,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            4
+          ]
+        }
+      ],
+      "orig": "Main",
+      "text": "Main"
+    },
+    {
+      "self_ref": "#/texts/111",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 458.1666666666667,
+            "t": 649.6789245605469,
+            "r": 565.8333333333334,
+            "b": 636.15625,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            18
+          ]
+        }
+      ],
+      "orig": "AuxiliaryEmergency",
+      "text": "AuxiliaryEmergency"
+    },
+    {
+      "self_ref": "#/texts/112",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 273.19047037760413,
+            "t": 620.9944458007812,
+            "r": 370.73809814453125,
+            "b": 609.9304402669271,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            26
+          ]
+        }
+      ],
+      "orig": "Manufacturer's designation",
+      "text": "Manufacturer's designation"
+    },
+    {
+      "self_ref": "#/texts/113",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 48.14285786946615,
+            "t": 608.7011108398438,
+            "r": 89.83333333333334,
+            "b": 598.8664347330729,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            9
+          ]
+        }
+      ],
+      "orig": "528106066",
+      "text": "528106066"
+    },
+    {
+      "self_ref": "#/texts/114",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 274.0,
+            "t": 608.2913208007812,
+            "r": 349.69049072265625,
+            "b": 598.8664347330729,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            15
+          ]
+        }
+      ],
+      "orig": "MTU 20V4000M53B",
+      "text": "MTU 20V4000M53B"
+    },
+    {
+      "self_ref": "#/texts/115",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 48.14285786946615,
+            "t": 597.2273152669271,
+            "r": 146.09523518880206,
+            "b": 586.5730794270834,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            26
+          ]
+        },
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 221.78572591145834,
+            "t": 596.4077555338541,
+            "r": 365.07143147786456,
+            "b": 586.9828491210938,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            27,
+            65
+          ]
+        },
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 397.452392578125,
+            "t": 596.4077555338541,
+            "r": 451.2857259114583,
+            "b": 586.5730794270834,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            66,
+            80
+          ]
+        }
+      ],
+      "orig": "Type Approval No. and Date Design Appraisal Document No. and date Engine Control",
+      "text": "Type Approval No. and Date Design Appraisal Document No. and date Engine Control"
+    },
+    {
+      "self_ref": "#/texts/116",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 47.333333333333336,
+            "t": 586.1633097330729,
+            "r": 150.95238240559894,
+            "b": 575.0992838541666,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            25
+          ]
+        }
+      ],
+      "orig": "LR2002664TA 02 April 2020",
+      "text": "LR2002664TA 02 April 2020"
+    },
+    {
+      "self_ref": "#/texts/117",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 221.3809611002604,
+            "t": 585.34375,
+            "r": 328.23809814453125,
+            "b": 574.6895141601562,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            26
+          ]
+        }
+      ],
+      "orig": "ENS 23549-09 02 April 2020",
+      "text": "ENS 23549-09 02 April 2020"
+    },
+    {
+      "self_ref": "#/texts/118",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 396.6428629557292,
+            "t": 585.34375,
+            "r": 483.6666666666667,
+            "b": 574.6895141601562,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            25
+          ]
+        }
+      ],
+      "orig": "Electronically controlled",
+      "text": "Electronically controlled"
+    },
+    {
+      "self_ref": "#/texts/119",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 46.92857106526693,
+            "t": 573.8699544270834,
+            "r": 92.26190694173178,
+            "b": 561.5765991210938,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            11
+          ]
+        }
+      ],
+      "orig": "Engine Type",
+      "text": "Engine Type"
+    },
+    {
+      "self_ref": "#/texts/120",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 47.333333333333336,
+            "t": 563.62548828125,
+            "r": 93.88095092773438,
+            "b": 551.3321533203125,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            9
+          ]
+        }
+      ],
+      "orig": "\u26102 Stroke",
+      "text": "\u26102 Stroke"
+    },
+    {
+      "self_ref": "#/texts/121",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_selected",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 136.7857157389323,
+            "t": 564.8548380533854,
+            "r": 183.33333333333334,
+            "b": 550.1028238932292,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            8
+          ]
+        }
+      ],
+      "orig": "4 Stroke",
+      "text": "4 Stroke"
+    },
+    {
+      "self_ref": "#/texts/122",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 231.0952351888021,
+            "t": 564.4450480143229,
+            "r": 269.14286295572913,
+            "b": 550.5125935872395,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            8
+          ]
+        }
+      ],
+      "orig": "\u25a1In-Line",
+      "text": "\u25a1In-Line"
+    },
+    {
+      "self_ref": "#/texts/123",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_selected",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 321.3571370442708,
+            "t": 565.2646077473959,
+            "r": 352.1190592447917,
+            "b": 549.6930338541667,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            3
+          ]
+        }
+      ],
+      "orig": "Vee",
+      "text": "Vee"
+    },
+    {
+      "self_ref": "#/texts/124",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 415.2619222005208,
+            "t": 564.4450480143229,
+            "r": 453.7142740885417,
+            "b": 551.741923014323,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            6
+          ]
+        }
+      ],
+      "orig": "Other:",
+      "text": "Other:"
+    },
+    {
+      "self_ref": "#/texts/125",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 47.333333333333336,
+            "t": 550.5125935872395,
+            "r": 239.19047037760416,
+            "b": 539.038798014323,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            50
+          ]
+        }
+      ],
+      "orig": "Shaft power kW and rpm (maximum continuous rating)",
+      "text": "Shaft power kW and rpm (maximum continuous rating)"
+    },
+    {
+      "self_ref": "#/texts/126",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 263.8809611002604,
+            "t": 550.92236328125,
+            "r": 336.3333333333333,
+            "b": 539.038798014323,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            19
+          ]
+        },
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 358.59523518880206,
+            "t": 549.6930338541667,
+            "r": 404.7381184895833,
+            "b": 538.6290283203125,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            20,
+            31
+          ]
+        }
+      ],
+      "orig": "Number of cylinders Stroke (mm)",
+      "text": "Number of cylinders Stroke (mm)"
+    },
+    {
+      "self_ref": "#/texts/127",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 464.2381184895833,
+            "t": 549.6930338541667,
+            "r": 557.3333333333334,
+            "b": 539.038798014323,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            25
+          ]
+        }
+      ],
+      "orig": "Diameter of cylinder (mm)",
+      "text": "Diameter of cylinder (mm)"
+    },
+    {
+      "self_ref": "#/texts/128",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 47.73809560139974,
+            "t": 537.8094685872395,
+            "r": 126.26190185546875,
+            "b": 527.1552327473958,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            19
+          ]
+        }
+      ],
+      "orig": "3015 kW at 1800 rpm",
+      "text": "3015 kW at 1800 rpm"
+    },
+    {
+      "self_ref": "#/texts/129",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 263.8809611002604,
+            "t": 538.6290283203125,
+            "r": 277.64286295572913,
+            "b": 526.7454630533855,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            2
+          ]
+        }
+      ],
+      "orig": "20",
+      "text": "20"
+    },
+    {
+      "self_ref": "#/texts/130",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 358.19049072265625,
+            "t": 538.21923828125,
+            "r": 376.40476481119794,
+            "b": 527.1552327473958,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            3
+          ]
+        }
+      ],
+      "orig": "210",
+      "text": "210"
+    },
+    {
+      "self_ref": "#/texts/131",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 464.2381184895833,
+            "t": 538.21923828125,
+            "r": 481.6428629557292,
+            "b": 527.1552327473958,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            3
+          ]
+        }
+      ],
+      "orig": "170",
+      "text": "170"
+    },
+    {
+      "self_ref": "#/texts/132",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 47.333333333333336,
+            "t": 526.335673014323,
+            "r": 176.04761759440103,
+            "b": 514.8618774414062,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            37
+          ]
+        }
+      ],
+      "orig": "Crankshaft ID (Serial No.) & markings",
+      "text": "Crankshaft ID (Serial No.) & markings"
+    },
+    {
+      "self_ref": "#/texts/133",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 47.73809560139974,
+            "t": 513.632548014323,
+            "r": 88.21428426106772,
+            "b": 503.79787190755206,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            8
+          ]
+        }
+      ],
+      "orig": "M650 919",
+      "text": "M650 919"
+    },
+    {
+      "self_ref": "#/texts/134",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 46.92857106526693,
+            "t": 498.47076416015625,
+            "r": 99.14285786946616,
+            "b": 487.40673828125,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            12
+          ]
+        }
+      ],
+      "orig": "Fuel Systems",
+      "text": "Fuel Systems"
+    },
+    {
+      "self_ref": "#/texts/135",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 46.92857106526693,
+            "t": 486.58717854817706,
+            "r": 96.30952453613281,
+            "b": 474.70361328125,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            14
+          ]
+        },
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 357.7857259114583,
+            "t": 525.51611328125,
+            "r": 450.0714518229167,
+            "b": 504.20766194661456,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            15,
+            52
+          ]
+        }
+      ],
+      "orig": "Injection type Crankshaft Certificate No. HAM2152092",
+      "text": "Injection type Crankshaft Certificate No. HAM2152092"
+    },
+    {
+      "self_ref": "#/texts/136",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 218.952392578125,
+            "t": 485.76763916015625,
+            "r": 361.42856852213544,
+            "b": 475.1134033203125,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            44
+          ]
+        }
+      ],
+      "orig": "Fuel types (select all that are appropriate)",
+      "text": "Fuel types (select all that are appropriate)"
+    },
+    {
+      "self_ref": "#/texts/137",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 392.1904703776042,
+            "t": 486.1774088541667,
+            "r": 418.90478515625,
+            "b": 475.93296305338544,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            7
+          ]
+        }
+      ],
+      "orig": "Details",
+      "text": "Details"
+    },
+    {
+      "self_ref": "#/texts/138",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 47.333333333333336,
+            "t": 473.88405354817706,
+            "r": 103.19047546386719,
+            "b": 462.820068359375,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            16
+          ]
+        }
+      ],
+      "orig": "Direct injection",
+      "text": "Direct injection"
+    },
+    {
+      "self_ref": "#/texts/139",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 219.35713704427084,
+            "t": 475.1134033203125,
+            "r": 301.92856852213544,
+            "b": 463.2298177083333,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            20
+          ]
+        }
+      ],
+      "orig": "Marine residual fuel",
+      "text": "Marine residual fuel"
+    },
+    {
+      "self_ref": "#/texts/140",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 414.8571370442708,
+            "t": 473.4742838541667,
+            "r": 548.0238037109375,
+            "b": 462.820068359375,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            38
+          ]
+        }
+      ],
+      "orig": "cSt (Max. kinematic viscosity at 50\u00b0C)",
+      "text": "cSt (Max. kinematic viscosity at 50\u00b0C)"
+    },
+    {
+      "self_ref": "#/texts/141",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 46.92857106526693,
+            "t": 409.1391194661458,
+            "r": 82.95238240559897,
+            "b": 399.304443359375,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            7
+          ]
+        }
+      ],
+      "orig": "Remarks",
+      "text": "Remarks"
+    },
+    {
+      "self_ref": "#/texts/142",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 47.73809560139974,
+            "t": 398.48486328125,
+            "r": 159.45238240559894,
+            "b": 389.0599772135417,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            29
+          ]
+        }
+      ],
+      "orig": "Serial nos. of ECU: 258536869",
+      "text": "Serial nos. of ECU: 258536869"
+    },
+    {
+      "self_ref": "#/texts/143",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 229.0714314778646,
+            "t": 462.4102783203125,
+            "r": 304.76190185546875,
+            "b": 450.5266927083333,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            22
+          ]
+        }
+      ],
+      "orig": "Marine distillate Fuel",
+      "text": "Marine distillate Fuel"
+    },
+    {
+      "self_ref": "#/texts/144",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 393.40478515625,
+            "t": 462.4102783203125,
+            "r": 497.4285888671875,
+            "b": 451.3462727864583,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            16
+          ]
+        }
+      ],
+      "orig": "(\u25a1DMA/\u25a1DMB/\u25a1DMC)",
+      "text": "(\u25a1DMA/\u25a1DMB/\u25a1DMC)"
+    },
+    {
+      "self_ref": "#/texts/145",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 220.16666666666666,
+            "t": 449.29736328125,
+            "r": 304.76190185546875,
+            "b": 438.6431477864583,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            22
+          ]
+        }
+      ],
+      "orig": "Marine distillate Fuel",
+      "text": "Marine distillate Fuel"
+    },
+    {
+      "self_ref": "#/texts/146",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 392.1904703776042,
+            "t": 450.5266927083333,
+            "r": 428.6190592447917,
+            "b": 437.8235677083333,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            6
+          ]
+        }
+      ],
+      "orig": "(\u25a1DMX)",
+      "text": "(\u25a1DMX)"
+    },
+    {
+      "self_ref": "#/texts/147",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 219.35713704427084,
+            "t": 437.8235677083333,
+            "r": 346.04762776692706,
+            "b": 425.9400227864583,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            32
+          ]
+        }
+      ],
+      "orig": "Low Flash Liquid and/or Gas Fuel",
+      "text": "Low Flash Liquid and/or Gas Fuel"
+    },
+    {
+      "self_ref": "#/texts/148",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 391.7857259114583,
+            "t": 437.0040283203125,
+            "r": 437.5238037109375,
+            "b": 424.710693359375,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            13
+          ]
+        }
+      ],
+      "orig": "Specify fuel:",
+      "text": "Specify fuel:"
+    },
+    {
+      "self_ref": "#/texts/149",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 392.1904703776042,
+            "t": 423.89111328125,
+            "r": 468.6904703776042,
+            "b": 413.2368977864583,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            21
+          ]
+        }
+      ],
+      "orig": "Specify fuel: DIN 590",
+      "text": "Specify fuel: DIN 590"
+    },
+    {
+      "self_ref": "#/texts/150",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_selected",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 218.14286295572916,
+            "t": 427.1693522135417,
+            "r": 255.3809611002604,
+            "b": 412.8271077473958,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            5
+          ]
+        }
+      ],
+      "orig": "Other",
+      "text": "Other"
+    },
+    {
+      "self_ref": "#/texts/151",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 232.71429443359375,
+            "t": 399.304443359375,
+            "r": 297.4761962890625,
+            "b": 388.6501871744792,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            14
+          ]
+        }
+      ],
+      "orig": "EMU: 258539919",
+      "text": "EMU: 258539919"
+    },
+    {
+      "self_ref": "#/texts/152",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 357.7857259114583,
+            "t": 398.48486328125,
+            "r": 419.7142740885417,
+            "b": 388.6501871744792,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            14
+          ]
+        }
+      ],
+      "orig": "EIM: 257532513",
+      "text": "EIM: 257532513"
+    },
+    {
+      "self_ref": "#/texts/153",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 463.4285888671875,
+            "t": 398.8946533203125,
+            "r": 561.3809407552084,
+            "b": 388.2403971354167,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            25
+          ]
+        }
+      ],
+      "orig": "- Only multi plant engine",
+      "text": "- Only multi plant engine"
+    },
+    {
+      "self_ref": "#/texts/154",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 47.333333333333336,
+            "t": 372.6688232421875,
+            "r": 295.452392578125,
+            "b": 362.0146077473958,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            63
+          ]
+        }
+      ],
+      "orig": "Engine Identification Marks (QAM No, Engine Serial No and Date)",
+      "text": "Engine Identification Marks (QAM No, Engine Serial No and Date)"
+    },
+    {
+      "self_ref": "#/texts/155",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "section_header",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 47.333333333333336,
+            "t": 337.0181477864583,
+            "r": 148.11904907226562,
+            "b": 327.59322102864576,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            24
+          ]
+        }
+      ],
+      "orig": "Manufacturer's Statement",
+      "text": "Manufacturer's Statement",
+      "level": 1
+    },
+    {
+      "self_ref": "#/texts/156",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 131.11904907226562,
+            "t": 361.6048177083333,
+            "r": 153.38095092773438,
+            "b": 336.6083577473958,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            1
+          ]
+        }
+      ],
+      "orig": "R",
+      "text": "R"
+    },
+    {
+      "self_ref": "#/texts/157",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 46.5238094329834,
+            "t": 327.59322102864576,
+            "r": 552.4761962890625,
+            "b": 306.28474934895826,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            162
+          ]
+        }
+      ],
+      "orig": "This is to certify that the engine described above has been constructed and tested with satisfactory results in accordance with the current Rules and Regulations.",
+      "text": "This is to certify that the engine described above has been constructed and tested with satisfactory results in accordance with the current Rules and Regulations."
+    },
+    {
+      "self_ref": "#/texts/158",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 155.80952962239581,
+            "t": 305.4652099609375,
+            "r": 489.7381184895833,
+            "b": 295.22074381510413,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            94
+          ]
+        }
+      ],
+      "orig": "A copy of the applicable Design Appraisal Document and Type Approval Certificate are attached.",
+      "text": "A copy of the applicable Design Appraisal Document and Type Approval Certificate are attached."
+    },
+    {
+      "self_ref": "#/texts/159",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 156.61904907226562,
+            "t": 292.7620849609375,
+            "r": 358.59523518880206,
+            "b": 283.33719889322913,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            55
+          ]
+        }
+      ],
+      "orig": "Applicable Design Appraisal Document has been reviewed.",
+      "text": "Applicable Design Appraisal Document has been reviewed."
+    },
+    {
+      "self_ref": "#/texts/160",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 47.333333333333336,
+            "t": 279.23942057291663,
+            "r": 164.30952962239584,
+            "b": 268.99495442708337,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            32
+          ]
+        }
+      ],
+      "orig": "Signed on behalf of manufacturer",
+      "text": "Signed on behalf of manufacturer"
+    },
+    {
+      "self_ref": "#/texts/161",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 46.92857106526693,
+            "t": 267.3558349609375,
+            "r": 152.57143147786456,
+            "b": 256.70157877604163,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            24
+          ]
+        }
+      ],
+      "orig": "MTU Friedrichshafen GmbH",
+      "text": "MTU Friedrichshafen GmbH"
+    },
+    {
+      "self_ref": "#/texts/162",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 46.92857106526693,
+            "t": 231.29532877604163,
+            "r": 125.04761759440105,
+            "b": 220.64111328125,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            22
+          ]
+        },
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 271.9761962890625,
+            "t": 256.70157877604163,
+            "r": 293.0238037109375,
+            "b": 244.81803385416663,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            23,
+            27
+          ]
+        }
+      ],
+      "orig": "Name in block capitals Date",
+      "text": "Name in block capitals Date"
+    },
+    {
+      "self_ref": "#/texts/163",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 272.3809611002604,
+            "t": 244.81803385416663,
+            "r": 321.3571370442708,
+            "b": 233.7540283203125,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            12
+          ]
+        }
+      ],
+      "orig": "01 July 2021",
+      "text": "01 July 2021"
+    },
+    {
+      "self_ref": "#/texts/164",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 271.9761962890625,
+            "t": 231.29532877604163,
+            "r": 344.42856852213544,
+            "b": 219.82157389322913,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            19
+          ]
+        }
+      ],
+      "orig": "Position in company",
+      "text": "Position in company"
+    },
+    {
+      "self_ref": "#/texts/165",
+      "parent": {
+        "$ref": "#/pictures/8"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 46.92857106526693,
+            "t": 256.29182942708337,
+            "r": 83.35714213053384,
+            "b": 244.81803385416663,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            9
+          ]
+        }
+      ],
+      "orig": "Signature",
+      "text": "Signature"
+    },
+    {
+      "self_ref": "#/texts/166",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 46.5238094329834,
+            "t": 219.00199381510413,
+            "r": 123.42856852213542,
+            "b": 207.11844889322913,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            17
+          ]
+        },
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 273.19047037760413,
+            "t": 217.36287434895837,
+            "r": 339.9761962890625,
+            "b": 207.11844889322913,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            18,
+            33
+          ]
+        }
+      ],
+      "orig": "Mr. StotzWolfgang Quality Manager",
+      "text": "Mr. StotzWolfgang Quality Manager"
+    },
+    {
+      "self_ref": "#/texts/167",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 46.92857106526693,
+            "t": 205.88907877604163,
+            "r": 562.5952555338541,
+            "b": 186.2197265625,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            175
+          ]
+        }
+      ],
+      "orig": "This certificate is issued by the manufacturer in accordance with the arrangements authorised by Lloyd's Register EMEA in Quality Assurance approval Certificate number QAM 030",
+      "text": "This certificate is issued by the manufacturer in accordance with the arrangements authorised by Lloyd's Register EMEA in Quality Assurance approval Certificate number QAM 030"
+    },
+    {
+      "self_ref": "#/texts/168",
+      "parent": {
+        "$ref": "#/pictures/9"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 463.4285888671875,
+            "t": 157.12548828125,
+            "r": 486.0952555338542,
+            "b": 145.24190266927087,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            6
+          ]
+        }
+      ],
+      "orig": "Loyd's",
+      "text": "Loyd's"
+    },
+    {
+      "self_ref": "#/texts/169",
+      "parent": {
+        "$ref": "#/pictures/9"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 464.2381184895833,
+            "t": 149.33968098958337,
+            "r": 488.5238037109375,
+            "b": 139.5050048828125,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            8
+          ]
+        }
+      ],
+      "orig": "Register",
+      "text": "Register"
+    },
+    {
+      "self_ref": "#/texts/170",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 272.3809611002604,
+            "t": 126.80192057291663,
+            "r": 316.90476481119794,
+            "b": 116.96720377604163,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            11
+          ]
+        },
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 543.9761962890625,
+            "t": 127.62141927083337,
+            "r": 563.0,
+            "b": 116.55745442708337,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            12,
+            15
+          ]
+        }
+      ],
+      "orig": "M.H. Santer mhs",
+      "text": "M.H. Santer mhs"
+    },
+    {
+      "self_ref": "#/texts/171",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 46.11904780069987,
+            "t": 181.71219889322913,
+            "r": 554.90478515625,
+            "b": 125.16276041666663,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            203
+          ]
+        }
+      ],
+      "orig": "I certify that these arrangements are being kept under review by regular and systematic auditing of the approved Manufacturing and quality control procedures bac Date Signature 01 July 2021 Vienna Office",
+      "text": "I certify that these arrangements are being kept under review by regular and systematic auditing of the approved Manufacturing and quality control procedures bac Date Signature 01 July 2021 Vienna Office"
+    },
+    {
+      "self_ref": "#/texts/172",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 272.78572591145837,
+            "t": 116.55745442708337,
+            "r": 392.5952555338542,
+            "b": 105.90323893229163,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            33
+          ]
+        }
+      ],
+      "orig": "Surveyor to Lloyd's Register EMEA",
+      "text": "Surveyor to Lloyd's Register EMEA"
+    },
+    {
+      "self_ref": "#/texts/173",
+      "parent": {
+        "$ref": "#/pictures/10"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 424.1666666666667,
+            "t": 267.765625,
+            "r": 457.3571370442708,
+            "b": 254.6527099609375,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            7
+          ]
+        }
+      ],
+      "orig": "Quality",
+      "text": "Quality"
+    },
+    {
+      "self_ref": "#/texts/174",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 163.5,
+            "t": 355.4581705729167,
+            "r": 201.95238240559897,
+            "b": 345.6234944661458,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            7
+          ]
+        }
+      ],
+      "orig": "QAM 030",
+      "text": "QAM 030"
+    },
+    {
+      "self_ref": "#/texts/175",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 203.5714314778646,
+            "t": 356.2777099609375,
+            "r": 248.9047648111979,
+            "b": 345.6234944661458,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            9
+          ]
+        }
+      ],
+      "orig": "528106066",
+      "text": "528106066"
+    },
+    {
+      "self_ref": "#/texts/176",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 265.5,
+            "t": 356.2777099609375,
+            "r": 320.952392578125,
+            "b": 345.6234944661458,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            12
+          ]
+        }
+      ],
+      "orig": "LLOYD'S TEST",
+      "text": "LLOYD'S TEST"
+    },
+    {
+      "self_ref": "#/texts/177",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 342.0,
+            "t": 355.867919921875,
+            "r": 395.8333333333333,
+            "b": 346.0332438151042,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            10
+          ]
+        }
+      ],
+      "orig": "HAM2152275",
+      "text": "HAM2152275"
+    },
+    {
+      "self_ref": "#/texts/178",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 420.5238037109375,
+            "t": 355.4581705729167,
+            "r": 463.0238037109375,
+            "b": 345.6234944661458,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            9
+          ]
+        }
+      ],
+      "orig": "06 MHS 21",
+      "text": "06 MHS 21"
+    },
+    {
+      "self_ref": "#/texts/179",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 272.78572591145837,
+            "t": 101.805419921875,
+            "r": 431.452392578125,
+            "b": 92.38053385416663,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            46
+          ]
+        }
+      ],
+      "orig": "A subsidiary of Lloyd's Register Group Limited",
+      "text": "A subsidiary of Lloyd's Register Group Limited"
+    },
+    {
+      "self_ref": "#/texts/180",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 45.71428553263346,
+            "t": 87.87296549479163,
+            "r": 558.1428629557291,
+            "b": 59.1884765625,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            399
+          ]
+        }
+      ],
+      "orig": "This engine will be accepted for fitting in ships classed or intended to be classed with Lloyd's Register subject to satisfactory integration testing of the complete engine with ancillary systems as detailed in Part B of either Form 2011 or 2013 as applicable, and installation under the usual conditions of survey and testing, and where required by the rules, approval of vibration characteristics.",
+      "text": "This engine will be accepted for fitting in ships classed or intended to be classed with Lloyd's Register subject to satisfactory integration testing of the complete engine with ancillary systems as detailed in Part B of either Form 2011 or 2013 as applicable, and installation under the usual conditions of survey and testing, and where required by the rules, approval of vibration characteristics."
+    },
+    {
+      "self_ref": "#/texts/181",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "footnote",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 46.5238094329834,
+            "t": 45.25602213541663,
+            "r": 552.4761962890625,
+            "b": 10.424886067708371,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            673
+          ]
+        }
+      ],
+      "orig": "* Delete as appropriateLloyd's Register Group Limited, its affiliates and subsidiaries and their respective officers, employees or agents are, individually and collectively, referred to in this clause as 'Lloyd's Register'. Lloyd's Register assumes no responsibility and shall not be liable to any person for any loss, damage or expense caused by reliance on the information or advice in this document or howsoever provided, unless that person has signed a contract with the relevant Lloyd's Register entity for the provision of this information or advice and in that case any responsibility or liability is exclusively on the terms and conditions set out in that contract.",
+      "text": "* Delete as appropriateLloyd's Register Group Limited, its affiliates and subsidiaries and their respective officers, employees or agents are, individually and collectively, referred to in this clause as 'Lloyd's Register'. Lloyd's Register assumes no responsibility and shall not be liable to any person for any loss, damage or expense caused by reliance on the information or advice in this document or howsoever provided, unless that person has signed a contract with the relevant Lloyd's Register entity for the provision of this information or advice and in that case any responsibility or liability is exclusively on the terms and conditions set out in that contract."
+    }
+  ],
+  "pictures": [
+    {
+      "self_ref": "#/pictures/0",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "picture",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 53.13535776116357,
+            "t": 783.2826690673828,
+            "r": 100.18375122052005,
+            "b": 734.723030090332,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "captions": [],
+      "references": [],
+      "footnotes": [],
+      "annotations": []
+    },
+    {
+      "self_ref": "#/pictures/1",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "picture",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 132.80212772573023,
+            "t": 362.5554504394531,
+            "r": 150.2966188099329,
+            "b": 340.2528381347656,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "captions": [],
+      "references": [],
+      "footnotes": [],
+      "annotations": []
+    },
+    {
+      "self_ref": "#/pictures/2",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "picture",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 87.8490519848554,
+            "t": 308.5899658203125,
+            "r": 101.31689840780301,
+            "b": 277.8856201171875,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "captions": [],
+      "references": [],
+      "footnotes": [],
+      "annotations": []
+    },
+    {
+      "self_ref": "#/pictures/3",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "picture",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 46.78764576047201,
+            "t": 255.05401611328125,
+            "r": 98.60484305680286,
+            "b": 229.7568359375,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "captions": [],
+      "references": [],
+      "footnotes": [],
+      "annotations": []
+    },
+    {
+      "self_ref": "#/pictures/4",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/79"
+        },
+        {
+          "$ref": "#/texts/80"
+        },
+        {
+          "$ref": "#/texts/81"
+        }
+      ],
+      "content_layer": "body",
+      "label": "picture",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 315.2976039460481,
+            "t": 169.17425537109375,
+            "r": 488.81277100403037,
+            "b": 129.688720703125,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "captions": [],
+      "references": [],
+      "footnotes": [],
+      "annotations": []
+    },
+    {
+      "self_ref": "#/pictures/5",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/84"
+        }
+      ],
+      "content_layer": "body",
+      "label": "picture",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 408.00193817563473,
+            "t": 296.59637451171875,
+            "r": 482.5702707112847,
+            "b": 221.8170166015625,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "captions": [],
+      "references": [],
+      "footnotes": [],
+      "annotations": []
+    },
+    {
+      "self_ref": "#/pictures/6",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "picture",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 53.68539568820229,
+            "t": 782.4118766784668,
+            "r": 100.50192735819194,
+            "b": 733.6255340576172,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "captions": [],
+      "references": [],
+      "footnotes": [],
+      "annotations": []
+    },
+    {
+      "self_ref": "#/pictures/7",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "picture",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 132.8637072501807,
+            "t": 360.42169189453125,
+            "r": 149.8208616611796,
+            "b": 339.0523681640625,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "captions": [],
+      "references": [],
+      "footnotes": [],
+      "annotations": []
+    },
+    {
+      "self_ref": "#/pictures/8",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/165"
+        }
+      ],
+      "content_layer": "body",
+      "label": "picture",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 47.600224594356284,
+            "t": 258.3641357421875,
+            "r": 101.91467763530325,
+            "b": 230.599365234375,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "captions": [],
+      "references": [],
+      "footnotes": [],
+      "annotations": []
+    },
+    {
+      "self_ref": "#/pictures/9",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/168"
+        },
+        {
+          "$ref": "#/texts/169"
+        }
+      ],
+      "content_layer": "body",
+      "label": "picture",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 316.2084925448962,
+            "t": 167.91314697265625,
+            "r": 490.377028277172,
+            "b": 128.24810791015625,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "captions": [],
+      "references": [],
+      "footnotes": [],
+      "annotations": []
+    },
+    {
+      "self_ref": "#/pictures/10",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/173"
+        }
+      ],
+      "content_layer": "body",
+      "label": "picture",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 404.57759773047957,
+            "t": 292.9556884765625,
+            "r": 477.85689607698794,
+            "b": 218.45074462890625,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "captions": [],
+      "references": [],
+      "footnotes": [],
+      "annotations": []
+    }
+  ],
+  "tables": [],
+  "key_value_items": [],
+  "form_items": [],
+  "pages": {
+    "1": {
+      "size": {
+        "width": 597.0999755859375,
+        "height": 844.0
+      },
+      "page_no": 1
+    },
+    "2": {
+      "size": {
+        "width": 597.0999755859375,
+        "height": 844.0
+      },
+      "page_no": 2
+    }
+  }
+}

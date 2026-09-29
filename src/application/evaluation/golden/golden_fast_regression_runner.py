@@ -6,7 +6,6 @@ from src.application.evaluation.corpus.resolved_golden_document import (
 )
 from src.application.evaluation.golden.cache_only_parser_guard import (
     CacheOnlyParserGuard,
-    GoldenCorpusDoclingUnavailableError,
 )
 from src.application.evaluation.golden.corpus_coverage_summary import (
     CorpusCoverageSummary,
@@ -14,6 +13,9 @@ from src.application.evaluation.golden.corpus_coverage_summary import (
 from src.application.evaluation.golden.golden_document_evaluation_outcome import (
     GoldenDocumentEvaluationOutcome,
     GoldenDocumentEvaluationStatus,
+)
+from src.application.evaluation.golden.golden_document_parse_stage import (
+    parse_golden_document,
 )
 from src.application.evaluation.golden.golden_evaluation_report import (
     GoldenEvaluationReport,
@@ -31,8 +33,8 @@ from src.application.evaluation.reproducibility import build_evaluation_run_meta
 from src.application.orchestrator.ingestion.parsing_runtime_builder import (
     build_parsing_runtime,
 )
-from src.shared.exceptions import ApplicationError, SchemaValidationError
-from src.shared.ids import IdGenerator, IdPrefix
+from src.shared.exceptions import SchemaValidationError
+from src.shared.ids import IdGenerator
 
 
 def run_fast_golden_regression(
@@ -123,21 +125,16 @@ def _evaluate_one_document(
     evaluator: IngestionExpectationEvaluator,
     id_generator: IdGenerator,
 ) -> GoldenDocumentEvaluationOutcome:
-    if resolved.availability == GoldenDocumentAvailability.MISSING:
+    parse_outcome = parse_golden_document(
+        resolved=resolved,
+        parsing_workflow=parsing_workflow,
+        id_generator=id_generator,
+    )
+    if parse_outcome.status != GoldenDocumentEvaluationStatus.EVALUATED:
         return GoldenDocumentEvaluationOutcome(
-            alias=resolved.alias,
-            status=GoldenDocumentEvaluationStatus.CORPUS_MISSING,
-            detail=f"expected file not found at {resolved.absolute_path}",
-        )
-
-    if resolved.availability == GoldenDocumentAvailability.HASH_MISMATCH:
-        return GoldenDocumentEvaluationOutcome(
-            alias=resolved.alias,
-            status=GoldenDocumentEvaluationStatus.CORPUS_HASH_MISMATCH,
-            detail=(
-                f"expected sha256={resolved.entry.expected_sha256} "
-                f"actual={resolved.actual_sha256}"
-            ),
+            alias=parse_outcome.alias,
+            status=parse_outcome.status,
+            detail=parse_outcome.detail,
         )
 
     resolved_case = case or IngestionExpectationCase(
@@ -146,40 +143,14 @@ def _evaluate_one_document(
         document_alias=resolved.alias,
     )
 
-    document_id = id_generator.new_id(IdPrefix.DOCUMENT)
-    try:
-        parse_result = parsing_workflow.parse(
-            file_path=str(resolved.absolute_path),
-            file_hash=resolved.actual_sha256,
-            content_hash=None,
-            document_id=document_id,
-        )
-    except GoldenCorpusDoclingUnavailableError as exc:
-        return GoldenDocumentEvaluationOutcome(
-            alias=resolved.alias,
-            status=GoldenDocumentEvaluationStatus.CACHE_MISS_IN_CACHED_ONLY_MODE,
-            detail=str(exc),
-        )
-    except ApplicationError as exc:
-        # Fault isolation across an independent unit of work in a
-        # multi-document batch: one document's real Docling failure must
-        # not silently abort evaluation of the other nine, but must also
-        # never disappear - it is recorded as an explicit, visible outcome.
-        return GoldenDocumentEvaluationOutcome(
-            alias=resolved.alias,
-            status=GoldenDocumentEvaluationStatus.PARSE_FAILED,
-            detail=repr(exc),
-        )
-
+    document_graph = parse_outcome.document_graph
     structural_result = evaluator.evaluate(
-        case=resolved_case, document_graph=parse_result.document_graph
+        case=resolved_case, document_graph=document_graph
     )
     cross_reference_result = evaluator.evaluate_cross_references(
-        case=resolved_case, document_graph=parse_result.document_graph
+        case=resolved_case, document_graph=document_graph
     )
-    chunk_token_budget_result = evaluator.evaluate_chunk_token_budget(
-        parse_result.document_graph
-    )
+    chunk_token_budget_result = evaluator.evaluate_chunk_token_budget(document_graph)
     return GoldenDocumentEvaluationOutcome(
         alias=resolved.alias,
         status=GoldenDocumentEvaluationStatus.EVALUATED,

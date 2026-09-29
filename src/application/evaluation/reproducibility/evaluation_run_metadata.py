@@ -34,6 +34,16 @@ class EvaluationRunMetadata:
     embedding_model: str | None = None
     retrieval_configuration: dict[str, Any] | None = None
 
+    # Populated by Phase 2A (classification golden evaluation). Kept on
+    # this same metadata model rather than a second reproducibility
+    # system - see approved Phase 2A instruction to extend
+    # EvaluationRunMetadata, not invent a parallel one.
+    classification_execution_mode: str | None = None
+    classification_confidence_threshold: float | None = None
+    classification_allow_reclassification: bool | None = None
+    classification_use_cache: bool | None = None
+    classification_prompt_version: str | None = None
+
 
 def build_evaluation_run_metadata(
     *,
@@ -41,6 +51,12 @@ def build_evaluation_run_metadata(
     parser_version: str | None = None,
     conversion_fingerprint: str | None = None,
     evaluation_config: dict[str, Any] | None = None,
+    classification_model: str | None = None,
+    classification_execution_mode: str | None = None,
+    classification_confidence_threshold: float | None = None,
+    classification_allow_reclassification: bool | None = None,
+    classification_use_cache: bool | None = None,
+    classification_prompt_version: str | None = None,
 ) -> EvaluationRunMetadata:
     return EvaluationRunMetadata(
         timestamp=datetime.now(timezone.utc).isoformat(),
@@ -50,6 +66,12 @@ def build_evaluation_run_metadata(
         parser_version=parser_version,
         conversion_fingerprint=conversion_fingerprint,
         evaluation_config=dict(evaluation_config or {}),
+        classification_model=classification_model,
+        classification_execution_mode=classification_execution_mode,
+        classification_confidence_threshold=classification_confidence_threshold,
+        classification_allow_reclassification=classification_allow_reclassification,
+        classification_use_cache=classification_use_cache,
+        classification_prompt_version=classification_prompt_version,
     )
 
 

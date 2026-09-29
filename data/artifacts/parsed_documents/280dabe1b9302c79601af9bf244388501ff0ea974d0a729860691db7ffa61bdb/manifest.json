@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "source_sha256": "64f0ee8bac148f965b17155ade6a758b1744289646009e4fce3400a9db4f1158",
+  "parser_name": "docling",
+  "parser_version": "2.126.0",
+  "conversion_fingerprint": "e6c271c982c219155891eac9f98ff47e72177e4df45e22609853a8f1401ed6b5",
+  "document_sha256": "20df0f37e6cf3874ef7e6be095fdd902fc5ee01977d3b25879999344cc784b0e",
+  "title": "0762 0050 CER 1612 H.A.Schroeder Flexible Hoses HAM2423501",
+  "page_count": 6,
+  "metadata": {
+    "status": "success",
+    "confidence": {
+      "parse_score": 1.0,
+      "layout_score": 0.7432925784559594,
+      "table_score": NaN,
+      "ocr_score": 0.9311079609712344,
+      "pages": {
+        "1": {
+          "parse_score": 1.0,
+          "layout_score": 0.8527747499361039,
+          "table_score": NaN,
+          "ocr_score": 0.9488399999999999,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9338715833120346,
+          "low_score": 0.8623812749424935
+        },
+        "2": {
+          "parse_score": 1.0,
+          "layout_score": 0.7400582336589269,
+          "table_score": NaN,
+          "ocr_score": 0.71209,
+          "mean_grade": "good",
+          "low_grade": "fair",
+          "mean_score": 0.8173827445529757,
+          "low_score": 0.7148868233658927
+        },
+        "3": {
+          "parse_score": 1.0,
+          "layout_score": 0.7071284399550303,
+          "table_score": NaN,
+          "ocr_score": 0.9852342741935484,
+          "mean_grade": "good",
+          "low_grade": "fair",
+          "mean_score": 0.8974542380495262,
+          "low_score": 0.7349390233788821
+        },
+        "4": {
+          "parse_score": 1.0,
+          "layout_score": 0.7126271770550654,
+          "table_score": NaN,
+          "ocr_score": 0.983474094488189,
+          "mean_grade": "good",
+          "low_grade": "fair",
+          "mean_score": 0.8987004238477514,
+          "low_score": 0.7397118687983778
+        },
+        "5": {
+          "parse_score": 1.0,
+          "layout_score": 0.7145342058860339,
+          "table_score": NaN,
+          "ocr_score": 0.9805665625000001,
+          "mean_grade": "good",
+          "low_grade": "fair",
+          "mean_score": 0.8983669227953447,
+          "low_score": 0.7411374415474306
+        },
+        "6": {
+          "parse_score": 1.0,
+          "layout_score": 0.7326326642445956,
+          "table_score": NaN,
+          "ocr_score": 0.976442834645669,
+          "mean_grade": "excellent",
+          "low_grade": "fair",
+          "mean_score": 0.9030251662967549,
+          "low_score": 0.7570136812847029
+        }
+      },
+      "mean_grade": "good",
+      "low_grade": "fair",
+      "mean_score": 0.8914668464757312,
+      "low_score": 0.7583450188862967
+    }
+  },
+  "published_at": "2026-09-29T01:43:39.645944+00:00"
+}

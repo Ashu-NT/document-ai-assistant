@@ -92,20 +92,10 @@ class DocumentClassificationWorkflow:
             if cached is not None:
                 return cached
 
-        prompt = self.prompt_builder.build(document_graph)
-        response = self.llm_service.generate(
-            prompt,
-            model=self.classification_model,
-            activity_context=activity_context,
-            response_schema=build_classification_response_json_schema(),
+        classification = self.classify_document_attempt(
+            document_graph, activity_context=activity_context
         )
-
-        classification = self._build_classification(document, response)
         assert classification.result is not None
-
-        if not classification_settings.store_reasoning:
-            classification.result.rationale = None
-            classification.result.evidence = []
 
         if not classification.result.is_confident(
             classification_settings.confidence_threshold
@@ -119,6 +109,44 @@ class DocumentClassificationWorkflow:
             classification,
             activity_context=activity_context,
         )
+        return classification
+
+    def classify_document_attempt(
+        self,
+        document_graph: DocumentGraph | Document,
+        activity_context: ActivityContext | None = None,
+    ) -> DocumentClassification:
+        """Run a single fresh classification attempt and return it verbatim,
+        with NO reclassification-reuse check, NO content-hash cache-reuse
+        check, NO confidence gate, NO validation, and NO persistence.
+
+        This is the exact pre-gate result `classify_document()` otherwise
+        discards when confidence is below threshold - extracted so a caller
+        (golden evaluation) can observe it directly, without duplicating
+        prompt/parsing/resolution logic and without going through any of
+        production's cache/reclassification settings. Deliberately not
+        decorated with `@tracked_action`: only `classify_document()` (which
+        calls this internally) emits the production activity event.
+        """
+        document = self._resolve_document(document_graph)
+
+        prompt = self.prompt_builder.build(document_graph)
+        response = self.llm_service.generate(
+            prompt,
+            model=self.classification_model,
+            activity_context=activity_context,
+            response_schema=build_classification_response_json_schema(),
+        )
+
+        classification = self._build_classification(document, response)
+        assert classification.result is not None
+
+        from src.config.settings import classification_settings
+
+        if not classification_settings.store_reasoning:
+            classification.result.rationale = None
+            classification.result.evidence = []
+
         return classification
 
     def _reuse_cached_classification(

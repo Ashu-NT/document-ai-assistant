@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "source_sha256": "b9da2994dd7544f9cedb052b3cac3a3e25d5c6bdfdc412f5342bbf36c10ed4af",
+  "parser_name": "docling",
+  "parser_version": "2.126.0",
+  "conversion_fingerprint": "e6c271c982c219155891eac9f98ff47e72177e4df45e22609853a8f1401ed6b5",
+  "document_sha256": "91aa6beb393274f901d07c3a4f3716dba0c50c7882488955933e90f045e4f4b5",
+  "title": "P.N.2022-40405 D4000240 T.REPORT",
+  "page_count": 4,
+  "metadata": {
+    "status": "success",
+    "confidence": {
+      "parse_score": NaN,
+      "layout_score": 0.615626761420024,
+      "table_score": NaN,
+      "ocr_score": 0.9874884382855705,
+      "pages": {
+        "1": {
+          "parse_score": NaN,
+          "layout_score": 0.7957456428728605,
+          "table_score": NaN,
+          "ocr_score": 0.978244705882353,
+          "mean_grade": "good",
+          "low_grade": "good",
+          "mean_score": 0.8869951743776068,
+          "low_score": 0.8048705960233351
+        },
+        "2": {
+          "parse_score": NaN,
+          "layout_score": 0.8319451257801056,
+          "table_score": NaN,
+          "ocr_score": 0.9919264423076922,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9119357840438989,
+          "low_score": 0.8399441916064849
+        },
+        "3": {
+          "parse_score": NaN,
+          "layout_score": 0.8348162770271301,
+          "table_score": NaN,
+          "ocr_score": 0.9922941666666666,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9135552218468983,
+          "low_score": 0.842690171509107
+        },
+        "4": {
+          "parse_score": NaN,
+          "layout_score": 0.0,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "poor",
+          "low_grade": "poor",
+          "mean_score": 0.0,
+          "low_score": 0.0
+        }
+      },
+      "mean_grade": "fair",
+      "low_grade": "fair",
+      "mean_score": 0.678121545067101,
+      "low_score": 0.6218762397847317
+    }
+  },
+  "published_at": "2026-09-29T01:44:44.770222+00:00"
+}

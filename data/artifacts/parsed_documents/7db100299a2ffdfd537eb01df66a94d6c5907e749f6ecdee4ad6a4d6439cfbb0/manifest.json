@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "source_sha256": "1481f98b7dc1e4f07a28567212aeaeced10f9448c374ad7ea462ba8b936feb39",
+  "parser_name": "docling",
+  "parser_version": "2.126.0",
+  "conversion_fingerprint": "e6c271c982c219155891eac9f98ff47e72177e4df45e22609853a8f1401ed6b5",
+  "document_sha256": "a235663d31336a2b1e1281f4164a9df933a578ba0cfe067e04334eaf74eb332a",
+  "title": "DN25 - DN80_MK311xxx",
+  "page_count": 4,
+  "metadata": {
+    "status": "success",
+    "confidence": {
+      "parse_score": 1.0,
+      "layout_score": 0.8410538424652952,
+      "table_score": NaN,
+      "ocr_score": 0.9633611805555556,
+      "pages": {
+        "1": {
+          "parse_score": 1.0,
+          "layout_score": 0.8491769238394133,
+          "table_score": NaN,
+          "ocr_score": 0.9684177777777779,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9391982338723971,
+          "low_score": 0.8611010092332498
+        },
+        "2": {
+          "parse_score": 1.0,
+          "layout_score": 0.8175148688829862,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.908757434441493,
+          "low_score": 0.8266391254388369
+        },
+        "3": {
+          "parse_score": 1.0,
+          "layout_score": 0.7496757730841637,
+          "table_score": NaN,
+          "ocr_score": 0.9583045833333333,
+          "mean_grade": "excellent",
+          "low_grade": "fair",
+          "mean_score": 0.9026601188058323,
+          "low_score": 0.7705386541090806
+        },
+        "4": {
+          "parse_score": 1.0,
+          "layout_score": 0.9478478040546179,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "excellent",
+          "mean_score": 0.9739239020273089,
+          "low_score": 0.950455413851887
+        }
+      },
+      "mean_grade": "excellent",
+      "low_grade": "good",
+      "mean_score": 0.9311349222867579,
+      "low_score": 0.8521835506582636
+    }
+  },
+  "published_at": "2026-09-29T01:41:39.279784+00:00"
+}

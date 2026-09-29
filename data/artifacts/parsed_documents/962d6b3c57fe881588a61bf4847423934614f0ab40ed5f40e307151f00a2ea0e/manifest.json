@@ -1,0 +1,446 @@
+{
+  "schema_version": 1,
+  "source_sha256": "ec82b50a4c31bd697a6dce27888dd817cc62aca3ad1616b83e8508b20e631506",
+  "parser_name": "docling",
+  "parser_version": "2.126.0",
+  "conversion_fingerprint": "e6c271c982c219155891eac9f98ff47e72177e4df45e22609853a8f1401ed6b5",
+  "document_sha256": "9849cf5a09a5fdf738e165883f58be0ccb74494a933aa0312a4566f6d573bb28",
+  "title": "Pressure transmitter",
+  "page_count": 42,
+  "metadata": {
+    "status": "success",
+    "confidence": {
+      "parse_score": 1.0,
+      "layout_score": 0.8109681643261167,
+      "table_score": NaN,
+      "ocr_score": 0.903781483789286,
+      "pages": {
+        "1": {
+          "parse_score": 1.0,
+          "layout_score": 0.7492595888101138,
+          "table_score": NaN,
+          "ocr_score": 0.9948338461538463,
+          "mean_grade": "excellent",
+          "low_grade": "fair",
+          "mean_score": 0.9146978116546535,
+          "low_score": 0.773817014544487
+        },
+        "2": {
+          "parse_score": 1.0,
+          "layout_score": 0.7951973355733432,
+          "table_score": NaN,
+          "ocr_score": 0.9917421259842517,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9289798205191984,
+          "low_score": 0.814851814614434
+        },
+        "3": {
+          "parse_score": 1.0,
+          "layout_score": 0.8484898656606674,
+          "table_score": NaN,
+          "ocr_score": 0.9658760000000001,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9381219552202226,
+          "low_score": 0.8602284790946007
+        },
+        "4": {
+          "parse_score": 1.0,
+          "layout_score": 0.9395049810409546,
+          "table_score": NaN,
+          "ocr_score": 0.9375333333333334,
+          "mean_grade": "excellent",
+          "low_grade": "excellent",
+          "mean_score": 0.959012771458096,
+          "low_score": 0.9377304981040956
+        },
+        "5": {
+          "parse_score": 1.0,
+          "layout_score": 0.8538688316941261,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.926934415847063,
+          "low_score": 0.8611753901094198
+        },
+        "6": {
+          "parse_score": 1.0,
+          "layout_score": 0.8633688398769923,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9316844199384962,
+          "low_score": 0.8702003978831427
+        },
+        "7": {
+          "parse_score": 1.0,
+          "layout_score": 0.9340213214357694,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "excellent",
+          "mean_score": 0.9670106607178848,
+          "low_score": 0.937320255363981
+        },
+        "8": {
+          "parse_score": 1.0,
+          "layout_score": 0.8887355946577512,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9443677973288755,
+          "low_score": 0.8942988149248636
+        },
+        "9": {
+          "parse_score": 1.0,
+          "layout_score": 0.8670474963803445,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9335237481901723,
+          "low_score": 0.8736951215613273
+        },
+        "10": {
+          "parse_score": 1.0,
+          "layout_score": 0.9500416602407183,
+          "table_score": NaN,
+          "ocr_score": 0.6773,
+          "mean_grade": "good",
+          "low_grade": "fair",
+          "mean_score": 0.8757805534135729,
+          "low_score": 0.7045741660240719
+        },
+        "11": {
+          "parse_score": 1.0,
+          "layout_score": 0.9252308055206582,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "excellent",
+          "mean_score": 0.9626154027603291,
+          "low_score": 0.9289692652446253
+        },
+        "12": {
+          "parse_score": 1.0,
+          "layout_score": 0.9098149648419133,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "excellent",
+          "mean_score": 0.9549074824209567,
+          "low_score": 0.9143242165998176
+        },
+        "13": {
+          "parse_score": 1.0,
+          "layout_score": 0.902207729063536,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "excellent",
+          "mean_score": 0.951103864531768,
+          "low_score": 0.9070973426103591
+        },
+        "14": {
+          "parse_score": 1.0,
+          "layout_score": 0.879906735922161,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9399533679610805,
+          "low_score": 0.8859113991260529
+        },
+        "15": {
+          "parse_score": 1.0,
+          "layout_score": 0.8573088198900223,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9286544099450111,
+          "low_score": 0.8644433788955211
+        },
+        "16": {
+          "parse_score": 1.0,
+          "layout_score": 0.8959418914534829,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "excellent",
+          "mean_score": 0.9479709457267415,
+          "low_score": 0.9011447968808087
+        },
+        "17": {
+          "parse_score": 1.0,
+          "layout_score": 0.9318336844444275,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "excellent",
+          "mean_score": 0.9659168422222137,
+          "low_score": 0.9352420002222062
+        },
+        "18": {
+          "parse_score": 1.0,
+          "layout_score": 0.8395268959658486,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9197634479829243,
+          "low_score": 0.8475505511675562
+        },
+        "19": {
+          "parse_score": 1.0,
+          "layout_score": 0.9482930430344173,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "excellent",
+          "mean_score": 0.9741465215172087,
+          "low_score": 0.9508783908826964
+        },
+        "20": {
+          "parse_score": 1.0,
+          "layout_score": 0.8347021852220807,
+          "table_score": NaN,
+          "ocr_score": 0.94912,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9279407284073602,
+          "low_score": 0.8461439666998727
+        },
+        "21": {
+          "parse_score": 1.0,
+          "layout_score": 0.9213474988937378,
+          "table_score": NaN,
+          "ocr_score": 0.99859,
+          "mean_grade": "excellent",
+          "low_grade": "excellent",
+          "mean_score": 0.973312499631246,
+          "low_score": 0.9290717490043641
+        },
+        "22": {
+          "parse_score": 1.0,
+          "layout_score": 0.8452775586735118,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9226387793367559,
+          "low_score": 0.8530136807398363
+        },
+        "23": {
+          "parse_score": 1.0,
+          "layout_score": 0.9008213895739932,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "excellent",
+          "mean_score": 0.9504106947869966,
+          "low_score": 0.9057803200952935
+        },
+        "24": {
+          "parse_score": 1.0,
+          "layout_score": 0.8699793934822082,
+          "table_score": NaN,
+          "ocr_score": 0.80857,
+          "mean_grade": "good",
+          "low_grade": "good",
+          "mean_score": 0.8928497978274027,
+          "low_score": 0.8147109393482208
+        },
+        "25": {
+          "parse_score": 1.0,
+          "layout_score": 0.8145102603094918,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9072551301547459,
+          "low_score": 0.8237847472940172
+        },
+        "26": {
+          "parse_score": 1.0,
+          "layout_score": 0.8567485883831978,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9283742941915989,
+          "low_score": 0.8639111589640379
+        },
+        "27": {
+          "parse_score": 1.0,
+          "layout_score": 0.8706081076101824,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9353040538050912,
+          "low_score": 0.8770777022296733
+        },
+        "28": {
+          "parse_score": 1.0,
+          "layout_score": 0.7638404254729931,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "good",
+          "low_grade": "fair",
+          "mean_score": 0.8819202127364966,
+          "low_score": 0.7756484041993434
+        },
+        "29": {
+          "parse_score": NaN,
+          "layout_score": 0.0,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "poor",
+          "low_grade": "poor",
+          "mean_score": 0.0,
+          "low_score": 0.0
+        },
+        "30": {
+          "parse_score": 1.0,
+          "layout_score": 0.8340628544489542,
+          "table_score": NaN,
+          "ocr_score": 0.88085,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9049709514829848,
+          "low_score": 0.8387415690040588
+        },
+        "31": {
+          "parse_score": 1.0,
+          "layout_score": 0.8158974895874659,
+          "table_score": NaN,
+          "ocr_score": 0.9581824999999999,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9246933298624885,
+          "low_score": 0.8301259906287193
+        },
+        "32": {
+          "parse_score": NaN,
+          "layout_score": 0.581339418888092,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "fair",
+          "low_grade": "fair",
+          "mean_score": 0.581339418888092,
+          "low_score": 0.581339418888092
+        },
+        "33": {
+          "parse_score": 1.0,
+          "layout_score": 0.8848772794008255,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9424386397004128,
+          "low_score": 0.8906334154307842
+        },
+        "34": {
+          "parse_score": 1.0,
+          "layout_score": 0.7977825826214205,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "good",
+          "low_grade": "good",
+          "mean_score": 0.8988912913107103,
+          "low_score": 0.8078934534903495
+        },
+        "35": {
+          "parse_score": 1.0,
+          "layout_score": 0.7867451318923164,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "good",
+          "low_grade": "fair",
+          "mean_score": 0.8933725659461582,
+          "low_score": 0.7974078752977006
+        },
+        "36": {
+          "parse_score": 1.0,
+          "layout_score": 0.877303703835136,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.938651851917568,
+          "low_score": 0.8834385186433792
+        },
+        "37": {
+          "parse_score": 1.0,
+          "layout_score": 0.9210134694973627,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "excellent",
+          "mean_score": 0.9605067347486813,
+          "low_score": 0.9249627960224946
+        },
+        "38": {
+          "parse_score": 1.0,
+          "layout_score": 0.8722995345791181,
+          "table_score": NaN,
+          "ocr_score": 0.80193,
+          "mean_grade": "good",
+          "low_grade": "good",
+          "mean_score": 0.8914098448597061,
+          "low_score": 0.8089669534579118
+        },
+        "39": {
+          "parse_score": 1.0,
+          "layout_score": 0.8226256436771817,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9113128218385909,
+          "low_score": 0.8314943614933227
+        },
+        "40": {
+          "parse_score": NaN,
+          "layout_score": 0.581339418888092,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "fair",
+          "low_grade": "fair",
+          "mean_score": 0.581339418888092,
+          "low_score": 0.581339418888092
+        },
+        "41": {
+          "parse_score": NaN,
+          "layout_score": 0.0,
+          "table_score": NaN,
+          "ocr_score": NaN,
+          "mean_grade": "poor",
+          "low_grade": "poor",
+          "mean_score": 0.0,
+          "low_score": 0.0
+        },
+        "42": {
+          "parse_score": 1.0,
+          "layout_score": 0.8279408812522888,
+          "table_score": NaN,
+          "ocr_score": 0.88085,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.902930293750763,
+          "low_score": 0.83323179312706
+        }
+      },
+      "mean_grade": "good",
+      "low_grade": "good",
+      "mean_score": 0.8694526093673429,
+      "low_score": 0.8086231315904927
+    }
+  },
+  "published_at": "2026-09-29T01:50:40.943381+00:00"
+}

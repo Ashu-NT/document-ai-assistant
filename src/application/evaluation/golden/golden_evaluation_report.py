@@ -1,6 +1,13 @@
 from collections import Counter
 from dataclasses import dataclass, field
 
+from src.application.evaluation.classification.classification_golden_metrics import (
+    ClassificationGoldenMetrics,
+    compute_classification_golden_metrics,
+)
+from src.application.evaluation.classification.golden_classification_document_result import (
+    GoldenClassificationDocumentResult,
+)
 from src.application.evaluation.golden.aggregate_cross_reference_metrics import (
     AggregateCrossReferenceTypeMetrics,
     aggregate_cross_reference_type_metrics,
@@ -22,6 +29,17 @@ class GoldenEvaluationReport:
     run_metadata: EvaluationRunMetadata
     corpus_coverage: CorpusCoverageSummary
     document_outcomes: list[GoldenDocumentEvaluationOutcome] = field(default_factory=list)
+    # Sibling to document_outcomes (parsing/structural stage) rather than an
+    # extension of it - the classification stage has its own outcome model
+    # (see ClassificationStageStatus) and its own, separate golden-label
+    # source. Empty by default so every Phase 1 caller/report is unaffected.
+    classification_results: list[GoldenClassificationDocumentResult] = field(
+        default_factory=list
+    )
+
+    @property
+    def classification_metrics(self) -> ClassificationGoldenMetrics:
+        return compute_classification_golden_metrics(self.classification_results)
 
     @property
     def structural_passed_count(self) -> int:

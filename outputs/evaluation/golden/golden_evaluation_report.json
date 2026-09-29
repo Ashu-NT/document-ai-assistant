@@ -1,0 +1,431 @@
+{
+  "run_metadata": {
+    "timestamp": "2026-09-29T01:55:45.704490+00:00",
+    "git_commit": "bcebf124e3e7ebfef4cacff56dca93969b90f5a0",
+    "artifact_schema_version": 1,
+    "parser_name": "docling",
+    "parser_version": "2.126.0",
+    "conversion_fingerprint": "e6c271c982c219155891eac9f98ff47e72177e4df45e22609853a8f1401ed6b5",
+    "evaluation_config": {
+      "allow_real_parsing": false
+    },
+    "classification_model": "qwen2.5:3b",
+    "extraction_model": null,
+    "embedding_model": null,
+    "retrieval_configuration": null,
+    "classification_execution_mode": "fresh_model",
+    "classification_confidence_threshold": 0.75,
+    "classification_allow_reclassification": true,
+    "classification_use_cache": true,
+    "classification_prompt_version": "v2"
+  },
+  "corpus_coverage": {
+    "expected": 10,
+    "available": 10,
+    "evaluated": 10,
+    "missing_aliases": [],
+    "hash_mismatch_aliases": []
+  },
+  "summary": {
+    "structural_passed_count": 0,
+    "structural_failed_count": 0,
+    "structural_assertion_failure_count": 0,
+    "chunk_invariant_failure_count": 0,
+    "chunk_token_budget_hard_violation_count": 0,
+    "chunk_token_budget_oversized_indivisible_count": 0,
+    "chunk_token_budget_unresolved_aliases": [],
+    "documents_not_evaluated": []
+  },
+  "cross_reference_type_metrics": [],
+  "reconciliation_outcome_counts": {},
+  "documents": [
+    {
+      "alias": "manual_fwc12",
+      "status": "evaluated",
+      "detail": null,
+      "structural": null,
+      "cross_references": null,
+      "chunk_token_budget": null
+    },
+    {
+      "alias": "manual_bauer_mv320_compressor",
+      "status": "evaluated",
+      "detail": null,
+      "structural": null,
+      "cross_references": null,
+      "chunk_token_budget": null
+    },
+    {
+      "alias": "datasheet_mk311xxx",
+      "status": "evaluated",
+      "detail": null,
+      "structural": null,
+      "cross_references": null,
+      "chunk_token_budget": null
+    },
+    {
+      "alias": "datasheet_deck_fillers",
+      "status": "evaluated",
+      "detail": null,
+      "structural": null,
+      "cross_references": null,
+      "chunk_token_budget": null
+    },
+    {
+      "alias": "certificate_hoses_ham2423501",
+      "status": "evaluated",
+      "detail": null,
+      "structural": null,
+      "cross_references": null,
+      "chunk_token_budget": null
+    },
+    {
+      "alias": "certificate_mtu_engine_set_ham2152268",
+      "status": "evaluated",
+      "detail": null,
+      "structural": null,
+      "cross_references": null,
+      "chunk_token_budget": null
+    },
+    {
+      "alias": "report_transformer_d4000240",
+      "status": "evaluated",
+      "detail": null,
+      "structural": null,
+      "cross_references": null,
+      "chunk_token_budget": null
+    },
+    {
+      "alias": "report_man_shop_test_8351446",
+      "status": "evaluated",
+      "detail": null,
+      "structural": null,
+      "cross_references": null,
+      "chunk_token_budget": null
+    },
+    {
+      "alias": "report_pressure_transmitter",
+      "status": "evaluated",
+      "detail": null,
+      "structural": null,
+      "cross_references": null,
+      "chunk_token_budget": null
+    },
+    {
+      "alias": "report_vedder_maintenance",
+      "status": "evaluated",
+      "detail": null,
+      "structural": null,
+      "cross_references": null,
+      "chunk_token_budget": null
+    }
+  ],
+  "classification": {
+    "metrics": {
+      "executed_count": 10,
+      "execution_failed_count": 0,
+      "skipped_parsing_unavailable_count": 0,
+      "unknown_count": 0,
+      "unknown_rate": 0.0,
+      "low_confidence_rejected_count": 0,
+      "low_confidence_rejection_rate": 0.0,
+      "confidence_count": 10,
+      "confidence_min": 0.85,
+      "confidence_max": 0.98,
+      "confidence_mean": 0.9469999999999998,
+      "confidence_median": 0.95,
+      "reviewed_eligible_document_count": 0,
+      "raw_correct_count": 0,
+      "raw_accuracy": null,
+      "accepted_count": 0,
+      "accepted_correct_count": 0,
+      "accepted_classification_accuracy": null,
+      "accuracy_among_accepted": null,
+      "ambiguous_document_count": 3,
+      "ambiguous_raw_match_count": 2,
+      "confusion_matrix": {}
+    },
+    "documents": [
+      {
+        "alias": "manual_fwc12",
+        "stage_status": "evaluated",
+        "detail": null,
+        "execution_error": null,
+        "expectation": {
+          "expected_document_type": "manual",
+          "ambiguous": false,
+          "review_status": "candidate",
+          "notes": "Migrated verbatim from the golden corpus manifest; not yet independently reviewed against a real classifier run."
+        },
+        "attempt": {
+          "predicted_document_type": "manual",
+          "predicted_label": "manual",
+          "confidence": 0.98,
+          "confidence_threshold": 0.75,
+          "passed_confidence_gate": true,
+          "validation_outcome": "valid",
+          "model_name": "qwen2.5:3b",
+          "rationale": "The document contains a 'Table of Contents' and multiple sections labeled as 'General', 'Installation Instruction', 'Operation Instruction', and 'Maintenance Interval', which are typical components of a technical manual. The presence of a 'Technical Manual T' section further supports this classification.",
+          "processing_errors": [],
+          "prompt_version": "v2"
+        },
+        "eligible_for_accuracy": false,
+        "raw_prediction_correct": null,
+        "accepted_classification_correct": null,
+        "ambiguous_raw_match": null
+      },
+      {
+        "alias": "manual_bauer_mv320_compressor",
+        "stage_status": "evaluated",
+        "detail": null,
+        "execution_error": null,
+        "expectation": {
+          "expected_document_type": "manual",
+          "ambiguous": false,
+          "review_status": "candidate",
+          "notes": "Migrated verbatim from the golden corpus manifest; not yet independently reviewed against a real classifier run."
+        },
+        "attempt": {
+          "predicted_document_type": "manual",
+          "predicted_label": "manual",
+          "confidence": 0.98,
+          "confidence_threshold": 0.75,
+          "passed_confidence_gate": true,
+          "validation_outcome": "valid",
+          "model_name": "qwen2.5:3b",
+          "rationale": "The document is clearly an operating manual as evidenced by sections such as 'Operating Manual', 'Preface', 'Commissioning and operation', and 'Operation instructions'. These sections are common in comprehensive manuals that guide users on how to operate and maintain a product like a compressor.",
+          "processing_errors": [],
+          "prompt_version": "v2"
+        },
+        "eligible_for_accuracy": false,
+        "raw_prediction_correct": null,
+        "accepted_classification_correct": null,
+        "ambiguous_raw_match": null
+      },
+      {
+        "alias": "datasheet_mk311xxx",
+        "stage_status": "evaluated",
+        "detail": null,
+        "execution_error": null,
+        "expectation": {
+          "expected_document_type": "datasheet",
+          "ambiguous": false,
+          "review_status": "candidate",
+          "notes": "Migrated verbatim from the golden corpus manifest; not yet independently reviewed against a real classifier run."
+        },
+        "attempt": {
+          "predicted_document_type": "drawing",
+          "predicted_label": "drawing",
+          "confidence": 0.95,
+          "confidence_threshold": 0.75,
+          "passed_confidence_gate": true,
+          "validation_outcome": "valid",
+          "model_name": "qwen2.5:3b",
+          "rationale": "The document contains technical specifications, dimensions, and a pressure-temperature diagram, which are characteristic of a technical drawing. It also includes detailed measurements and structural information, further supporting the 'drawing' classification.",
+          "processing_errors": [],
+          "prompt_version": "v2"
+        },
+        "eligible_for_accuracy": false,
+        "raw_prediction_correct": null,
+        "accepted_classification_correct": null,
+        "ambiguous_raw_match": null
+      },
+      {
+        "alias": "datasheet_deck_fillers",
+        "stage_status": "evaluated",
+        "detail": null,
+        "execution_error": null,
+        "expectation": {
+          "expected_document_type": "datasheet",
+          "ambiguous": false,
+          "review_status": "candidate",
+          "notes": "Migrated verbatim from the golden corpus manifest; not yet independently reviewed against a real classifier run."
+        },
+        "attempt": {
+          "predicted_document_type": "datasheet",
+          "predicted_label": "datasheet",
+          "confidence": 0.98,
+          "confidence_threshold": 0.75,
+          "passed_confidence_gate": true,
+          "validation_outcome": "valid",
+          "model_name": "qwen2.5:3b",
+          "rationale": "The document contains extensive technical specifications and installation instructions, which are typical features of a datasheet. The presence of technical specification sections, installation instructions, and material dimensions are strong indicators of this type of document.",
+          "processing_errors": [],
+          "prompt_version": "v2"
+        },
+        "eligible_for_accuracy": false,
+        "raw_prediction_correct": null,
+        "accepted_classification_correct": null,
+        "ambiguous_raw_match": null
+      },
+      {
+        "alias": "certificate_hoses_ham2423501",
+        "stage_status": "evaluated",
+        "detail": null,
+        "execution_error": null,
+        "expectation": {
+          "expected_document_type": "certificate",
+          "ambiguous": false,
+          "review_status": "candidate",
+          "notes": "Migrated verbatim from the golden corpus manifest; not yet independently reviewed against a real classifier run."
+        },
+        "attempt": {
+          "predicted_document_type": "certificate",
+          "predicted_label": "certificate",
+          "confidence": 0.95,
+          "confidence_threshold": 0.75,
+          "passed_confidence_gate": true,
+          "validation_outcome": "valid",
+          "model_name": "qwen2.5:3b",
+          "rationale": "The document contains a certificate for a machinery equipment, with a header '3.2 Abnahmepr\u00fcfzeugnis nach DIN EN 10204', and multiple sections of certification information.",
+          "processing_errors": [],
+          "prompt_version": "v2"
+        },
+        "eligible_for_accuracy": false,
+        "raw_prediction_correct": null,
+        "accepted_classification_correct": null,
+        "ambiguous_raw_match": null
+      },
+      {
+        "alias": "certificate_mtu_engine_set_ham2152268",
+        "stage_status": "evaluated",
+        "detail": null,
+        "execution_error": null,
+        "expectation": {
+          "expected_document_type": "certificate",
+          "ambiguous": true,
+          "review_status": "candidate",
+          "notes": "Two separate Lloyd's Register certificates in one PDF - structurally two documents packaged as one; single CERTIFICATE label is defensible but debatable."
+        },
+        "attempt": {
+          "predicted_document_type": "certificate",
+          "predicted_label": "certificate",
+          "confidence": 0.95,
+          "confidence_threshold": 0.75,
+          "passed_confidence_gate": true,
+          "validation_outcome": "valid",
+          "model_name": "qwen2.5:3b",
+          "rationale": "The document contains multiple certification information chunks and a manufacturer's statement, which are typical of certificate documents. The presence of an engine identification marks, design appraisal document review, and manufacturer's signature/signature as per manufacturer also aligns with certificate documents.",
+          "processing_errors": [],
+          "prompt_version": "v2"
+        },
+        "eligible_for_accuracy": false,
+        "raw_prediction_correct": null,
+        "accepted_classification_correct": null,
+        "ambiguous_raw_match": true
+      },
+      {
+        "alias": "report_transformer_d4000240",
+        "stage_status": "evaluated",
+        "detail": null,
+        "execution_error": null,
+        "expectation": {
+          "expected_document_type": "report",
+          "ambiguous": false,
+          "review_status": "candidate",
+          "notes": "Migrated verbatim from the golden corpus manifest; not yet independently reviewed against a real classifier run."
+        },
+        "attempt": {
+          "predicted_document_type": "report",
+          "predicted_label": "report",
+          "confidence": 0.95,
+          "confidence_threshold": 0.75,
+          "passed_confidence_gate": true,
+          "validation_outcome": "valid",
+          "model_name": "qwen2.5:3b",
+          "rationale": "The document contains a comprehensive report with sections like TRANSFORMER TEST REPORT, RATING DATA, MEASUREMENT OF VOLTAGE RATIO, etc., indicating it is a technical report. The presence of a detailed table and multiple sections describing various tests and measurements supports this classification.",
+          "processing_errors": [],
+          "prompt_version": "v2"
+        },
+        "eligible_for_accuracy": false,
+        "raw_prediction_correct": null,
+        "accepted_classification_correct": null,
+        "ambiguous_raw_match": null
+      },
+      {
+        "alias": "report_man_shop_test_8351446",
+        "stage_status": "evaluated",
+        "detail": null,
+        "execution_error": null,
+        "expectation": {
+          "expected_document_type": "report",
+          "ambiguous": false,
+          "review_status": "candidate",
+          "notes": "Migrated verbatim from the golden corpus manifest; not yet independently reviewed against a real classifier run."
+        },
+        "attempt": {
+          "predicted_document_type": "report",
+          "predicted_label": "report",
+          "confidence": 0.98,
+          "confidence_threshold": 0.75,
+          "passed_confidence_gate": true,
+          "validation_outcome": "valid",
+          "model_name": "qwen2.5:3b",
+          "rationale": "The document contains a comprehensive report with sections such as 'Shop test protocol', 'Engine type', 'Operating record', and 'Performance Data'. The presence of detailed technical specifications, operation instructions, and a certification block further supports the report label.",
+          "processing_errors": [],
+          "prompt_version": "v2"
+        },
+        "eligible_for_accuracy": false,
+        "raw_prediction_correct": null,
+        "accepted_classification_correct": null,
+        "ambiguous_raw_match": null
+      },
+      {
+        "alias": "report_pressure_transmitter",
+        "stage_status": "evaluated",
+        "detail": null,
+        "execution_error": null,
+        "expectation": {
+          "expected_document_type": "report",
+          "ambiguous": true,
+          "review_status": "candidate",
+          "notes": "Source itself labels this \"Report / mixed packet\" - inspection report + operating instructions + safety instructions, three logically distinct content types forced into one label."
+        },
+        "attempt": {
+          "predicted_document_type": "manual",
+          "predicted_label": "manual",
+          "confidence": 0.85,
+          "confidence_threshold": 0.75,
+          "passed_confidence_gate": true,
+          "validation_outcome": "valid",
+          "model_name": "qwen2.5:3b",
+          "rationale": "The document contains detailed specifications, instructions, and safety warnings, which are characteristic of a manual. It includes sections like 'Order information', 'Execution', and 'Brief Operating Instructions Cerabar M PMC51, PMP51, PMP55', indicating it is a user manual for a product.",
+          "processing_errors": [],
+          "prompt_version": "v2"
+        },
+        "eligible_for_accuracy": false,
+        "raw_prediction_correct": null,
+        "accepted_classification_correct": null,
+        "ambiguous_raw_match": false
+      },
+      {
+        "alias": "report_vedder_maintenance",
+        "stage_status": "evaluated",
+        "detail": null,
+        "execution_error": null,
+        "expectation": {
+          "expected_document_type": "report",
+          "ambiguous": true,
+          "review_status": "candidate",
+          "notes": "Content is maintenance-task/interval-table-driven (per VED-002/003 retrieval queries), arguably MANUAL-shaped content wearing a REPORT label. Not flagged ambiguous by the source itself; included here for honesty about the edge."
+        },
+        "attempt": {
+          "predicted_document_type": "report",
+          "predicted_label": "report",
+          "confidence": 0.9,
+          "confidence_threshold": 0.75,
+          "passed_confidence_gate": true,
+          "validation_outcome": "valid",
+          "model_name": "qwen2.5:3b",
+          "rationale": "The document contains sections such as 'INHALTSVERZEICHNIS', '1. INDOOR CLIMATE', and '4. SKYLIGHT BLINDS - 01 PIECE'. These sections are typical for a structured report, with headers and data tables. The presence of maintenance documentation and intervals also supports the 'report' label.",
+          "processing_errors": [],
+          "prompt_version": "v2"
+        },
+        "eligible_for_accuracy": false,
+        "raw_prediction_correct": null,
+        "accepted_classification_correct": null,
+        "ambiguous_raw_match": true
+      }
+    ]
+  }
+}

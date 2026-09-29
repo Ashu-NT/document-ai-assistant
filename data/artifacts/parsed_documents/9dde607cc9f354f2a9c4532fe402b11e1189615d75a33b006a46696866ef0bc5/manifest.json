@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "source_sha256": "193504db71f77d5da76127f20a692bb4904e495528b22c1e33522f5ab95e9272",
+  "parser_name": "docling",
+  "parser_version": "2.126.0",
+  "conversion_fingerprint": "e6c271c982c219155891eac9f98ff47e72177e4df45e22609853a8f1401ed6b5",
+  "document_sha256": "41fc07f604df0a4bbc1f5615fd72a8d8184dc0ca091e5b69641f4267cfd0c797",
+  "title": "99_Vedder_Maintenance Reports",
+  "page_count": 12,
+  "metadata": {
+    "status": "success",
+    "confidence": {
+      "parse_score": 1.0,
+      "layout_score": 0.7969036052524979,
+      "table_score": NaN,
+      "ocr_score": 0.9856382057057056,
+      "pages": {
+        "1": {
+          "parse_score": 1.0,
+          "layout_score": 0.8416753808657328,
+          "table_score": NaN,
+          "ocr_score": 0.99995,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9472084602885776,
+          "low_score": 0.8575028427791596
+        },
+        "2": {
+          "parse_score": 1.0,
+          "layout_score": 0.7292394151920742,
+          "table_score": NaN,
+          "ocr_score": 0.9874841666666666,
+          "mean_grade": "excellent",
+          "low_grade": "fair",
+          "mean_score": 0.9055745272862469,
+          "low_score": 0.7550638903395335
+        },
+        "3": {
+          "parse_score": 1.0,
+          "layout_score": 0.8069394637851716,
+          "table_score": NaN,
+          "ocr_score": 0.9586251351351351,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9218548663067688,
+          "low_score": 0.8221080309201679
+        },
+        "4": {
+          "parse_score": 1.0,
+          "layout_score": 0.8368165149748326,
+          "table_score": NaN,
+          "ocr_score": 0.9872275,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9413480049916109,
+          "low_score": 0.8518576134773493
+        },
+        "5": {
+          "parse_score": 1.0,
+          "layout_score": 0.7770771600875148,
+          "table_score": NaN,
+          "ocr_score": 0.98828,
+          "mean_grade": "excellent",
+          "low_grade": "fair",
+          "mean_score": 0.9217857200291716,
+          "low_score": 0.7981974440787634
+        },
+        "6": {
+          "parse_score": 1.0,
+          "layout_score": 0.7809625241784696,
+          "table_score": NaN,
+          "ocr_score": 0.9830391666666666,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9213338969483787,
+          "low_score": 0.8011701884272893
+        },
+        "7": {
+          "parse_score": 1.0,
+          "layout_score": 0.7663497911672592,
+          "table_score": NaN,
+          "ocr_score": 0.9882791666666667,
+          "mean_grade": "excellent",
+          "low_grade": "fair",
+          "mean_score": 0.9182096526113086,
+          "low_score": 0.7885427287172
+        },
+        "8": {
+          "parse_score": 1.0,
+          "layout_score": 0.7761222991076383,
+          "table_score": NaN,
+          "ocr_score": 0.9882783333333335,
+          "mean_grade": "excellent",
+          "low_grade": "fair",
+          "mean_score": 0.921466877480324,
+          "low_score": 0.7973379025302079
+        },
+        "9": {
+          "parse_score": 1.0,
+          "layout_score": 0.8223937408998276,
+          "table_score": NaN,
+          "ocr_score": 0.9889525,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9371154136332759,
+          "low_score": 0.8390496168098449
+        },
+        "10": {
+          "parse_score": 1.0,
+          "layout_score": 0.8050796764370111,
+          "table_score": NaN,
+          "ocr_score": 0.9830391666666666,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9293729477012258,
+          "low_score": 0.8228756254599766
+        },
+        "11": {
+          "parse_score": 1.0,
+          "layout_score": 0.8130657253225032,
+          "table_score": NaN,
+          "ocr_score": 0.9872508333333334,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.933438852885279,
+          "low_score": 0.8304842361235862
+        },
+        "12": {
+          "parse_score": 1.0,
+          "layout_score": 0.8071215710119407,
+          "table_score": NaN,
+          "ocr_score": 0.9872525,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9314580236706469,
+          "low_score": 0.8251346639107466
+        }
+      },
+      "mean_grade": "excellent",
+      "low_grade": "good",
+      "mean_score": 0.9275139369860681,
+      "low_score": 0.8157770652978189
+    }
+  },
+  "published_at": "2026-09-29T01:51:38.477622+00:00"
+}

@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "source_sha256": "cd304a12ead6de83a9e934e7fc7374075dd3ef4b0e487f5dbd23a4bfeed492af",
+  "parser_name": "docling",
+  "parser_version": "2.126.0",
+  "conversion_fingerprint": "e6c271c982c219155891eac9f98ff47e72177e4df45e22609853a8f1401ed6b5",
+  "document_sha256": "83fc76d31a4f2507ea34fb0aac51c1f244167136300baff0440a19ba1a9263c0",
+  "title": "Deck-fillers_datasheet",
+  "page_count": 10,
+  "metadata": {
+    "status": "success",
+    "confidence": {
+      "parse_score": NaN,
+      "layout_score": 0.8054273121258305,
+      "table_score": NaN,
+      "ocr_score": 0.953198602991263,
+      "pages": {
+        "1": {
+          "parse_score": NaN,
+          "layout_score": 0.7494265079498291,
+          "table_score": NaN,
+          "ocr_score": 0.8779181818181818,
+          "mean_grade": "good",
+          "low_grade": "fair",
+          "mean_score": 0.8136723448840055,
+          "low_score": 0.7558510916432467
+        },
+        "2": {
+          "parse_score": NaN,
+          "layout_score": 0.7906014124552408,
+          "table_score": NaN,
+          "ocr_score": 0.9915128571428572,
+          "mean_grade": "good",
+          "low_grade": "good",
+          "mean_score": 0.891057134799049,
+          "low_score": 0.8006469846896217
+        },
+        "3": {
+          "parse_score": NaN,
+          "layout_score": 0.7821269290787833,
+          "table_score": NaN,
+          "ocr_score": 0.9943933673469387,
+          "mean_grade": "good",
+          "low_grade": "fair",
+          "mean_score": 0.888260148212861,
+          "low_score": 0.7927402509921911
+        },
+        "4": {
+          "parse_score": NaN,
+          "layout_score": 0.8288547620177269,
+          "table_score": NaN,
+          "ocr_score": 0.9910227118644068,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9099387369410669,
+          "low_score": 0.8369631595100608
+        },
+        "5": {
+          "parse_score": NaN,
+          "layout_score": 0.7124820748964945,
+          "table_score": NaN,
+          "ocr_score": 0.9321293333333334,
+          "mean_grade": "good",
+          "low_grade": "fair",
+          "mean_score": 0.822305704114914,
+          "low_score": 0.7234644378183365
+        },
+        "6": {
+          "parse_score": NaN,
+          "layout_score": 0.8668338299242655,
+          "table_score": NaN,
+          "ocr_score": 0.9519511538461537,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9093924918852097,
+          "low_score": 0.8710896961203599
+        },
+        "7": {
+          "parse_score": NaN,
+          "layout_score": 0.8676949978319803,
+          "table_score": NaN,
+          "ocr_score": 0.9563019354838708,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9119984666579255,
+          "low_score": 0.8721253447145748
+        },
+        "8": {
+          "parse_score": NaN,
+          "layout_score": 0.8654090206273396,
+          "table_score": NaN,
+          "ocr_score": 0.977640357142857,
+          "mean_grade": "excellent",
+          "low_grade": "good",
+          "mean_score": 0.9215246888850983,
+          "low_score": 0.8710205874531155
+        },
+        "9": {
+          "parse_score": NaN,
+          "layout_score": 0.8532592141151428,
+          "table_score": NaN,
+          "ocr_score": 0.916814827586207,
+          "mean_grade": "good",
+          "low_grade": "good",
+          "mean_score": 0.8850370208506749,
+          "low_score": 0.8564369947886961
+        },
+        "10": {
+          "parse_score": NaN,
+          "layout_score": 0.7375843723615011,
+          "table_score": NaN,
+          "ocr_score": 0.9423013043478258,
+          "mean_grade": "good",
+          "low_grade": "fair",
+          "mean_score": 0.8399428383546634,
+          "low_score": 0.7478202189608173
+        }
+      },
+      "mean_grade": "good",
+      "low_grade": "good",
+      "mean_score": 0.8793129575585468,
+      "low_score": 0.812815876669102
+    }
+  },
+  "published_at": "2026-09-29T01:42:46.726389+00:00"
+}

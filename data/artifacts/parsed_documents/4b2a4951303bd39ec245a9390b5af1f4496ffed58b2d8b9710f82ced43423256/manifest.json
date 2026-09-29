@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "source_sha256": "28e25caefafac8a795e1a31a5a87e757536d56fa5beecc7580299c7941344c17",
+  "parser_name": "docling",
+  "parser_version": "2.126.0",
+  "conversion_fingerprint": "e6c271c982c219155891eac9f98ff47e72177e4df45e22609853a8f1401ed6b5",
+  "document_sha256": "afdf9e6d993e2868e1fdf15c8dbc5fbffbe708dc402401aa8a83702db33be74f",
+  "title": "Reg - 18 MTU_Engine_Set_20V4000M53B_SN_528106066_528106062_Certificate_HAM_2152268_2152275",
+  "page_count": 2,
+  "metadata": {
+    "status": "success",
+    "confidence": {
+      "parse_score": NaN,
+      "layout_score": 0.7931055081865429,
+      "table_score": NaN,
+      "ocr_score": 0.9884713917861799,
+      "pages": {
+        "1": {
+          "parse_score": NaN,
+          "layout_score": 0.7888953474006303,
+          "table_score": NaN,
+          "ocr_score": 0.9889984615384616,
+          "mean_grade": "good",
+          "low_grade": "fair",
+          "mean_score": 0.8889469044695459,
+          "low_score": 0.7989005031075218
+        },
+        "2": {
+          "parse_score": NaN,
+          "layout_score": 0.7973156689724555,
+          "table_score": NaN,
+          "ocr_score": 0.9879443220338983,
+          "mean_grade": "good",
+          "low_grade": "good",
+          "mean_score": 0.8926299955031769,
+          "low_score": 0.8068471016255276
+        }
+      },
+      "mean_grade": "good",
+      "low_grade": "good",
+      "mean_score": 0.8907884499863614,
+      "low_score": 0.8028738023665247
+    }
+  },
+  "published_at": "2026-09-29T01:44:07.948195+00:00"
+}

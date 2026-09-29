@@ -1,6 +1,12 @@
 from dataclasses import asdict
 from typing import Any
 
+from src.application.evaluation.classification.classification_golden_metrics import (
+    ClassificationGoldenMetrics,
+)
+from src.application.evaluation.classification.golden_classification_document_result import (
+    GoldenClassificationDocumentResult,
+)
 from src.application.evaluation.golden.golden_document_evaluation_outcome import (
     GoldenDocumentEvaluationOutcome,
 )
@@ -60,6 +66,100 @@ class GoldenEvaluationReportJsonSerializer:
                 self._serialize_document_outcome(outcome)
                 for outcome in report.document_outcomes
             ],
+            # Sibling to the structural/cross-reference sections above, never
+            # merged with them into one combined "AI quality" score.
+            "classification": self._serialize_classification(report),
+        }
+
+    def _serialize_classification(self, report) -> dict[str, Any]:
+        return {
+            "metrics": self._serialize_classification_metrics(
+                report.classification_metrics
+            ),
+            "documents": [
+                self._serialize_classification_document_result(result)
+                for result in report.classification_results
+            ],
+        }
+
+    @staticmethod
+    def _serialize_classification_metrics(
+        metrics: ClassificationGoldenMetrics,
+    ) -> dict[str, Any]:
+        return {
+            "executed_count": metrics.executed_count,
+            "execution_failed_count": metrics.execution_failed_count,
+            "skipped_parsing_unavailable_count": metrics.skipped_parsing_unavailable_count,
+            "unknown_count": metrics.unknown_count,
+            "unknown_rate": metrics.unknown_rate,
+            "low_confidence_rejected_count": metrics.low_confidence_rejected_count,
+            "low_confidence_rejection_rate": metrics.low_confidence_rejection_rate,
+            "confidence_count": metrics.confidence_count,
+            "confidence_min": metrics.confidence_min,
+            "confidence_max": metrics.confidence_max,
+            "confidence_mean": metrics.confidence_mean,
+            "confidence_median": metrics.confidence_median,
+            "reviewed_eligible_document_count": metrics.reviewed_eligible_document_count,
+            "raw_correct_count": metrics.raw_correct_count,
+            "raw_accuracy": metrics.raw_accuracy,
+            "accepted_count": metrics.accepted_count,
+            "accepted_correct_count": metrics.accepted_correct_count,
+            "accepted_classification_accuracy": metrics.accepted_classification_accuracy,
+            "accuracy_among_accepted": metrics.accuracy_among_accepted,
+            "ambiguous_document_count": metrics.ambiguous_document_count,
+            "ambiguous_raw_match_count": metrics.ambiguous_raw_match_count,
+            "confusion_matrix": metrics.confusion_matrix,
+        }
+
+    @staticmethod
+    def _serialize_classification_document_result(
+        result: GoldenClassificationDocumentResult,
+    ) -> dict[str, Any]:
+        expectation = result.expectation
+        attempt = result.attempt
+        return {
+            "alias": result.alias,
+            "stage_status": result.stage_status.value,
+            "detail": result.detail,
+            "execution_error": result.execution_error,
+            "expectation": (
+                {
+                    "expected_document_type": expectation.expected_document_type.value,
+                    "ambiguous": expectation.ambiguous,
+                    "review_status": expectation.review_status.value,
+                    "notes": expectation.notes,
+                }
+                if expectation is not None
+                else None
+            ),
+            "attempt": (
+                {
+                    "predicted_document_type": attempt.predicted_document_type.value,
+                    "predicted_label": attempt.predicted_label,
+                    "confidence": attempt.confidence,
+                    "confidence_threshold": attempt.confidence_threshold,
+                    "passed_confidence_gate": attempt.passed_confidence_gate,
+                    "validation_outcome": attempt.validation_outcome.value,
+                    "model_name": attempt.model_name,
+                    "rationale": attempt.rationale,
+                    "processing_errors": list(
+                        attempt.processing_metadata.errors
+                        if attempt.processing_metadata
+                        else []
+                    ),
+                    "prompt_version": (
+                        attempt.processing_metadata.prompt_version
+                        if attempt.processing_metadata
+                        else None
+                    ),
+                }
+                if attempt is not None
+                else None
+            ),
+            "eligible_for_accuracy": result.eligible_for_accuracy,
+            "raw_prediction_correct": result.raw_prediction_correct,
+            "accepted_classification_correct": result.accepted_classification_correct,
+            "ambiguous_raw_match": result.ambiguous_raw_match,
         }
 
     def _serialize_document_outcome(

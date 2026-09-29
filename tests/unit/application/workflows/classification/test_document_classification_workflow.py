@@ -333,6 +333,125 @@ def test_classify_document_returns_none_when_confidence_is_below_threshold(
     assert validator.calls == []
 
 
+class TestClassifyDocumentAttempt:
+    def test_returns_pre_gate_result_without_persisting_or_gating(
+        self, sample_document_graph
+    ) -> None:
+        fake_llm_service = FakeLLMService(
+            [
+                '{"label": "manual", "confidence_score": 0.10, '
+                '"rationale": "Low confidence classification.", '
+                '"evidence": []}'
+            ]
+        )
+        fake_classification_service = FakeClassificationService()
+        workflow, validator = make_workflow(
+            fake_llm_service,
+            fake_classification_service,
+        )
+
+        attempt = workflow.classify_document_attempt(sample_document_graph)
+
+        assert attempt is not None
+        assert attempt.result is not None
+        assert attempt.result.confidence_score == 0.10
+        assert attempt.document_type == DocumentType.MANUAL
+        # Below the confidence threshold, but classify_document_attempt()
+        # never gates - it hands back the raw attempt unconditionally.
+        assert fake_classification_service.saved_document_classifications == []
+        assert validator.calls == []
+
+    def test_does_not_consult_reclassification_or_cache_settings(
+        self,
+        sample_document_graph,
+        monkeypatch,
+    ) -> None:
+        monkeypatch.setattr(classification_settings, "allow_reclassification", False)
+        existing_classification = DocumentClassification(
+            document_id=sample_document_graph.document.document_id,
+            document_type=DocumentType.MANUAL,
+            result=ClassificationResult(
+                classification_id="classification_existing",
+                document_id=sample_document_graph.document.document_id,
+                predicted_label=DocumentType.MANUAL.value,
+                confidence_score=0.91,
+                rationale="Already classified previously.",
+                evidence=["Hydraulic Pump Manual"],
+            ),
+        )
+        fake_llm_service = FakeLLMService(
+            [
+                '{"label": "datasheet", "confidence_score": 0.95, '
+                '"rationale": "Fresh classification.", '
+                '"evidence": ["Spec table"]}'
+            ]
+        )
+        fake_classification_service = FakeClassificationService(
+            existing_by_document_id={
+                sample_document_graph.document.document_id: existing_classification
+            }
+        )
+        workflow, _ = make_workflow(
+            fake_llm_service,
+            fake_classification_service,
+        )
+
+        attempt = workflow.classify_document_attempt(sample_document_graph)
+
+        # Structurally guaranteed fresh: even though reclassification is
+        # disallowed and a saved classification already exists, this method
+        # never even looks at either setting - it always calls the LLM.
+        assert len(fake_llm_service.calls) == 1
+        assert attempt.document_type == DocumentType.DATASHEET
+        assert fake_classification_service.saved_document_classifications == []
+
+    def test_still_respects_store_reasoning_setting(
+        self,
+        sample_document_graph,
+        monkeypatch,
+    ) -> None:
+        monkeypatch.setattr(classification_settings, "store_reasoning", False)
+        fake_llm_service = FakeLLMService(
+            [
+                '{"label": "manual", "confidence_score": 0.91, '
+                '"rationale": "The graph summary and content match a maintenance manual.", '
+                '"evidence": ["Hydraulic Pump Manual"]}'
+            ]
+        )
+        fake_classification_service = FakeClassificationService()
+        workflow, _ = make_workflow(
+            fake_llm_service,
+            fake_classification_service,
+        )
+
+        attempt = workflow.classify_document_attempt(sample_document_graph)
+
+        assert attempt.result is not None
+        assert attempt.result.rationale is None
+        assert attempt.result.evidence == []
+
+    def test_classify_document_reuses_classify_document_attempt_internally(
+        self, sample_document_graph
+    ) -> None:
+        fake_llm_service = FakeLLMService(
+            [
+                '{"label": "manual", "confidence_score": 0.91, '
+                '"rationale": "The graph summary and content match a maintenance manual.", '
+                '"evidence": ["Hydraulic Pump Manual"]}'
+            ]
+        )
+        fake_classification_service = FakeClassificationService()
+        workflow, _ = make_workflow(
+            fake_llm_service,
+            fake_classification_service,
+        )
+
+        classification = workflow.classify_document(sample_document_graph)
+
+        assert classification is not None
+        assert len(fake_llm_service.calls) == 1
+
+
 def test_classify_document_clears_reasoning_when_store_reasoning_is_disabled(
     sample_document_graph,
     monkeypatch,
