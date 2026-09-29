@@ -1,3 +1,5 @@
+import re
+
 from src.application.workflows.parsing.builders.chunking.builders.chunk_payload_factory import (
     ChunkPayloadFactory,
 )
@@ -16,6 +18,25 @@ from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitte
 from src.domain.common import ChunkType
 
 
+def _pad_to_real_token_count(text: str, token_count: int) -> str:
+    """Pads `text` with filler words so its REAL whitespace-token count
+    equals `token_count`, keeping `text` itself as a findable prefix.
+
+    Since the packer now validates budgets against the real re-tokenized
+    serialized text (see ChunkFragmentPacker._fits_budget) rather than a
+    per-fragment additive estimate, every fixture's declared `token_count`
+    must match what a real tokenizer would count for its actual text -
+    otherwise these fragments would silently be lying about their own
+    size, exactly the class of bug the production fix addresses.
+    """
+    real_count = len(text.split())
+    filler_needed = max(0, token_count - real_count)
+    if not filler_needed:
+        return text
+    filler = " ".join(f"filler{i}" for i in range(filler_needed))
+    return f"{text} {filler}"
+
+
 def make_fragment(
     *,
     text: str,
@@ -28,7 +49,7 @@ def make_fragment(
     docling_group_total_tokens: int | None = None,
 ) -> ChunkFragment:
     return ChunkFragment(
-        text=text,
+        text=_pad_to_real_token_count(text, token_count),
         chunk_type=ChunkType.GENERAL,
         order_index=order_index,
         section_id="s1",
@@ -40,6 +61,14 @@ def make_fragment(
         docling_group_type=docling_group_type,
         docling_group_total_tokens=docling_group_total_tokens,
     )
+
+
+def _strip_filler(text: str) -> str:
+    """Inverse of `_pad_to_real_token_count` - recovers the original,
+    readable label for test assertions (the padded filler words are only
+    there to make the fragment's declared `token_count` match what a real
+    tokenizer counts; they are not part of the label under test)."""
+    return re.sub(r"(\s+filler\d+)+$", "", text)
 
 
 def _pack(fragments: list[ChunkFragment]) -> list[list[str]]:
@@ -57,7 +86,7 @@ def _pack(fragments: list[ChunkFragment]) -> list[list[str]]:
     )
     return [
         [
-            fragment.text
+            _strip_filler(fragment.text)
             for fragment in fragments
             if fragment.text in payload.content
         ]
@@ -471,3 +500,387 @@ def test_list_run_and_key_value_group_cohesion_operate_independently() -> None:
     assert len(groups) == 2
     assert groups[0] == ["Step 1.", "Step 2.", "Step 3."]
     assert groups[1] == ["Nr.:", "FB-8.6-21"]
+
+
+def _words(label: str, count: int) -> str:
+    """Real, distinct whitespace-tokens - `count` words long, starting
+    with `label` so it stays a findable marker in assembled content."""
+    if count <= 1:
+        return label
+    return label + " " + " ".join(f"{label}_w{i}" for i in range(count - 1))
+
+
+def _real_fragment(
+    *,
+    text: str,
+    order_index: int,
+    section_path: list[str],
+    section_title: str | None = None,
+    section_id: str = "s1",
+    page_start: int | None = None,
+    page_end: int | None = None,
+    element_ids: list[str] | None = None,
+    table_ids: list[str] | None = None,
+    picture_ids: list[str] | None = None,
+    chunk_type: ChunkType = ChunkType.GENERAL,
+) -> ChunkFragment:
+    """Builds a fragment whose declared `token_count` is ALWAYS the real
+    whitespace-token count of its own text alone - i.e. never lying about
+    its own size, the precondition the production fix assumes holds for
+    every individual fragment (only the MULTI-fragment assembled text can
+    legitimately differ, due to inserted section titles)."""
+    return ChunkFragment(
+        text=text,
+        chunk_type=chunk_type,
+        order_index=order_index,
+        section_id=section_id,
+        section_title=section_title,
+        section_path=section_path,
+        token_count=len(text.split()),
+        page_start=page_start,
+        page_end=page_end,
+        element_ids=element_ids or [],
+        table_ids=table_ids or [],
+        picture_ids=picture_ids or [],
+    )
+
+
+def _real_pack(fragments: list[ChunkFragment], *, max_chunk_tokens: int = 50):
+    text_splitter = ChunkTextSplitter(max_chunk_tokens=max_chunk_tokens, chunk_overlap=0)
+    merge_policy = SectionMergePolicy(text_splitter=text_splitter, min_section_text_length=1)
+    return ChunkFragmentPacker().pack(
+        document_title=None,
+        fragments=fragments,
+        text_splitter=text_splitter,
+        payload_factory=ChunkPayloadFactory(),
+        merge_policy=merge_policy,
+    ), text_splitter
+
+
+class TestExactSerializedBudgetIsAuthoritative:
+    """Regression coverage for the proven MTU production defect: the
+    packer used to accept a candidate pack whenever the SUM of each
+    fragment's own pre-computed token_count stayed under budget, even
+    though the real assembled-and-cleaned payload text (which can include
+    an inserted `section_title` when packed fragments span more than one
+    section - see ChunkPayloadFactory._assemble_chunk_content) sometimes
+    tokenizes to more than that sum. See
+    outputs/architecture/mtu_challenge_document_reconnaissance.md and the
+    hard-token-budget-correction report."""
+
+    def test_additive_estimate_under_budget_but_real_serialization_over_budget_splits(
+        self,
+    ) -> None:
+        # Additive sum: 20 + 25 = 45 <= 50 (the OLD check would have
+        # accepted this). Real assembled text: 20 words + a 6-word
+        # inserted section_title (since fragment B's section_path differs
+        # from A's) + 25 words = 51 words > 50 - the exact MTU mechanism,
+        # reproduced deterministically.
+        fragment_a = _real_fragment(
+            text=_words("alpha", 20),
+            order_index=1,
+            section_path=["1 General"],
+        )
+        fragment_b = _real_fragment(
+            text=_words("bravo", 25),
+            order_index=2,
+            section_path=["1 General", "1.2 Something"],
+            section_title=_words("SectionTitle", 6),
+        )
+
+        payloads, text_splitter = _real_pack([fragment_a, fragment_b])
+
+        assert len(payloads) == 2, (
+            "additive sum (45) fit, but the real serialized text (51 "
+            "words, including the inserted section title) must not - "
+            "these must land in separate chunks"
+        )
+        assert "alpha" in payloads[0].content
+        assert "bravo" not in payloads[0].content
+        assert "bravo" in payloads[1].content
+        for payload in payloads:
+            assert text_splitter.count_tokens(payload.content) <= 50
+
+    def test_exact_joined_payload_at_budget_is_accepted(self) -> None:
+        fragment_a = _real_fragment(
+            text=_words("alpha", 25), order_index=1, section_path=["1 General"]
+        )
+        fragment_b = _real_fragment(
+            text=_words("bravo", 25), order_index=2, section_path=["1 General"]
+        )
+
+        payloads, text_splitter = _real_pack([fragment_a, fragment_b])
+
+        assert len(payloads) == 1
+        assert text_splitter.count_tokens(payloads[0].content) == 50
+
+    def test_exact_joined_payload_one_token_over_budget_is_rejected(self) -> None:
+        fragment_a = _real_fragment(
+            text=_words("alpha", 25), order_index=1, section_path=["1 General"]
+        )
+        fragment_b = _real_fragment(
+            text=_words("bravo", 26), order_index=2, section_path=["1 General"]
+        )
+
+        payloads, text_splitter = _real_pack([fragment_a, fragment_b])
+
+        assert len(payloads) == 2
+        for payload in payloads:
+            assert text_splitter.count_tokens(payload.content) <= 50
+
+    def test_flush_before_overflow_preserves_prior_content_exactly(self) -> None:
+        fragment_a = _real_fragment(
+            text=_words("alpha", 30), order_index=1, section_path=["1 General"]
+        )
+        fragment_b = _real_fragment(
+            text=_words("bravo", 30), order_index=2, section_path=["1 General"]
+        )
+
+        payloads, _ = _real_pack([fragment_a, fragment_b])
+
+        assert payloads[0].content == _words("alpha", 30)
+
+    def test_next_fragment_begins_a_new_pack_correctly(self) -> None:
+        fragment_a = _real_fragment(
+            text=_words("alpha", 30), order_index=1, section_path=["1 General"]
+        )
+        fragment_b = _real_fragment(
+            text=_words("bravo", 30), order_index=2, section_path=["1 General"]
+        )
+
+        payloads, _ = _real_pack([fragment_a, fragment_b])
+
+        assert len(payloads) == 2
+        assert payloads[1].content == _words("bravo", 30)
+
+    def test_multiple_sequential_flushes_produce_one_chunk_per_fragment(self) -> None:
+        fragments = [
+            _real_fragment(
+                text=_words(f"frag{i}", 40), order_index=i, section_path=["1 General"]
+            )
+            for i in range(5)
+        ]
+
+        payloads, text_splitter = _real_pack(fragments)
+
+        assert len(payloads) == 5
+        for payload in payloads:
+            assert text_splitter.count_tokens(payload.content) <= 50
+
+    def test_no_empty_chunks_introduced(self) -> None:
+        fragments = [
+            _real_fragment(
+                text=_words(f"frag{i}", 10), order_index=i, section_path=["1 General"]
+            )
+            for i in range(9)
+        ]
+
+        payloads, _ = _real_pack(fragments)
+
+        assert all(payload.content.strip() for payload in payloads)
+
+    def test_ordering_preserved(self) -> None:
+        fragments = [
+            _real_fragment(
+                text=_words(f"frag{i}", 30), order_index=i, section_path=["1 General"]
+            )
+            for i in range(4)
+        ]
+
+        payloads, _ = _real_pack(fragments)
+
+        markers_in_order = [
+            next(i for i in range(4) if f"frag{i}" in payload.content)
+            for payload in payloads
+        ]
+        assert markers_in_order == sorted(markers_in_order)
+
+    def test_provenance_page_start_end_preserved(self) -> None:
+        fragment_a = _real_fragment(
+            text=_words("alpha", 10),
+            order_index=1,
+            section_path=["1 General"],
+            page_start=5,
+            page_end=5,
+        )
+        fragment_b = _real_fragment(
+            text=_words("bravo", 10),
+            order_index=2,
+            section_path=["1 General"],
+            page_start=6,
+            page_end=7,
+        )
+
+        payloads, _ = _real_pack([fragment_a, fragment_b])
+
+        assert len(payloads) == 1
+        assert payloads[0].page_start == 5
+        assert payloads[0].page_end == 7
+
+    def test_section_association_preserved(self) -> None:
+        fragment_a = _real_fragment(
+            text=_words("alpha", 10),
+            order_index=1,
+            section_path=["1 General"],
+            section_id="sec_general",
+        )
+        fragment_b = _real_fragment(
+            text=_words("bravo", 40),
+            order_index=2,
+            section_path=["1 General"],
+            section_id="sec_general",
+        )
+
+        payloads, _ = _real_pack([fragment_a, fragment_b])
+
+        assert payloads[0].section_id == "sec_general"
+        assert payloads[0].section_path == ["1 General"]
+
+    def test_fragment_metadata_table_and_picture_ids_preserved(self) -> None:
+        fragment_a = _real_fragment(
+            text=_words("alpha", 10),
+            order_index=1,
+            section_path=["1 General"],
+            element_ids=["el_1"],
+            picture_ids=["pic_1"],
+        )
+        fragment_b = _real_fragment(
+            text=_words("bravo", 10),
+            order_index=2,
+            section_path=["1 General"],
+            element_ids=["el_2"],
+        )
+
+        payloads, _ = _real_pack([fragment_a, fragment_b])
+
+        assert len(payloads) == 1
+        assert payloads[0].element_ids == ["el_1", "el_2"]
+        assert payloads[0].picture_ids == ["pic_1"]
+
+    def test_table_fragment_still_routes_through_existing_split_path_unchanged(
+        self,
+    ) -> None:
+        table_fragment = ChunkFragment(
+            text="| A | B |\n| --- | --- |\n| 1 | 2 |",
+            chunk_type=ChunkType.GENERAL,
+            standalone=True,
+            order_index=1,
+            section_id="s1",
+            section_path=["1 General"],
+            token_count=8,
+            table_rows=[["A", "B"], ["1", "2"]],
+            table_row_start=None,
+            table_row_end=None,
+        )
+
+        payloads, _ = _real_pack([table_fragment])
+
+        # Still isolated into its own chunk via the standalone path,
+        # never merged with anything - untouched by this fix.
+        assert len(payloads) == 1
+        assert "A" in payloads[0].content and "B" in payloads[0].content
+
+    def test_single_fragment_over_budget_follows_existing_split_contract(self) -> None:
+        oversized = _real_fragment(
+            text=_words("alpha", 80), order_index=1, section_path=["1 General"]
+        )
+
+        payloads, text_splitter = _real_pack([oversized])
+
+        # Routed to the real recursive text splitter (already
+        # overlap-safe, per the prior fix), never emitted as one
+        # single 80-token hard violation.
+        assert len(payloads) >= 2
+        for payload in payloads:
+            assert text_splitter.count_tokens(payload.content) <= 50
+
+    def test_configured_overlap_trim_loop_still_respects_exact_budget(self) -> None:
+        text_splitter = ChunkTextSplitter(max_chunk_tokens=50, chunk_overlap=10)
+        merge_policy = SectionMergePolicy(text_splitter=text_splitter, min_section_text_length=1)
+        fragments = [
+            _real_fragment(
+                text=_words(f"frag{i}", 20), order_index=i, section_path=["1 General"]
+            )
+            for i in range(4)
+        ]
+
+        payloads = ChunkFragmentPacker().pack(
+            document_title=None,
+            fragments=fragments,
+            text_splitter=text_splitter,
+            payload_factory=ChunkPayloadFactory(),
+            merge_policy=merge_policy,
+        )
+
+        for payload in payloads:
+            assert text_splitter.count_tokens(payload.content) <= 50
+
+    def test_unicode_multilingual_text_budget_check_is_accurate(self) -> None:
+        fragment_a = _real_fragment(
+            text=_words("Prüfung_Öl_Über", 25),
+            order_index=1,
+            section_path=["1 Allgemein"],
+        )
+        fragment_b = _real_fragment(
+            text=_words("检查_压力_传感器", 25),
+            order_index=2,
+            section_path=["1 Allgemein"],
+        )
+
+        payloads, text_splitter = _real_pack([fragment_a, fragment_b])
+
+        assert len(payloads) == 1
+        assert text_splitter.count_tokens(payloads[0].content) == 50
+
+    def test_many_small_fragment_packing_reproduces_mtu_shape(self) -> None:
+        # ~30 tiny fragments (2-3 words each, like numbered component-
+        # callout list items) spanning two sections partway through -
+        # the real MTU pattern (17-34 merged fragments per chunk, a
+        # section boundary crossed mid-pack).
+        fragments = []
+        for i in range(15):
+            fragments.append(
+                _real_fragment(
+                    text=f"{i} Component label",
+                    order_index=i,
+                    section_path=["8 Instructions", "8.6 Fuel System"],
+                )
+            )
+        for i in range(15, 30):
+            fragments.append(
+                _real_fragment(
+                    text=f"{i} Component label",
+                    order_index=i,
+                    section_path=["8 Instructions", "8.7 Control Equipment"],
+                    section_title=_words("LongSubsectionTitle", 8),
+                )
+            )
+
+        payloads, text_splitter = _real_pack(fragments, max_chunk_tokens=50)
+
+        assert payloads, "expected at least one payload"
+        for payload in payloads:
+            assert payload.content.strip()
+            assert text_splitter.count_tokens(payload.content) <= 50
+
+    def test_all_emitted_splittable_chunks_retokenize_within_budget(self) -> None:
+        # Broad mixed-size property check across a varied fixture set.
+        fragments = [
+            _real_fragment(text=_words("a", 5), order_index=0, section_path=["1 S1"]),
+            _real_fragment(text=_words("b", 45), order_index=1, section_path=["1 S1"]),
+            _real_fragment(
+                text=_words("c", 12),
+                order_index=2,
+                section_path=["1 S1", "1.1 Sub"],
+                section_title=_words("Title", 7),
+            ),
+            _real_fragment(text=_words("d", 33), order_index=3, section_path=["1 S1", "1.1 Sub"]),
+            _real_fragment(text=_words("e", 90), order_index=4, section_path=["2 S2"]),
+            _real_fragment(text=_words("f", 8), order_index=5, section_path=["2 S2"]),
+        ]
+
+        payloads, text_splitter = _real_pack(fragments, max_chunk_tokens=50)
+
+        assert payloads
+        for payload in payloads:
+            assert text_splitter.count_tokens(payload.content) <= 50

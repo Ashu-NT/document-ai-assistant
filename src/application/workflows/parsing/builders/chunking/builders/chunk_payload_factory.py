@@ -134,6 +134,22 @@ class ChunkPayloadFactory:
             ),
         )
 
+    def assemble_and_clean_content(self, fragments: list[ChunkFragment]) -> str:
+        """The exact final chunk text a candidate list of fragments would
+        produce if packed together right now - byte-for-byte identical to
+        what `build_payload()` stores as `content` (both call the same
+        `_assemble_chunk_content()` + `clean_chunk_text()` steps).
+
+        This is the single authoritative source `ChunkFragmentPacker` must
+        tokenize when deciding whether a candidate pack fits the token
+        budget - never a per-fragment additive sum, which can diverge from
+        this real text whenever `_assemble_chunk_content()` inserts extra
+        content (e.g. a fragment's own `section_title`, when packed
+        fragments span more than one section) that no individual
+        fragment's own pre-computed `token_count` ever accounted for.
+        """
+        return clean_chunk_text(self._assemble_chunk_content(fragments)) or ""
+
     @staticmethod
     def _first_table_rows(fragments: list[ChunkFragment]) -> list[list[str]] | None:
         for fragment in fragments:

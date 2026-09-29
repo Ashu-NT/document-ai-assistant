@@ -1,7 +1,7 @@
 {
   "run_metadata": {
-    "timestamp": "2026-09-29T04:14:31.671519+00:00",
-    "git_commit": "241387c372353cd3f3cd05e65f903426ff0b75ea",
+    "timestamp": "2026-09-29T05:17:10.116063+00:00",
+    "git_commit": "e1525b52007cf8159cc90cad589997bb88b11b99",
     "artifact_schema_version": 1,
     "parser_name": "docling",
     "parser_version": "2.126.0",
@@ -678,52 +678,52 @@
         "passed": true,
         "oversized_chunks": [
           {
-            "chunk_id": "chunk_65e1a11218df4c619f4e6685aeb986c2",
+            "chunk_id": "chunk_f8b5aa4ced4848e186a860a16cb93817",
             "token_count": 317,
             "budget": 270,
             "status": "oversized_indivisible",
             "chunk_type": "technical_specification",
-            "table_id": "table_3cd865c2825d43a0a3da88472ecb2151",
+            "table_id": "table_4bb1dd510fc5469581943738e1ac9a14",
             "table_row_start": 11,
             "table_row_end": 11
           },
           {
-            "chunk_id": "chunk_4ad23c2cf54d4431a8a5fd138f017ecc",
+            "chunk_id": "chunk_4562b70f5495417bb3184f6b7d7ddba8",
             "token_count": 283,
             "budget": 270,
             "status": "oversized_indivisible",
             "chunk_type": "technical_specification",
-            "table_id": "table_be94b6a8f41c49bcad5f1cec1c7880d9",
+            "table_id": "table_66c6a471c1994574817bcd4e7fac4eb8",
             "table_row_start": 8,
             "table_row_end": 8
           },
           {
-            "chunk_id": "chunk_81c45a75141d4f389c28757991b31464",
+            "chunk_id": "chunk_52a44475fede437abf732452207654c0",
             "token_count": 292,
             "budget": 270,
             "status": "oversized_indivisible",
             "chunk_type": "technical_specification",
-            "table_id": "table_be94b6a8f41c49bcad5f1cec1c7880d9",
+            "table_id": "table_66c6a471c1994574817bcd4e7fac4eb8",
             "table_row_start": 14,
             "table_row_end": 14
           },
           {
-            "chunk_id": "chunk_f2d34f44e8e84515881c4a9a2916a52d",
+            "chunk_id": "chunk_564ad168dd2d48bcb63c32bd6bceb85c",
             "token_count": 273,
             "budget": 270,
             "status": "oversized_indivisible",
             "chunk_type": "technical_specification",
-            "table_id": "table_83a503b0a65840f4b0d619825ec4296f",
+            "table_id": "table_fa507c9c97bf4dff87aa5d08c6c2e136",
             "table_row_start": 2,
             "table_row_end": 2
           },
           {
-            "chunk_id": "chunk_0954c56cf8364207855331e0cdaa61c0",
+            "chunk_id": "chunk_67cda704e18647a683f57899dee38833",
             "token_count": 282,
             "budget": 270,
             "status": "oversized_indivisible",
             "chunk_type": "technical_specification",
-            "table_id": "table_83a503b0a65840f4b0d619825ec4296f",
+            "table_id": "table_fa507c9c97bf4dff87aa5d08c6c2e136",
             "table_row_start": 8,
             "table_row_end": 8
           }
@@ -851,12 +851,12 @@
         "passed": true,
         "oversized_chunks": [
           {
-            "chunk_id": "chunk_a274307dcadd445798d2c8dc76eb3bb8",
+            "chunk_id": "chunk_640b89ef083c43ce9a25ee73f52f953b",
             "token_count": 311,
             "budget": 310,
             "status": "oversized_indivisible",
             "chunk_type": "general",
-            "table_id": "table_ec94f32c6d3e46d4995ae4626e774a90",
+            "table_id": "table_5b7c0f4fba6f48f797920cb32c302e79",
             "table_row_start": 7,
             "table_row_end": 7
           }

@@ -57,7 +57,9 @@ class ChunkFragmentPacker:
                 )
                 continue
 
-            if fragment.token_count > text_splitter.max_chunk_tokens:
+            if not self._fits_budget(
+                [fragment], payload_factory=payload_factory, text_splitter=text_splitter
+            ):
                 self._flush_current_fragments(
                     chunk_payloads=chunk_payloads,
                     document_title=document_title,
@@ -123,7 +125,11 @@ class ChunkFragmentPacker:
                 current_fragments = []
 
             candidate_fragments = [*current_fragments, fragment]
-            if self._fragments_token_count(candidate_fragments) <= text_splitter.max_chunk_tokens:
+            if self._fits_budget(
+                candidate_fragments,
+                payload_factory=payload_factory,
+                text_splitter=text_splitter,
+            ):
                 current_fragments = candidate_fragments
                 continue
 
@@ -139,10 +145,10 @@ class ChunkFragmentPacker:
                 current_fragments,
                 text_splitter=text_splitter,
             )
-            while (
-                current_fragments
-                and self._fragments_token_count([*current_fragments, fragment])
-                > text_splitter.max_chunk_tokens
+            while current_fragments and not self._fits_budget(
+                [*current_fragments, fragment],
+                payload_factory=payload_factory,
+                text_splitter=text_splitter,
             ):
                 current_fragments = current_fragments[1:]
 
@@ -253,7 +259,33 @@ class ChunkFragmentPacker:
 
     @staticmethod
     def _fragments_token_count(fragments: list[ChunkFragment]) -> int:
+        """Cheap additive estimate - used only by the list-run/key_value_area
+        COHESION heuristics below (_should_flush_before_list_run/
+        _should_flush_before_key_value_group), which decide whether to
+        flush *early* to keep a run/group together. Being approximate
+        there only ever makes a cohesion judgment call slightly early or
+        late; it never governs whether a chunk's final content actually
+        fits the budget. That correctness gate is `_fits_budget`."""
         return sum(fragment.token_count for fragment in fragments)
+
+    @staticmethod
+    def _fits_budget(
+        fragments: list[ChunkFragment],
+        *,
+        payload_factory: ChunkPayloadFactory,
+        text_splitter: ChunkTextSplitter,
+    ) -> bool:
+        """The one authoritative budget check: assembles and cleans the
+        EXACT text `build_payload()` would store for this candidate
+        fragment list (the same method it itself calls - see
+        ChunkPayloadFactory.assemble_and_clean_content), then tokenizes
+        that real text. Never an additive per-fragment sum, which can
+        diverge from the real serialized content whenever assembly inserts
+        extra text (e.g. a fragment's own `section_title`, when the
+        packed fragments span more than one section) that no individual
+        fragment's own pre-computed `token_count` ever accounted for."""
+        candidate_text = payload_factory.assemble_and_clean_content(fragments)
+        return text_splitter.count_tokens(candidate_text) <= text_splitter.max_chunk_tokens
 
     @staticmethod
     def _should_flush_before_list_run(

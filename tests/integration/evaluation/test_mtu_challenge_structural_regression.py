@@ -169,25 +169,24 @@ def test_mtu_challenge_structural_regression() -> None:
 
     # Tolerant/candidate structural expectations (see
     # structural_expectations_mtu_challenge.md) - report, don't silently
-    # weaken, any failure here. `chunk_hard_token_budget` is deliberately
-    # excluded from this "must all pass" check: it is a real, distinct,
-    # NOT-YET-FIXED finding (4 ordinary multi-fragment-packed chunks,
-    # unrelated to table degeneracy or the previously-fixed overlap-
-    # injection defect - see the challenge-integration report), asserted
-    # on explicitly below instead so a REGRESSION (a change in count) is
-    # visible without pretending the current count is zero.
+    # weaken, any failure here.
     failed_case_assertions = [
-        a.name
-        for a in structural_result.assertions
-        if not a.passed and a.name != "chunk_hard_token_budget"
+        a.name for a in structural_result.assertions if not a.passed
     ]
     assert not failed_case_assertions, (
         f"structural expectation assertions failed: {failed_case_assertions}"
     )
 
-    assert budget_result.hard_budget_violation_count == 4, (
-        "expected the 4 already-characterized hard-budget-violation "
-        f"chunks; got {budget_result.hard_budget_violation_count} - "
-        "investigate before updating this expectation"
+    # Universal invariant, same as every CORE document: a genuine packer
+    # defect (ChunkFragmentPacker trusting an additive per-fragment token
+    # sum instead of the real serialized-payload token count whenever
+    # packed fragments crossed a section boundary) previously produced 4
+    # hard-budget-violation chunks here. Fixed in ChunkFragmentPacker /
+    # ChunkPayloadFactory (assemble_and_clean_content / _fits_budget) -
+    # see the correction report. This must stay 0; it is never acceptable
+    # golden behavior for it to be otherwise.
+    assert budget_result.hard_budget_violation_count == 0, (
+        "hard token-budget violations must always be 0 - got "
+        f"{budget_result.hard_budget_violation_count}"
     )
     assert budget_result.oversized_indivisible_count == 0
