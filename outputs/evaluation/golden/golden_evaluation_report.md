@@ -96,11 +96,11 @@
 
 | chunk_id | status | tokens | budget | chunk_type | table_id | rows |
 | --- | --- | --- | --- | --- | --- | --- |
-| chunk_645d32e0383f4939a7fa4031cecdc7b2 | oversized_indivisible | 317 | 270 | technical_specification | table_8791f14620924ad6bce8fb36a9d509b7 | 11-11 |
-| chunk_aadb713c83964467bffc4670dd76a654 | oversized_indivisible | 283 | 270 | technical_specification | table_23d2dfc3ed3542f993c7f0ee3c79bbee | 8-8 |
-| chunk_eec493e0fed44966a81651d7bd5dd3d9 | oversized_indivisible | 292 | 270 | technical_specification | table_23d2dfc3ed3542f993c7f0ee3c79bbee | 14-14 |
-| chunk_3b2d5bfa59ff461c98c8890f80a9e4a1 | oversized_indivisible | 273 | 270 | technical_specification | table_251332c5de7f4fbca21b51f71a5e08f9 | 2-2 |
-| chunk_2e95f9587929414c9467e424e875f73f | oversized_indivisible | 282 | 270 | technical_specification | table_251332c5de7f4fbca21b51f71a5e08f9 | 8-8 |
+| chunk_1379fc43622c450aa45c51a78dc2868c | oversized_indivisible | 317 | 270 | technical_specification | table_ce8ca368c0904dd4a15d838dd9b72d9f | 11-11 |
+| chunk_0db7fa62134741ab97a9c9f3ebe0bbdf | oversized_indivisible | 283 | 270 | technical_specification | table_ce1780475f7541249f720aa200da9bae | 8-8 |
+| chunk_76c101bd269343c5a446996dfc39c4aa | oversized_indivisible | 292 | 270 | technical_specification | table_ce1780475f7541249f720aa200da9bae | 14-14 |
+| chunk_e223955f755b4a0e8eec96f9dac5d419 | oversized_indivisible | 273 | 270 | technical_specification | table_a3b9fe9c921348e7b2f63b30ade42379 | 2-2 |
+| chunk_8e21e4178f6d457b8d3a92586d557927 | oversized_indivisible | 282 | 270 | technical_specification | table_a3b9fe9c921348e7b2f63b30ade42379 | 8-8 |
 
 ### report_pressure_transmitter
 
@@ -122,7 +122,7 @@
 
 | chunk_id | status | tokens | budget | chunk_type | table_id | rows |
 | --- | --- | --- | --- | --- | --- | --- |
-| chunk_08194c21a1c6462481ebff1736fd946b | oversized_indivisible | 311 | 310 | general | table_5d9ddbe1b3284b02847edc802cd259cd | 7-7 |
+| chunk_09570fd558534215adefdc8a71493b8a | oversized_indivisible | 311 | 310 | general | table_0965a0c71d3d4408bce1166be30636bb | 7-7 |
 
 ## Cross References
 
@@ -163,8 +163,8 @@ _None._
 
 ## Reproducibility
 
-- timestamp: `2026-09-29T06:33:20.322941+00:00`
-- git commit: `9bce1640dfc589686e95f94a4aba38a3d9de4ad9`
+- timestamp: `2026-09-29T20:40:15.570942+00:00`
+- git commit: `32116bcf87c6116a4664243bb4834c8f4f2c303f`
 - artifact schema version: `1`
 - parser: `docling 2.126.0`
 - conversion fingerprint: `e6c271c982c219155891eac9f98ff47e72177e4df45e22609853a8f1401ed6b5`

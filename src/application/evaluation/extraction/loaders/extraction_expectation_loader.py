@@ -28,6 +28,12 @@ from src.application.evaluation.extraction.extraction_expectation_case import (
 from src.application.evaluation.extraction.extraction_review_status import (
     ExtractionReviewStatus,
 )
+from src.application.evaluation.extraction.matchers.entity_identity_keys import (
+    ENTITY_IDENTITY_FIELD_NAMES,
+)
+from src.application.evaluation.extraction.matchers.field_assertion import (
+    has_usable_identity_assertion,
+)
 from src.application.evaluation.retrieval.benchmarking.loaders.markdown_section_parser import (
     extract_sections,
 )
@@ -300,6 +306,31 @@ class ExtractionExpectationLoader:
             if identity_override
             else None
         )
+
+        production_identity_fields = identity_fields_override or (
+            ENTITY_IDENTITY_FIELD_NAMES[entity_type]
+        )
+        if not has_usable_identity_assertion(
+            expected_fields, production_identity_fields
+        ):
+            raise SchemaValidationError(
+                "Extraction expectation has no usable asserted identity "
+                "field - this would vacuously match every actual entity of "
+                f"this type. entity_type={entity_type.value!r} requires at "
+                "least one of "
+                f"{production_identity_fields!r} to be asserted as a real "
+                "(non-null) value in 'expected_fields'. Asserting a field "
+                "as explicitly null alone does not count - see "
+                "field_assertion.has_usable_identity_assertion.",
+                details={
+                    "path": str(source_path),
+                    "alias": alias,
+                    "case_id": case_id,
+                    "entity_type": entity_type.value,
+                    "identity_fields": list(production_identity_fields),
+                    "expected_fields": expected_fields,
+                },
+            )
 
         return ExtractionExpectationCase(
             case_id=str(case_id),

@@ -40,7 +40,15 @@ class ExtractionExpectationCase:
     scope: ExtractionEvaluationScope
     completeness: ExtractionCompleteness = ExtractionCompleteness.PRESENCE_ONLY
     review_status: ExtractionReviewStatus = ExtractionReviewStatus.CANDIDATE
-    expected_fields: dict[str, str] = field(default_factory=dict)
+    # Key presence is semantically meaningful: a field ABSENT from this dict
+    # is NOT_ASSERTED (never compared for identity, never blocks a match); a
+    # field present with value `None` is an EXPECTED_NULL assertion (the
+    # actual field must also normalize empty); a field present with a real
+    # string is an EXPECTED_VALUE assertion (compared normally). See
+    # matchers/field_assertion.py - never call `.get(name, "")`-style code
+    # against this dict where the NOT_ASSERTED/EXPECTED_NULL distinction
+    # matters; use `resolve_field_assertion`/`effective_identity_fields`.
+    expected_fields: dict[str, str | None] = field(default_factory=dict)
     # Only set when a document-specific reason exists to deviate from the
     # entity type's default production identity fields (see
     # matchers/entity_identity_keys.py) - rare, and never guessed.

@@ -276,3 +276,442 @@ class TestDifferingFieldsDiagnostic:
         assert results[0].outcome is ExtractionMatchOutcome.MATCHED
         assert "value" in results[0].differing_fields
         assert "unit" in results[0].differing_fields
+
+
+class TestOmittedVsExplicitNullIdentitySemantics:
+    """Tests 1-3, 6-18 from the NOT_ASSERTED-semantics task: omitted
+    identity fields never constrain matching; explicit-null identity
+    fields DO constrain matching; asserted values keep existing
+    exact/CONTAINS semantics unchanged. Covers all 12 entity types."""
+
+    # --- 1/2/3: core semantics, generic ---
+
+    def test_omitted_identity_field_does_not_constrain_matching(self) -> None:
+        expectation = _expectation(ExtractionEntityType.MANUFACTURER, name="Acme")
+        actual = _ActualEntity(
+            entity_id="m1", fields={"name": "Acme", "website": None, "country": "Germany"}
+        )
+        results = match_expectations_against_actuals("manufacturer", [expectation], [actual])
+        assert results[0].outcome is ExtractionMatchOutcome.MATCHED
+        assert results[0].identity_fields_used == ("name",)
+
+    def test_explicit_null_identity_field_does_constrain_matching(self) -> None:
+        expectation = ExtractionExpectationCase(
+            case_id="c1",
+            document_alias="doc",
+            entity_type=ExtractionEntityType.EQUIPMENT_INFO,
+            scope=_SCOPE,
+            expected_fields={"name": "Pump A", "manufacturer_name": None},
+        )
+        actual_with_manufacturer = _ActualEntity(
+            entity_id="e1",
+            fields={
+                "name": "Pump A",
+                "model_number": None,
+                "serial_number": None,
+                "manufacturer_name": "Acme Corp",
+            },
+        )
+        results = match_expectations_against_actuals(
+            "equipment_info", [expectation], [actual_with_manufacturer]
+        )
+        assert results[0].outcome is ExtractionMatchOutcome.UNMATCHED_EXPECTED
+        assert "manufacturer_name" in results[0].identity_fields_used
+
+    def test_explicit_null_identity_field_matches_actual_also_empty(self) -> None:
+        expectation = ExtractionExpectationCase(
+            case_id="c1",
+            document_alias="doc",
+            entity_type=ExtractionEntityType.EQUIPMENT_INFO,
+            scope=_SCOPE,
+            expected_fields={"name": "Pump A", "manufacturer_name": None},
+        )
+        actual_no_manufacturer = _ActualEntity(
+            entity_id="e1",
+            fields={
+                "name": "Pump A",
+                "model_number": None,
+                "serial_number": None,
+                "manufacturer_name": None,
+            },
+        )
+        results = match_expectations_against_actuals(
+            "equipment_info", [expectation], [actual_no_manufacturer]
+        )
+        assert results[0].outcome is ExtractionMatchOutcome.MATCHED
+
+    def test_asserted_value_still_uses_existing_comparison_semantics(self) -> None:
+        """An asserted (non-null) identity field keeps its existing exact
+        or CONTAINS mode - this change never broadens matching for
+        fields that ARE asserted, only skips fields that aren't."""
+        expectation = _expectation(ExtractionEntityType.MANUFACTURER, name="Acme Corp")
+        wrong_wording = _ActualEntity(
+            entity_id="m1", fields={"name": "Acme Corporation", "website": None, "country": None}
+        )
+        results = match_expectations_against_actuals(
+            "manufacturer", [expectation], [wrong_wording]
+        )
+        assert results[0].outcome is ExtractionMatchOutcome.UNMATCHED_EXPECTED
+
+    # --- 6: the exact MTU-cover EquipmentInfo example from the task ---
+
+    def test_equipment_info_partial_golden_matches_actual_with_extra_identity_fields(
+        self,
+    ) -> None:
+        """Golden asserts only model_number (name deliberately omitted here
+        to isolate the omission effect from name's own exact-match
+        strictness, which this task does not change) - the model's fuller,
+        additionally-populated actual (extra manufacturer_name) must still
+        match, since manufacturer_name was never asserted."""
+        expectation = ExtractionExpectationCase(
+            case_id="c1",
+            document_alias="doc",
+            entity_type=ExtractionEntityType.EQUIPMENT_INFO,
+            scope=_SCOPE,
+            expected_fields={"model_number": "20V4000M53B"},
+        )
+        actual = _ActualEntity(
+            entity_id="e1",
+            fields={
+                "name": "Marine engine-generator set with 20V4000M53B engine",
+                "model_number": "20V4000M53B",
+                "serial_number": None,
+                "manufacturer_name": "Rolls-Royce Solutions",
+            },
+        )
+        results = match_expectations_against_actuals("equipment_info", [expectation], [actual])
+        assert results[0].outcome is ExtractionMatchOutcome.MATCHED
+        assert results[0].identity_fields_used == ("model_number",)
+
+    def test_equipment_info_name_still_exact_match_only_this_task_does_not_change_that(
+        self,
+    ) -> None:
+        """Per the task's explicit instruction: do not silently introduce
+        fuzzy/contains matching for EquipmentInfo.name. Asserting BOTH
+        name and model_number, with a fuller actual name, must still FN on
+        name - this task fixes omission semantics only."""
+        expectation = ExtractionExpectationCase(
+            case_id="c1",
+            document_alias="doc",
+            entity_type=ExtractionEntityType.EQUIPMENT_INFO,
+            scope=_SCOPE,
+            expected_fields={
+                "name": "Marine engine-generator set",
+                "model_number": "20V4000M53B",
+            },
+        )
+        actual = _ActualEntity(
+            entity_id="e1",
+            fields={
+                "name": "Marine engine-generator set with 20V4000M53B engine",
+                "model_number": "20V4000M53B",
+                "serial_number": None,
+                "manufacturer_name": "Rolls-Royce Solutions",
+            },
+        )
+        results = match_expectations_against_actuals("equipment_info", [expectation], [actual])
+        # manufacturer_name is NOT_ASSERTED now (fixed), but name is still
+        # asserted and still exact-match-only, so this remains a FN.
+        assert results[0].outcome is ExtractionMatchOutcome.UNMATCHED_EXPECTED
+        assert "name" in results[0].identity_fields_used
+        assert "manufacturer_name" not in results[0].identity_fields_used
+
+    # --- 7: ContactPoint ---
+
+    def test_contact_point_partial_golden_matches_actual_with_extra_identity_fields(
+        self,
+    ) -> None:
+        expectation = ExtractionExpectationCase(
+            case_id="c1",
+            document_alias="doc",
+            entity_type=ExtractionEntityType.CONTACT_POINT,
+            scope=_SCOPE,
+            expected_fields={"value": "info@example.com"},
+        )
+        actual = _ActualEntity(
+            entity_id="cp1",
+            fields={
+                "contact_type": "email_address",
+                "value": "info@example.com",
+                "label": "General",
+                "owner_name": "Acme Corp",
+                "owner_entity_type": "manufacturer",
+            },
+        )
+        results = match_expectations_against_actuals("contact_point", [expectation], [actual])
+        assert results[0].outcome is ExtractionMatchOutcome.MATCHED
+        assert results[0].identity_fields_used == ("value",)
+
+    # --- 8: MaintenanceTask ---
+
+    def test_maintenance_task_optional_identity_fields_omission(self) -> None:
+        expectation = ExtractionExpectationCase(
+            case_id="c1",
+            document_alias="doc",
+            entity_type=ExtractionEntityType.MAINTENANCE_TASK,
+            scope=_SCOPE,
+            expected_fields={"title": "Check engine oil level"},
+        )
+        actual = _ActualEntity(
+            entity_id="t1",
+            fields={
+                "title": "Check engine oil level",
+                "description": None,
+                "interval": "1000 hours",
+                "component_name": "ENGINE OPERATIONAL MONITORING",
+                "equipment_id": None,
+            },
+        )
+        results = match_expectations_against_actuals(
+            "maintenance_task", [expectation], [actual]
+        )
+        assert results[0].outcome is ExtractionMatchOutcome.MATCHED
+        assert results[0].identity_fields_used == ("title",)
+
+    # --- 9: Procedure component_name omission ---
+
+    def test_procedure_component_name_omission(self) -> None:
+        expectation = ExtractionExpectationCase(
+            case_id="c1",
+            document_alias="doc",
+            entity_type=ExtractionEntityType.PROCEDURE,
+            scope=_SCOPE,
+            expected_fields={"title": "Additional fuel filter"},
+        )
+        actual = _ActualEntity(
+            entity_id="p1",
+            fields={
+                "title": "Additional fuel filter – Replacement",
+                "procedure_type": "replacement",
+                "steps": "Replace left filter",
+                "component_name": "Fuel Filter",
+                "equipment_id": None,
+            },
+        )
+        results = match_expectations_against_actuals("procedure", [expectation], [actual])
+        assert results[0].outcome is ExtractionMatchOutcome.MATCHED
+        assert results[0].identity_fields_used == ("title",)
+
+    # --- 10: Specification component_name omission ---
+
+    def test_specification_component_name_omission(self) -> None:
+        expectation = ExtractionExpectationCase(
+            case_id="c1",
+            document_alias="doc",
+            entity_type=ExtractionEntityType.SPECIFICATION,
+            scope=_SCOPE,
+            expected_fields={"parameter": "Tank Capacity"},
+        )
+        actual = _ActualEntity(
+            entity_id="s1",
+            fields={
+                "parameter": "Tank Capacity",
+                "value": "1200",
+                "unit": "L",
+                "component_name": "Tank",
+            },
+        )
+        results = match_expectations_against_actuals("specification", [expectation], [actual])
+        assert results[0].outcome is ExtractionMatchOutcome.MATCHED
+        assert results[0].identity_fields_used == ("parameter",)
+
+    # --- 11: MaintenanceInterval component_name omission ---
+
+    def test_maintenance_interval_component_name_omission(self) -> None:
+        expectation = ExtractionExpectationCase(
+            case_id="c1",
+            document_alias="doc",
+            entity_type=ExtractionEntityType.MAINTENANCE_INTERVAL,
+            scope=_SCOPE,
+            expected_fields={"interval": "1000 operating hours"},
+        )
+        actual = _ActualEntity(
+            entity_id="mi1",
+            fields={
+                "interval": "1000 operating hours",
+                "component_name": "Valve gear",
+                "maintenance_task_id": None,
+            },
+        )
+        results = match_expectations_against_actuals(
+            "maintenance_interval", [expectation], [actual]
+        )
+        assert results[0].outcome is ExtractionMatchOutcome.MATCHED
+        assert results[0].identity_fields_used == ("interval",)
+
+    # --- 12: TroubleshootingEntry component_name omission ---
+
+    def test_troubleshooting_entry_component_name_omission(self) -> None:
+        expectation = ExtractionExpectationCase(
+            case_id="c1",
+            document_alias="doc",
+            entity_type=ExtractionEntityType.TROUBLESHOOTING_ENTRY,
+            scope=_SCOPE,
+            expected_fields={"symptom": "Fuel temperature is too high."},
+        )
+        actual = _ActualEntity(
+            entity_id="te1",
+            fields={
+                "symptom": "Fuel temperature is too high.",
+                "cause": None,
+                "remedy": "Reduce power",
+                "component_name": "Fuel System",
+                "equipment_id": None,
+            },
+        )
+        results = match_expectations_against_actuals(
+            "troubleshooting_entry", [expectation], [actual]
+        )
+        assert results[0].outcome is ExtractionMatchOutcome.MATCHED
+        assert results[0].identity_fields_used == ("symptom",)
+
+    # --- 13: SparePart optional identity fields ---
+
+    def test_spare_part_optional_identity_fields_omission(self) -> None:
+        expectation = ExtractionExpectationCase(
+            case_id="c1",
+            document_alias="doc",
+            entity_type=ExtractionEntityType.SPARE_PART,
+            scope=_SCOPE,
+            expected_fields={"part_number": "F30379104"},
+        )
+        actual = _ActualEntity(
+            entity_id="sp1",
+            fields={
+                "part_number": "F30379104",
+                "description": "Oil filter wrench",
+                "quantity": "1",
+                "component_name": "Fuel Filter",
+                "manufacturer_name": "Acme",
+            },
+        )
+        results = match_expectations_against_actuals("spare_part", [expectation], [actual])
+        assert results[0].outcome is ExtractionMatchOutcome.MATCHED
+        assert results[0].identity_fields_used == ("part_number",)
+
+    # --- 14: Manufacturer / Supplier simple identity unchanged ---
+
+    def test_manufacturer_simple_identity_unchanged(self) -> None:
+        expectation = _expectation(ExtractionEntityType.MANUFACTURER, name="MTU Friedrichshafen GmbH")
+        actual = _ActualEntity(
+            entity_id="m1",
+            fields={"name": "MTU Friedrichshafen GmbH", "website": None, "country": "Germany"},
+        )
+        results = match_expectations_against_actuals("manufacturer", [expectation], [actual])
+        assert results[0].outcome is ExtractionMatchOutcome.MATCHED
+
+    def test_supplier_simple_identity_unchanged(self) -> None:
+        expectation = _expectation(ExtractionEntityType.SUPPLIER, name="Acme Supply Co")
+        actual = _ActualEntity(
+            entity_id="s1",
+            fields={"name": "Acme Supply Co", "website": "acme.example", "country": None},
+        )
+        results = match_expectations_against_actuals("supplier", [expectation], [actual])
+        assert results[0].outcome is ExtractionMatchOutcome.MATCHED
+
+    # --- 15: SafetyWarning unchanged ---
+
+    def test_safety_warning_behavior_unchanged(self) -> None:
+        expectation = _expectation(ExtractionEntityType.SAFETY_WARNING, message="Biohazard")
+        actual = _ActualEntity(
+            entity_id="w1",
+            fields={"warning_type": "warning", "message": "WARNING: Biohazard.", "component_name": None},
+        )
+        results = match_expectations_against_actuals("safety_warning", [expectation], [actual])
+        assert results[0].outcome is ExtractionMatchOutcome.MATCHED
+        assert results[0].identity_fields_used == ("message",)
+
+    # --- 16: ExtractedIdentifier unchanged ---
+
+    def test_extracted_identifier_behavior_unchanged(self) -> None:
+        expectation = _expectation(
+            ExtractionEntityType.EXTRACTED_IDENTIFIER,
+            raw_value="HAM2152268",
+            identifier_type="certificate_number",
+        )
+        actual_match = _ActualEntity(
+            entity_id="i1", fields={"raw_value": "HAM2152268", "identifier_type": "certificate_number"}
+        )
+        actual_wrong_type = _ActualEntity(
+            entity_id="i2", fields={"raw_value": "HAM2152268", "identifier_type": "engine_serial_number"}
+        )
+        matched = match_expectations_against_actuals(
+            "extracted_identifier", [expectation], [actual_match]
+        )
+        assert matched[0].outcome is ExtractionMatchOutcome.MATCHED
+
+        unmatched = match_expectations_against_actuals(
+            "extracted_identifier", [expectation], [actual_wrong_type]
+        )
+        assert unmatched[0].outcome is ExtractionMatchOutcome.UNMATCHED_EXPECTED
+
+    # --- 17: ambiguous-candidate detection unchanged ---
+
+    def test_ambiguous_candidate_detection_unchanged_with_narrower_identity(self) -> None:
+        """Narrowing identity to only the asserted subset must not
+        suppress ambiguity detection - if multiple actuals still equally
+        match the (now possibly narrower) effective identity, this must
+        still surface as ambiguous, not silently resolved."""
+        expectation = ExtractionExpectationCase(
+            case_id="c1",
+            document_alias="doc",
+            entity_type=ExtractionEntityType.MANUFACTURER,
+            scope=_SCOPE,
+            expected_fields={"name": "Acme"},
+        )
+        actual_a = _ActualEntity(entity_id="m1", fields={"name": "Acme", "website": None, "country": "US"})
+        actual_b = _ActualEntity(entity_id="m2", fields={"name": "Acme", "website": None, "country": "DE"})
+        results = match_expectations_against_actuals(
+            "manufacturer", [expectation], [actual_a, actual_b]
+        )
+        assert len(results) == 1
+        assert results[0].outcome is ExtractionMatchOutcome.UNMATCHED_EXPECTED
+        assert set(results[0].ambiguous_actual_entity_ids) == {"m1", "m2"}
+
+    # --- 18: differing_fields diagnostics remain sensible ---
+
+    def test_differing_fields_shows_not_asserted_field_populated_by_actual(self) -> None:
+        """A NOT_ASSERTED identity field that the actual DID populate must
+        still surface as a differing_fields diagnostic (informational),
+        even though it no longer blocks the match."""
+        expectation = ExtractionExpectationCase(
+            case_id="c1",
+            document_alias="doc",
+            entity_type=ExtractionEntityType.EQUIPMENT_INFO,
+            scope=_SCOPE,
+            expected_fields={"model_number": "20V4000M53B"},
+        )
+        actual = _ActualEntity(
+            entity_id="e1",
+            fields={
+                "name": "Marine engine-generator set with 20V4000M53B engine",
+                "model_number": "20V4000M53B",
+                "serial_number": None,
+                "manufacturer_name": "Rolls-Royce Solutions",
+            },
+        )
+        results = match_expectations_against_actuals("equipment_info", [expectation], [actual])
+        assert results[0].outcome is ExtractionMatchOutcome.MATCHED
+        assert "name" in results[0].differing_fields
+        assert "manufacturer_name" in results[0].differing_fields
+
+    def test_differing_fields_does_not_flag_explicit_null_field_that_matched(self) -> None:
+        expectation = ExtractionExpectationCase(
+            case_id="c1",
+            document_alias="doc",
+            entity_type=ExtractionEntityType.EQUIPMENT_INFO,
+            scope=_SCOPE,
+            expected_fields={"name": "Pump A", "manufacturer_name": None},
+        )
+        actual = _ActualEntity(
+            entity_id="e1",
+            fields={
+                "name": "Pump A",
+                "model_number": None,
+                "serial_number": None,
+                "manufacturer_name": None,
+            },
+        )
+        results = match_expectations_against_actuals("equipment_info", [expectation], [actual])
+        assert results[0].outcome is ExtractionMatchOutcome.MATCHED
+        assert "manufacturer_name" not in results[0].differing_fields

@@ -168,3 +168,112 @@ class TestApplicabilityCounts:
         assert counts.applicable == 1
         assert counts.not_applicable == 2
         assert counts.not_assessed == 1
+
+
+class TestMetricsUnaffectedByNarrowedIdentityFields:
+    """Test 19: PRESENCE_ONLY/EXHAUSTIVE metric semantics must be unchanged
+    by the NOT_ASSERTED-field fix - runs the REAL matcher (not a hand-built
+    ExtractionMatchResult) so the full pipeline is exercised end to end."""
+
+    def test_exhaustive_false_positive_detection_still_works_with_omitted_fields(
+        self,
+    ) -> None:
+        from src.application.evaluation.extraction.extraction_entity_type import (
+            ExtractionEntityType,
+        )
+        from src.application.evaluation.extraction.extraction_evaluation_scope import (
+            ExtractionEvaluationScope,
+        )
+        from src.application.evaluation.extraction.extraction_expectation_case import (
+            ExtractionExpectationCase,
+        )
+        from src.application.evaluation.extraction.matchers.extraction_entity_matcher import (
+            _ActualEntity,
+            match_expectations_against_actuals,
+        )
+
+        expectation = ExtractionExpectationCase(
+            case_id="c1",
+            document_alias="doc",
+            entity_type=ExtractionEntityType.MANUFACTURER,
+            scope=ExtractionEvaluationScope.whole_document(),
+            completeness=ExtractionCompleteness.EXHAUSTIVE,
+            expected_fields={"name": "Acme"},
+        )
+        matched_actual = _ActualEntity(
+            entity_id="m1", fields={"name": "Acme", "website": None, "country": None}
+        )
+        extra_actual = _ActualEntity(
+            entity_id="m2", fields={"name": "Other Co", "website": None, "country": None}
+        )
+        results = match_expectations_against_actuals(
+            "manufacturer", [expectation], [matched_actual, extra_actual]
+        )
+        keyed = [
+            (
+                ExtractionMetricsBucketKey(
+                    document_alias="doc",
+                    entity_type=match.entity_type,
+                    completeness=match.group_completeness,
+                    review_status=match.group_review_status,
+                ),
+                match,
+            )
+            for match in results
+        ]
+        buckets = aggregate_extraction_metrics(keyed)
+        bucket = next(iter(buckets.values()))
+        assert bucket.true_positive_count == 1
+        assert bucket.false_positive_count == 1
+        assert bucket.precision == 0.5
+
+    def test_presence_only_precision_stays_undefined_with_omitted_fields(self) -> None:
+        from src.application.evaluation.extraction.extraction_entity_type import (
+            ExtractionEntityType,
+        )
+        from src.application.evaluation.extraction.extraction_evaluation_scope import (
+            ExtractionEvaluationScope,
+        )
+        from src.application.evaluation.extraction.extraction_expectation_case import (
+            ExtractionExpectationCase,
+        )
+        from src.application.evaluation.extraction.matchers.extraction_entity_matcher import (
+            _ActualEntity,
+            match_expectations_against_actuals,
+        )
+
+        expectation = ExtractionExpectationCase(
+            case_id="c1",
+            document_alias="doc",
+            entity_type=ExtractionEntityType.EQUIPMENT_INFO,
+            scope=ExtractionEvaluationScope.whole_document(),
+            completeness=ExtractionCompleteness.PRESENCE_ONLY,
+            expected_fields={"model_number": "20V4000M53B"},
+        )
+        actual = _ActualEntity(
+            entity_id="e1",
+            fields={
+                "name": "Marine engine-generator set with 20V4000M53B engine",
+                "model_number": "20V4000M53B",
+                "serial_number": None,
+                "manufacturer_name": "Rolls-Royce Solutions",
+            },
+        )
+        results = match_expectations_against_actuals("equipment_info", [expectation], [actual])
+        keyed = [
+            (
+                ExtractionMetricsBucketKey(
+                    document_alias="doc",
+                    entity_type=match.entity_type,
+                    completeness=match.group_completeness,
+                    review_status=match.group_review_status,
+                ),
+                match,
+            )
+            for match in results
+        ]
+        buckets = aggregate_extraction_metrics(keyed)
+        bucket = next(iter(buckets.values()))
+        assert bucket.true_positive_count == 1
+        assert bucket.recall == 1.0
+        assert bucket.precision is None

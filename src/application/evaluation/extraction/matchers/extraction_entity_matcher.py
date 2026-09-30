@@ -20,6 +20,9 @@ from src.application.evaluation.extraction.matchers.extraction_match_result impo
     ExtractionMatchOutcome,
     ExtractionMatchResult,
 )
+from src.application.evaluation.extraction.matchers.field_assertion import (
+    effective_identity_fields,
+)
 from src.application.evaluation.extraction.matchers.field_match_modes import (
     FieldMatchMode,
     match_mode_for_field,
@@ -54,16 +57,22 @@ def _fields_match(
 
 def _identity_matches(
     expectation: ExtractionExpectationCase,
-    expected_fields: dict[str, str | None],
+    identity_fields: tuple[str, ...],
     actual: _ActualEntity,
 ) -> bool:
-    identity_field_names = expectation.identity_fields_override or (
-        ENTITY_IDENTITY_FIELD_NAMES[expectation.entity_type]
-    )
-    for field_name in identity_field_names:
+    """`identity_fields` must already be the EFFECTIVE (asserted-only)
+    subset (see `field_assertion.effective_identity_fields`) - a field this
+    expectation never mentions is not in `identity_fields` at all and is
+    never compared here, so it can never block a match. Reads the RAW
+    `expectation.expected_fields` directly (not the normalize-filled dict)
+    so an explicitly-asserted-null field's real `None` is what gets
+    compared - `_fields_match(None, actual_value, ...)` already asserts
+    "actual must also be empty" via its existing normalization semantics,
+    unchanged by this function."""
+    for field_name in identity_fields:
         mode = match_mode_for_field(expectation.entity_type, field_name)
         if not _fields_match(
-            expected_fields.get(field_name),
+            expectation.expected_fields.get(field_name),
             actual.fields.get(field_name),
             mode=mode,
         ):
@@ -89,17 +98,27 @@ def match_expectations_against_actuals(
 
     for expectation in expectations:
         entity_type = expectation.entity_type
+        # `expected_fields` here is the FILLED/normalized dict - used only
+        # for the diagnostic differing_fields comparison and the reported
+        # normalized_expected snapshot below, never for identity matching.
         expected_fields = normalize_expected_fields(
             expectation.expected_fields, entity_type
         )
-        identity_field_names = expectation.identity_fields_override or (
+        production_identity_fields = expectation.identity_fields_override or (
             ENTITY_IDENTITY_FIELD_NAMES[entity_type]
+        )
+        # effective_identity_fields = production_identity_fields ∩
+        # fields_actually_asserted_by_this_expectation - a field this
+        # expectation never mentions never blocks a match; a field
+        # explicitly asserted null still does (see field_assertion.py).
+        identity_field_names = effective_identity_fields(
+            expectation.expected_fields, production_identity_fields
         )
 
         candidates = [
             actual
             for actual in actual_entities
-            if _identity_matches(expectation, expected_fields, actual)
+            if _identity_matches(expectation, identity_field_names, actual)
         ]
 
         if not candidates:
