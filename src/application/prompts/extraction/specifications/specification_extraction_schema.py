@@ -18,4 +18,13 @@ SPECIFICATION_GUIDANCE = (
     "value from its unit when both are present. Do not extract part numbers, "
     "maintenance intervals, or safety warnings here. Omit any specification "
     "item that does not include both parameter and value.\n"
+    "A Specification is a technical parameter/value/property describing the "
+    "equipment or a component - for example: capacity, pressure, voltage, "
+    "power, dimensions, or a temperature/range, each expressed as a "
+    "value with an optional unit. A SparePart is instead a replaceable "
+    "component/item intended as a part used in or for the equipment. A "
+    "technical-data table containing parameter/value rows must not be "
+    "converted into SparePart entries merely because its cells contain "
+    "labels, numbers, or units - a parameter label such as capacity, "
+    "voltage, or power is not a part number.\n"
 )

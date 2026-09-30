@@ -7,6 +7,9 @@ from src.application.prompts.extraction.common.prompt_text_utils import (
     build_correction_notice,
     format_chunk_blocks,
 )
+from src.application.prompts.extraction.common.cross_entity_disambiguation_rules import (
+    CROSS_ENTITY_DISAMBIGUATION_RULES,
+)
 from src.application.prompts.extraction.common.shared_extraction_rules import (
     SHARED_EXTRACTION_RULES,
 )
@@ -69,6 +72,7 @@ from src.application.prompts.extraction.spare_parts.spare_part_extraction_exampl
     SPARE_PART_EXTRACTION_EXAMPLE,
 )
 from src.application.prompts.extraction.spare_parts.spare_part_extraction_schema import (
+    SPARE_PART_GUIDANCE,
     SPARE_PART_SCHEMA_TEXT,
 )
 from src.application.prompts.extraction.specifications.specification_extraction_examples import (
@@ -94,7 +98,12 @@ from src.application.prompts.extraction.troubleshooting.troubleshooting_extracti
 )
 from src.domain.document import DocumentChunk
 
-NARROWED_EXTRACTION_PROMPT_VERSION = "v1"
+# v2 (2026-09-30): production prompt improvement 1 - see
+# extraction_prompt_version.py's IDENTIFIER_EXTRACTION_PROMPT_VERSION
+# comment for the full list of semantic guidance changes this composes
+# (identifier vocabulary/contract, EquipmentInfo, Specification/SparePart/
+# tool disambiguation, cross-entity disambiguation).
+NARROWED_EXTRACTION_PROMPT_VERSION = "v2"
 
 # Fixed order the legacy combined prompt used, preserved so a fully-narrowed
 # (all-types) prompt renders identically to the legacy one.
@@ -115,15 +124,12 @@ _ORDERED_TYPES: tuple[ExtractionPromptType, ...] = (
 
 
 def _identifier_guidance() -> str:
-    return (
-        "Identifier type guidance:\n"
-        + identifier_type_guidance()
-        + "A manufacturer made the item; a supplier sold, distributed, or "
-        "provided the item but did not necessarily make it. Use the "
-        "manufacturers list for the former and the suppliers list for the "
-        "latter. If a chunk does not distinguish the two roles, prefer "
-        "manufacturers.\n"
-    )
+    # identifier_type_guidance() itself is the single authoritative source
+    # for the vocabulary, the identifier contract, AND the manufacturer-vs-
+    # supplier distinction (folded in there so legacy/combined and narrowed
+    # prompts can never drift apart again) - this wrapper only adds the
+    # structural section header.
+    return "Identifier type guidance:\n" + identifier_type_guidance()
 
 
 _FAMILY_SCHEMA: dict[ExtractionPromptType, str] = {
@@ -141,14 +147,15 @@ _FAMILY_SCHEMA: dict[ExtractionPromptType, str] = {
     ExtractionPromptType.TROUBLESHOOTING: TROUBLESHOOTING_SCHEMA_TEXT,
 }
 
-# SPARE_PART and MAINTENANCE_TASK have no dedicated guidance paragraph in
-# their modular families — their schema field names are self-explanatory.
+# MAINTENANCE_TASK has no dedicated guidance paragraph in its modular
+# family - its schema field names are self-explanatory.
 _FAMILY_GUIDANCE: dict[ExtractionPromptType, str] = {
     ExtractionPromptType.IDENTIFIER: _identifier_guidance(),
     ExtractionPromptType.MANUFACTURER: MANUFACTURER_GUIDANCE,
     ExtractionPromptType.SUPPLIER: SUPPLIER_GUIDANCE,
     ExtractionPromptType.CONTACT_POINT: CONTACT_POINT_GUIDANCE,
     ExtractionPromptType.EQUIPMENT: EQUIPMENT_GUIDANCE,
+    ExtractionPromptType.SPARE_PART: SPARE_PART_GUIDANCE,
     ExtractionPromptType.SPECIFICATION: SPECIFICATION_GUIDANCE,
     ExtractionPromptType.MAINTENANCE_INTERVAL: MAINTENANCE_INTERVAL_GUIDANCE,
     ExtractionPromptType.PROCEDURE: PROCEDURE_GUIDANCE,
@@ -227,6 +234,11 @@ class ExtractionNarrowedPromptBuilder:
             if entity_type in _FAMILY_EXAMPLE
         )
 
+        # Included whenever any family is requested - the same cross-entity
+        # semantic rules must apply whether narrowing requests a subset or
+        # the full/all-entity prompt (never solved in only one path).
+        cross_entity_body = CROSS_ENTITY_DISAMBIGUATION_RULES if ordered else ""
+
         return (
             build_correction_notice(previous_error)
             + SHARED_EXTRACTION_RULES
@@ -236,6 +248,7 @@ class ExtractionNarrowedPromptBuilder:
             '  "requires_human_review": <true or false>,\n'
             f"{schema_body}"
             "}\n"
+            f"{cross_entity_body}"
             f"{guidance_body}"
             f"{examples_body}"
             f"Allowed chunk_id values (use one of these EXACTLY, or null): {allowed_chunk_ids(chunks)}\n"

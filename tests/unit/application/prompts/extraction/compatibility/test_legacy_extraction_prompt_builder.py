@@ -33,8 +33,65 @@ def test_legacy_builder_still_returns_a_combined_prompt_string(sample_chunk) -> 
     assert '"identifiers": [' in prompt
     assert "Only emit an array item when the required evidence fields for that entity are present." in prompt
     assert "For identifiers: if raw_value is missing, omit the item instead of returning only identifier_type." in prompt
-    assert "do not emit menu names, chapter numbers, parameter labels" in prompt
-    assert "For specifications: omit any item that does not include both parameter and value." in prompt
+    assert "Do not emit menu names, chapter numbers, parameter labels" in prompt
+    assert "Omit any specification item that does not include both parameter and value." in prompt
+
+
+def test_legacy_builder_uses_the_live_identifier_type_enum_not_a_hardcoded_list(
+    sample_chunk,
+) -> None:
+    from src.domain.common.enums import IdentifierType
+
+    builder = LegacyExtractionPromptBuilder()
+
+    prompt = builder.build(sample_chunk.document_id, [sample_chunk])
+
+    for member in IdentifierType:
+        assert f'"{member.value}"' in prompt
+
+    stale_hardcoded_vocabulary = (
+        "part_number|serial_number|model_number|certificate_number|"
+        "drawing_number|component_code|manufacturer_name|supplier_name|unknown"
+    )
+    assert stale_hardcoded_vocabulary not in prompt
+
+
+def test_legacy_builder_includes_equipment_guidance(sample_chunk) -> None:
+    builder = LegacyExtractionPromptBuilder()
+
+    prompt = builder.build(sample_chunk.document_id, [sample_chunk])
+
+    assert "name, model_number, serial_number, and manufacturer_name are different" in prompt
+    assert "Project numbers, order numbers, and document numbers are NOT serial" in prompt
+
+
+def test_legacy_builder_includes_spare_part_tool_disambiguation_guidance(
+    sample_chunk,
+) -> None:
+    builder = LegacyExtractionPromptBuilder()
+
+    prompt = builder.build(sample_chunk.document_id, [sample_chunk])
+
+    assert "Do not classify tools, special tools, measuring equipment" in prompt
+
+
+def test_legacy_builder_includes_cross_entity_disambiguation_rules(sample_chunk) -> None:
+    builder = LegacyExtractionPromptBuilder()
+
+    prompt = builder.build(sample_chunk.document_id, [sample_chunk])
+
+    assert "Before emitting an entity, determine what ROLE the source value plays" in prompt
+
+
+def test_legacy_builder_excludes_prompt_metadata_ids_from_identifier_guidance(
+    sample_chunk,
+) -> None:
+    builder = LegacyExtractionPromptBuilder()
+
+    prompt = builder.build(sample_chunk.document_id, [sample_chunk])
+
+    assert "they are prompt metadata for you to read, not document identifiers" in prompt
+    assert "never emit a chunk id, document id, or any internal system id" in prompt
 
 
 def test_combined_builder_preserves_legacy_prompt_output(sample_chunk) -> None:

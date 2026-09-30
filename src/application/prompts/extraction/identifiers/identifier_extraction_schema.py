@@ -28,6 +28,11 @@ def identifier_type_pipe_values() -> str:
 
 
 def identifier_type_guidance() -> str:
+    """The single authoritative identifier-contract text, used by EVERY
+    production prompt path (legacy/combined and narrowed) - never
+    duplicated or hand-copied elsewhere. The vocabulary list is generated
+    from the live `IdentifierType` enum (never hardcoded), so a new member
+    added to that enum appears here automatically in both prompt paths."""
     lines = []
     for member in IdentifierType:
         description = _IDENTIFIER_TYPE_DESCRIPTIONS.get(
@@ -35,16 +40,47 @@ def identifier_type_guidance() -> str:
         )
         lines.append(f'- "{member.value}": {description}\n')
     lines.append(
-        "- Emit an identifier only when raw_value is present exactly in the chunk text.\n"
+        "- raw_value MUST contain the literal identifier value exactly as "
+        "it appears in the chunk text - never a description, label, or "
+        "paraphrase of it.\n"
     )
     lines.append(
-        "- If the identifier type is known but the exact raw_value is missing, omit the item instead of returning a partial object.\n"
+        "- If there is no literal identifier value in the text, do not "
+        "emit the identifier at all - omit the item instead of returning "
+        "a partial object.\n"
     )
     lines.append(
-        '- Never use placeholder labels such as "Document ID" or "Chunk ID" unless that exact text is the real identifier value in the chunk.\n'
+        "- identifier_type MUST be exactly one of the values listed above. "
+        "Never invent a new identifier_type label that is not in this "
+        "list.\n"
     )
     lines.append(
-        "- Do not emit menu names, chapter numbers, parameter labels, display-message text, or internal system ids such as chunk_* or doc_* as identifiers; omit them instead.\n"
+        '- Never use placeholder/metadata labels such as "Document ID", '
+        '"Chunk ID", "Section ID", or "Section Path" as an identifier '
+        "value, unless that exact text is itself the real identifier "
+        "printed in the chunk.\n"
+    )
+    lines.append(
+        "- The chunk id, document id, and section path shown in this "
+        "prompt's own metadata (the Chunk id / Section path lines below) "
+        "describe where the text came from - they are prompt metadata for "
+        "you to read, not document identifiers to extract.\n"
+    )
+    lines.append(
+        "- source_chunk_id is provenance metadata for this response only - "
+        "never emit a chunk id, document id, or any internal system id "
+        "(e.g. chunk_*, doc_*) as an identifier's raw_value.\n"
+    )
+    lines.append(
+        "- Do not emit menu names, chapter numbers, parameter labels, or "
+        "display-message text as identifiers; omit them instead.\n"
+    )
+    lines.append(
+        "- A manufacturer made the item; a supplier sold, distributed, or "
+        "provided the item but did not necessarily make it. Use the "
+        "manufacturers list for the former and the suppliers list for the "
+        "latter. If a chunk does not distinguish the two roles, prefer "
+        "manufacturers.\n"
     )
     return "".join(lines)
 

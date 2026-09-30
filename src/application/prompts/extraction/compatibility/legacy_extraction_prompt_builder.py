@@ -1,6 +1,22 @@
 from src.application.prompts.common import PromptMetadata
+from src.application.prompts.extraction.common.cross_entity_disambiguation_rules import (
+    CROSS_ENTITY_DISAMBIGUATION_RULES,
+)
+from src.application.prompts.extraction.equipment.equipment_extraction_schema import (
+    EQUIPMENT_GUIDANCE,
+)
 from src.application.prompts.extraction.extraction_prompt_version import (
     IDENTIFIER_EXTRACTION_PROMPT_VERSION,
+)
+from src.application.prompts.extraction.identifiers.identifier_extraction_schema import (
+    identifier_schema_text,
+    identifier_type_guidance,
+)
+from src.application.prompts.extraction.spare_parts.spare_part_extraction_schema import (
+    SPARE_PART_GUIDANCE,
+)
+from src.application.prompts.extraction.specifications.specification_extraction_schema import (
+    SPECIFICATION_GUIDANCE,
 )
 from src.domain.document import DocumentChunk
 
@@ -15,6 +31,14 @@ class LegacyExtractionPromptBuilder:
     imports and call sites keep working unchanged. New code should use the
     per-family builders under identifiers/, manufacturers/, suppliers/, etc.
     via ExtractionPromptFactory instead.
+
+    The identifier vocabulary/contract and the EquipmentInfo/Specification/
+    SparePart/cross-entity semantic guidance are imported from the SAME
+    shared modules `ExtractionNarrowedPromptBuilder` uses (never
+    hand-copied here), so the full and narrowed prompt paths cannot drift
+    apart on these semantics again - see the "production prompt
+    improvement 1" version-bump comment on
+    IDENTIFIER_EXTRACTION_PROMPT_VERSION for the full change list.
     """
 
     prompt_version = IDENTIFIER_EXTRACTION_PROMPT_VERSION
@@ -170,30 +194,12 @@ class LegacyExtractionPromptBuilder:
             '      "requires_human_review": <true or false>\n'
             "    }\n"
             "  ],\n"
-            '  "identifiers": [\n'
-            "    {\n"
-            '      "raw_value": "<exact string as it appears in text>",\n'
-            '      "identifier_type": "part_number|serial_number|model_number|certificate_number|drawing_number|component_code|manufacturer_name|supplier_name|unknown",\n'
-            '      "source_chunk_id": "<chunk id or null>",\n'
-            '      "confidence_score": <float between 0 and 1 or null>,\n'
-            '      "requires_human_review": <true or false>\n'
-            "    }\n"
-            "  ]\n"
+            f"{identifier_schema_text()}"
             "}\n"
+            f"{CROSS_ENTITY_DISAMBIGUATION_RULES}"
+            f"{EQUIPMENT_GUIDANCE}"
             "Identifier type guidance:\n"
-            '- "part_number": P/N codes, part numbers, order numbers (e.g. HP-001, 4321-A).\n'
-            '- "serial_number": S/N codes, unit serial numbers (e.g. SN-1234, SER-2024-001).\n'
-            '- "model_number": Model designations for equipment (e.g. FWC-12, Model 500).\n'
-            '- "certificate_number": ISO, IEC, EN, ATEX, CERT numbers (e.g. ISO 9001, ATEX II 2G).\n'
-            '- "drawing_number": DRG or DWG references (e.g. DRG-1234, DWG 500).\n'
-            '- "component_code": Order codes, component codes, tag numbers (e.g. TAG-42, OC-8800).\n'
-            '- "manufacturer_name": Manufacturer or OEM names not captured in the manufacturers list.\n'
-            '- "supplier_name": Supplier, vendor, or distributor names not captured in the suppliers list.\n'
-            '- "unknown": Any identifier that does not fit the types above.\n'
-            "A manufacturer made the item; a supplier sold, distributed, or provided the item "
-            "but did not necessarily make it. Use the manufacturers list for the former and "
-            "the suppliers list for the latter. If a chunk does not distinguish the two roles, "
-            "prefer manufacturers.\n"
+            f"{identifier_type_guidance()}"
             "Contact points are organization contact channels such as phone numbers, fax numbers, "
             "email addresses, and websites. When a chunk clearly ties a contact value to a "
             'manufacturer or supplier, set owner_name and owner_entity_type ("manufacturer" or '
@@ -208,8 +214,8 @@ class LegacyExtractionPromptBuilder:
             "operation, startup, shutdown, calibration, testing, troubleshooting, safety, "
             "cleaning_flushing, assembly_disassembly, storage_preservation, decommissioning. "
             'Use "unknown" only if none of the other categories fit.\n'
-            "Specifications are technical parameter/value pairs (e.g. parameter=\"Pressure "
-            "rating\", value=\"16\", unit=\"bar\") — split the numeric value from its unit.\n"
+            f"{SPECIFICATION_GUIDANCE}"
+            f"{SPARE_PART_GUIDANCE}"
             "Safety warnings are explicit hazards or cautionary notes. warning_type severity: "
             '"danger" (immediate serious hazard), "warning" (potential serious hazard), '
             '"caution" (minor/moderate hazard), "note" (non-hazard advisory); default to '
@@ -240,9 +246,6 @@ class LegacyExtractionPromptBuilder:
             "- Only emit an array item when the required evidence fields for that entity are present.\n"
             "- If an item is missing its required fields, omit the item entirely instead of returning a partial object.\n"
             "- For identifiers: if raw_value is missing, omit the item instead of returning only identifier_type.\n"
-            '- Never use placeholder labels such as "Document ID" or "Chunk ID" unless that exact text is the real identifier value in the chunk.\n'
-            "- For identifiers: do not emit menu names, chapter numbers, parameter labels, display-message text, or internal system ids such as chunk_* or doc_*; omit them instead.\n"
-            "- For specifications: omit any item that does not include both parameter and value.\n"
             f"Allowed chunk_id values (use one of these EXACTLY, or null): {allowed_chunk_ids}\n"
             f"Document id: {document_id}\n"
             "Chunks:\n"
