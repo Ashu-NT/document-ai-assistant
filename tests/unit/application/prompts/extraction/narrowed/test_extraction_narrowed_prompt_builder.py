@@ -201,9 +201,10 @@ def test_narrowed_prompt_includes_spare_part_tool_disambiguation_only_when_reque
         requested_types=frozenset({ExtractionPromptType.TROUBLESHOOTING}),
     )
 
-    assert "Do not classify tools, special tools, measuring equipment" in with_spare_part
+    assert "Tools, measuring/lifting equipment, and consumables are not SparePart" in with_spare_part
     assert (
-        "Do not classify tools, special tools, measuring equipment" not in without_spare_part
+        "Tools, measuring/lifting equipment, and consumables are not SparePart"
+        not in without_spare_part
     )
 
 
@@ -218,7 +219,7 @@ def test_narrowed_prompt_specification_guidance_disambiguates_from_spare_part(
         requested_types=frozenset({ExtractionPromptType.SPECIFICATION}),
     )
 
-    assert "a parameter label such as capacity, voltage, or power is not a part number" in prompt
+    assert "a parameter/value table row is not a part merely because" in prompt
 
 
 def test_narrowed_prompt_includes_cross_entity_disambiguation_when_any_type_requested(
@@ -232,7 +233,7 @@ def test_narrowed_prompt_includes_cross_entity_disambiguation_when_any_type_requ
         requested_types=frozenset({ExtractionPromptType.TROUBLESHOOTING}),
     )
 
-    assert "Before emitting an entity, determine what ROLE the source value plays" in prompt
+    assert "Classify by ROLE, not by shape" in prompt
 
 
 def test_narrowed_identifier_guidance_excludes_prompt_metadata_ids(sample_chunk) -> None:
@@ -244,8 +245,8 @@ def test_narrowed_identifier_guidance_excludes_prompt_metadata_ids(sample_chunk)
         requested_types=frozenset({ExtractionPromptType.IDENTIFIER}),
     )
 
-    assert "they are prompt metadata for you to read, not document identifiers" in prompt
-    assert "never emit a chunk id, document id, or any internal system id" in prompt
+    assert "Metadata labels (Document ID, Chunk ID, Section ID/Path)" in prompt
+    assert "internal ids (chunk_*, doc_*, source_chunk_id) are context, not identifiers" in prompt
 
 
 def test_full_and_narrowed_prompt_paths_share_identical_identifier_guidance(
@@ -370,5 +371,5 @@ def test_narrowed_prompt_unrelated_types_omit_unrequested_family_guidance(
     )
 
     assert "name, model_number, serial_number, and manufacturer_name are different" not in prompt
-    assert "Do not classify tools, special tools, measuring equipment" not in prompt
-    assert "a parameter label such as capacity, voltage, or power is not a part number" not in prompt
+    assert "Tools, measuring/lifting equipment, and consumables are not SparePart" not in prompt
+    assert "a parameter/value table row is not a part merely because" not in prompt

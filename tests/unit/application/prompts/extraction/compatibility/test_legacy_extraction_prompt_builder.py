@@ -33,7 +33,7 @@ def test_legacy_builder_still_returns_a_combined_prompt_string(sample_chunk) -> 
     assert '"identifiers": [' in prompt
     assert "Only emit an array item when the required evidence fields for that entity are present." in prompt
     assert "For identifiers: if raw_value is missing, omit the item instead of returning only identifier_type." in prompt
-    assert "Do not emit menu names, chapter numbers, parameter labels" in prompt
+    assert "menu names, chapter numbers, parameter labels" in prompt
     assert "Omit any specification item that does not include both parameter and value." in prompt
 
 
@@ -62,7 +62,7 @@ def test_legacy_builder_includes_equipment_guidance(sample_chunk) -> None:
     prompt = builder.build(sample_chunk.document_id, [sample_chunk])
 
     assert "name, model_number, serial_number, and manufacturer_name are different" in prompt
-    assert "Project numbers, order numbers, and document numbers are NOT serial" in prompt
+    assert "not a model or serial number unless explicitly given that role" in prompt
 
 
 def test_legacy_builder_includes_spare_part_tool_disambiguation_guidance(
@@ -72,7 +72,7 @@ def test_legacy_builder_includes_spare_part_tool_disambiguation_guidance(
 
     prompt = builder.build(sample_chunk.document_id, [sample_chunk])
 
-    assert "Do not classify tools, special tools, measuring equipment" in prompt
+    assert "Tools, measuring/lifting equipment, and consumables are not SparePart" in prompt
 
 
 def test_legacy_builder_includes_cross_entity_disambiguation_rules(sample_chunk) -> None:
@@ -80,7 +80,7 @@ def test_legacy_builder_includes_cross_entity_disambiguation_rules(sample_chunk)
 
     prompt = builder.build(sample_chunk.document_id, [sample_chunk])
 
-    assert "Before emitting an entity, determine what ROLE the source value plays" in prompt
+    assert "Classify by ROLE, not by shape" in prompt
 
 
 def test_legacy_builder_excludes_prompt_metadata_ids_from_identifier_guidance(
@@ -90,8 +90,8 @@ def test_legacy_builder_excludes_prompt_metadata_ids_from_identifier_guidance(
 
     prompt = builder.build(sample_chunk.document_id, [sample_chunk])
 
-    assert "they are prompt metadata for you to read, not document identifiers" in prompt
-    assert "never emit a chunk id, document id, or any internal system id" in prompt
+    assert "Metadata labels (Document ID, Chunk ID, Section ID/Path)" in prompt
+    assert "internal ids (chunk_*, doc_*, source_chunk_id) are context, not identifiers" in prompt
 
 
 def test_combined_builder_preserves_legacy_prompt_output(sample_chunk) -> None:

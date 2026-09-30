@@ -48,7 +48,7 @@ def test_identifier_builder_requires_exact_raw_value_and_blocks_placeholders(
 
     prompt = builder.build(sample_chunk.document_id, [sample_chunk])
 
-    assert "raw_value MUST contain the literal identifier value exactly as" in prompt
-    assert "omit the item instead of returning a partial object" in prompt
-    assert 'placeholder/metadata labels such as "Document ID"' in prompt
-    assert "Do not emit menu names, chapter numbers, parameter labels" in prompt
+    assert "raw_value = literal text from the chunk" in prompt
+    assert "omit the item if no literal value exists" in prompt
+    assert "Metadata labels (Document ID, Chunk ID, Section ID/Path)" in prompt
+    assert "menu names, chapter numbers, parameter labels" in prompt
