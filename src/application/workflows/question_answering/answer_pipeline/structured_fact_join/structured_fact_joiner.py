@@ -196,7 +196,7 @@ class StructuredFactJoiner:
             retrieval_intent=analyzed_query.detected_intent,
             chunk_type_preferences=analyzed_query.chunk_types,
             approved_chunks=prepared_chunks,
-            legacy_query_intent=analyzed_query.detected_intent,
+            fallback_query_intent=analyzed_query.detected_intent,
             route=QuestionAnsweringRoute.RETRIEVAL_QA.value,
         )
 

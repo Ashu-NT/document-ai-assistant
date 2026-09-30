@@ -29,7 +29,7 @@ def identifier_type_pipe_values() -> str:
 
 def identifier_type_guidance() -> str:
     """The single authoritative identifier-contract text, used by EVERY
-    production prompt path (legacy/combined and narrowed) - never
+    production prompt path (full/combined and narrowed) - never
     duplicated or hand-copied elsewhere. The vocabulary list is generated
     from the live `IdentifierType` enum (never hardcoded), so a new member
     added to that enum appears here automatically in both prompt paths.

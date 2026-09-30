@@ -1,13 +1,12 @@
-from src.application.prompts.extraction.compatibility.legacy_extraction_prompt_builder import (
-    LegacyExtractionPromptBuilder,
+from src.application.prompts.extraction.full.full_extraction_prompt_builder import (
+    FullExtractionPromptBuilder,
 )
 
 
-class CombinedExtractionPromptBuilder(LegacyExtractionPromptBuilder):
+class CombinedExtractionPromptBuilder(FullExtractionPromptBuilder):
     """Explicit combined extraction prompt builder for the live extraction workflow.
 
-    The behavior intentionally stays identical to the legacy combined prompt so
+    The behavior intentionally stays identical to FullExtractionPromptBuilder so
     we preserve extraction output stability while making the active workflow
-    dependency explicit and easier to evolve independently from compatibility
-    aliases.
+    dependency's type explicit and easier to evolve independently.
     """

@@ -105,8 +105,8 @@ from src.domain.document import DocumentChunk
 # tool disambiguation, cross-entity disambiguation).
 NARROWED_EXTRACTION_PROMPT_VERSION = "v2"
 
-# Fixed order the legacy combined prompt used, preserved so a fully-narrowed
-# (all-types) prompt renders identically to the legacy one.
+# Fixed order the full combined prompt used, preserved so a fully-narrowed
+# (all-types) prompt renders identically to the full-prompt one.
 _ORDERED_TYPES: tuple[ExtractionPromptType, ...] = (
     ExtractionPromptType.MAINTENANCE_TASK,
     ExtractionPromptType.SPARE_PART,
@@ -126,7 +126,7 @@ _ORDERED_TYPES: tuple[ExtractionPromptType, ...] = (
 def _identifier_guidance() -> str:
     # identifier_type_guidance() itself is the single authoritative source
     # for the vocabulary, the identifier contract, AND the manufacturer-vs-
-    # supplier distinction (folded in there so legacy/combined and narrowed
+    # supplier distinction (folded in there so full/combined and narrowed
     # prompts can never drift apart again) - this wrapper only adds the
     # structural section header.
     return "Identifier type guidance:\n" + identifier_type_guidance()
@@ -186,7 +186,7 @@ class ExtractionNarrowedPromptBuilder:
     example text each modular per-family builder (procedures/,
     troubleshooting/, safety/, etc.) already owns — no duplicated prompt
     copy. When requested_types covers every family, the output is
-    equivalent to LegacyExtractionPromptBuilder's combined prompt (same
+    equivalent to FullExtractionPromptBuilder's combined prompt (same
     families, same order), just assembled from the modular pieces instead
     of one hardcoded string.
 

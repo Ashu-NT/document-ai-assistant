@@ -15,8 +15,8 @@ from src.application.prompts.common import (
 )
 from src.application.prompts.extraction import (
     CombinedExtractionPromptBuilder,
+    FullExtractionPromptBuilder,
     IDENTIFIER_EXTRACTION_PROMPT_VERSION,
-    IdentifierExtractionPromptBuilder,
 )
 from src.application.prompts.question_generation import (
     QUESTION_PROMPT_VERSION,
@@ -33,8 +33,8 @@ __all__ = [
     "DOCUMENT_CLASSIFICATION_PROMPT_VERSION",
     "DocumentClassificationPromptBuilder",
     "DocumentClassificationSummaryBuilder",
+    "FullExtractionPromptBuilder",
     "IDENTIFIER_EXTRACTION_PROMPT_VERSION",
-    "IdentifierExtractionPromptBuilder",
     "PromptMetadata",
     "QUESTION_PROMPT_VERSION",
     "QuestionPromptBuilder",

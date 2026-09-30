@@ -200,7 +200,7 @@ Plus two `agent_runtime`-scoped shared modules (used by the `console_presenter.p
 | `infrastructure/db/repositories/extraction/extraction_repository.py` (270) | **Do not split** (also now **[EXEMPT — ≤300 LOC threshold]**) — pure facade wiring 13 readers + 1 writer to a ~25-method contract; long because the contract is long, not because it does multiple things. |
 | `infrastructure/retrieval/rerankers/deterministic_hybrid_reranker.py` (308) | `deterministic/deterministic_hybrid_reranker.py` (slimmed, ~90), `deterministic/reranker_metadata_extractors.py`, `deterministic/chunk_role_scorer.py`, `deterministic/intent_chunk_type_scorer.py`, `deterministic/reranker_noise_penalty.py` (Still over the new 300 LOC threshold — not exempt.) |
 | `guardrails/services/post_response_guardrail_service.py` (255) | **Light split only** (also now **[EXEMPT — ≤300 LOC threshold]**, kept as optional) — `post_response/answer_sanitizer.py`. Splitting each check block further is possible but judged lower-value — each runs once, in a fixed order, with early-return semantics that would need threading the same trace/context through every extracted function. |
-| `prompts/extraction/compatibility/legacy_extraction_prompt_builder.py` (291) | **[EXEMPT — ≤300 LOC threshold]** Conservative split (the literal prompt-schema string stays untouched per the file's own documented byte-compatibility commitment) kept as optional future reference: `legacy_extraction_chunk_formatter.py`, `legacy_extraction_correction_notice.py` |
+| `prompts/extraction/full/full_extraction_prompt_builder.py` (291) | **[EXEMPT — ≤300 LOC threshold]** Conservative split (the literal prompt-schema string is one cohesive block) kept as optional future reference: `full_extraction_chunk_formatter.py`, `full_extraction_correction_notice.py` |
 
 ## 5. Phased Execution Plan
 
@@ -329,7 +329,7 @@ These were noticed while reading files for the structural analysis above. None a
 - `infrastructure/db/repositories/extraction/extraction_repository.py` — a facade whose length matches its contract's method count, not multiple responsibilities.
 - `.../families/datasheet_structured_family_builder.py` and `.../families/manual_structured_family_builder.py` — each is one declarative responsibility (window-spec declaration) bloated by repetition, not by mixed concerns; split lightly (gate vs. data) rather than fragmented further.
 - `guardrails/services/post_response_guardrail_service.py` — one ordered, early-return decision pipeline; only the pure-text sanitizer step was worth pulling out.
-- `prompts/extraction/compatibility/legacy_extraction_prompt_builder.py` — the prompt-schema string itself is a documented, frozen compatibility artifact; only its two pure helper methods were split out.
+- `prompts/extraction/full/full_extraction_prompt_builder.py` — the prompt-schema string itself is one cohesive block (the active all-entity extraction prompt); only its two pure helper methods were split out.
 
 ## 8. Open Questions for the Team
 

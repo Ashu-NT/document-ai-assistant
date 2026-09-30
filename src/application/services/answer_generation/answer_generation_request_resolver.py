@@ -89,6 +89,6 @@ class AnswerGenerationRequestResolver:
             retrieval_intent=request.retrieval_intent,
             chunk_type_preferences=request.chunk_type_preferences,
             approved_chunks=context_chunks,
-            legacy_query_intent=request.query_intent,
+            fallback_query_intent=request.query_intent,
             route=request.route,
         )

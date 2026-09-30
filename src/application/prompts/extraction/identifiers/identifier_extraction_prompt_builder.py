@@ -24,10 +24,10 @@ IDENTIFIER_EXTRACTION_PROMPT_VERSION = "v1"
 class IdentifierExtractionPromptBuilder:
     """Modular, identifier-only prompt builder.
 
-    Distinct from the package root's ``IdentifierExtractionPromptBuilder``
-    (the legacy combined builder) — that name is preserved at the package
-    root purely for import-path backward compatibility and points at
-    ``compatibility.LegacyExtractionPromptBuilder`` instead of this class.
+    Used by EXTRACTION_PROMPT_REGISTRY (per-family builders) and by
+    ExtractionNarrowedPromptBuilder for the IDENTIFIER family. Distinct
+    from ``FullExtractionPromptBuilder``, which extracts identifiers as
+    one part of a single large combined-entity prompt.
     """
 
     prompt_version = IDENTIFIER_EXTRACTION_PROMPT_VERSION

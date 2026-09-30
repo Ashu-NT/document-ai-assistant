@@ -43,7 +43,7 @@ class AnswerIntentAnalyzer:
         retrieval_intent: str | None = None,
         chunk_type_preferences: Sequence[ChunkType] | None = None,
         approved_chunks: Sequence[RetrievedChunk] | None = None,
-        legacy_query_intent: str | None = None,
+        fallback_query_intent: str | None = None,
         route: str | None = None,
     ) -> AnswerIntentDecision:
         normalized_question = normalize_text(question)
@@ -56,7 +56,7 @@ class AnswerIntentAnalyzer:
         apply_question_signals(normalized_question, scores, matched)
         apply_route_signal(route, scores, matched)
         apply_retrieval_intent_signal(
-            retrieval_intent or legacy_query_intent,
+            retrieval_intent or fallback_query_intent,
             scores,
             matched,
         )

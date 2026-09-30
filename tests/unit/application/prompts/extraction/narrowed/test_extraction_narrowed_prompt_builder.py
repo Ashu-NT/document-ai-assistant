@@ -37,7 +37,7 @@ def test_narrowed_prompt_schema_block_joins_families_with_correct_commas(
     sample_chunk,
 ) -> None:
     # The schema block is illustrative pseudo-JSON (unquoted <placeholder>
-    # tokens, "..." ellipsis markers) even in the original legacy prompt —
+    # tokens, "..." ellipsis markers) even in the original full prompt —
     # never meant to be strictly parsed. What actually matters here is that
     # merging multiple families' schema blocks into one object places
     # exactly one comma between each family's closing "]" and the next
@@ -70,7 +70,7 @@ def test_narrowed_prompt_schema_block_joins_families_with_correct_commas(
     assert "]\n  \"" not in schema_text  # a join missing its comma
 
 
-def test_narrowed_prompt_with_all_types_matches_legacy_family_set(sample_chunk) -> None:
+def test_narrowed_prompt_with_all_types_matches_full_family_set(sample_chunk) -> None:
     builder = ExtractionNarrowedPromptBuilder()
 
     prompt = builder.build(
@@ -252,8 +252,8 @@ def test_narrowed_identifier_guidance_excludes_prompt_metadata_ids(sample_chunk)
 def test_full_and_narrowed_prompt_paths_share_identical_identifier_guidance(
     sample_chunk,
 ) -> None:
-    from src.application.prompts.extraction.compatibility.legacy_extraction_prompt_builder import (
-        LegacyExtractionPromptBuilder,
+    from src.application.prompts.extraction.full.full_extraction_prompt_builder import (
+        FullExtractionPromptBuilder,
     )
     from src.application.prompts.extraction.identifiers.identifier_extraction_schema import (
         identifier_type_guidance,
@@ -264,18 +264,18 @@ def test_full_and_narrowed_prompt_paths_share_identical_identifier_guidance(
         [sample_chunk],
         requested_types=frozenset({ExtractionPromptType.IDENTIFIER}),
     )
-    legacy = LegacyExtractionPromptBuilder().build(sample_chunk.document_id, [sample_chunk])
+    full = FullExtractionPromptBuilder().build(sample_chunk.document_id, [sample_chunk])
 
     shared_guidance = identifier_type_guidance()
     assert shared_guidance in narrowed
-    assert shared_guidance in legacy
+    assert shared_guidance in full
 
 
 def test_full_and_narrowed_prompt_paths_share_identical_equipment_guidance(
     sample_chunk,
 ) -> None:
-    from src.application.prompts.extraction.compatibility.legacy_extraction_prompt_builder import (
-        LegacyExtractionPromptBuilder,
+    from src.application.prompts.extraction.full.full_extraction_prompt_builder import (
+        FullExtractionPromptBuilder,
     )
     from src.application.prompts.extraction.equipment.equipment_extraction_schema import (
         EQUIPMENT_GUIDANCE,
@@ -286,17 +286,17 @@ def test_full_and_narrowed_prompt_paths_share_identical_equipment_guidance(
         [sample_chunk],
         requested_types=frozenset({ExtractionPromptType.EQUIPMENT}),
     )
-    legacy = LegacyExtractionPromptBuilder().build(sample_chunk.document_id, [sample_chunk])
+    full = FullExtractionPromptBuilder().build(sample_chunk.document_id, [sample_chunk])
 
     assert EQUIPMENT_GUIDANCE in narrowed
-    assert EQUIPMENT_GUIDANCE in legacy
+    assert EQUIPMENT_GUIDANCE in full
 
 
 def test_full_and_narrowed_prompt_paths_share_identical_spare_part_guidance(
     sample_chunk,
 ) -> None:
-    from src.application.prompts.extraction.compatibility.legacy_extraction_prompt_builder import (
-        LegacyExtractionPromptBuilder,
+    from src.application.prompts.extraction.full.full_extraction_prompt_builder import (
+        FullExtractionPromptBuilder,
     )
     from src.application.prompts.extraction.spare_parts.spare_part_extraction_schema import (
         SPARE_PART_GUIDANCE,
@@ -307,17 +307,17 @@ def test_full_and_narrowed_prompt_paths_share_identical_spare_part_guidance(
         [sample_chunk],
         requested_types=frozenset({ExtractionPromptType.SPARE_PART}),
     )
-    legacy = LegacyExtractionPromptBuilder().build(sample_chunk.document_id, [sample_chunk])
+    full = FullExtractionPromptBuilder().build(sample_chunk.document_id, [sample_chunk])
 
     assert SPARE_PART_GUIDANCE in narrowed
-    assert SPARE_PART_GUIDANCE in legacy
+    assert SPARE_PART_GUIDANCE in full
 
 
 def test_full_and_narrowed_prompt_paths_share_identical_specification_guidance(
     sample_chunk,
 ) -> None:
-    from src.application.prompts.extraction.compatibility.legacy_extraction_prompt_builder import (
-        LegacyExtractionPromptBuilder,
+    from src.application.prompts.extraction.full.full_extraction_prompt_builder import (
+        FullExtractionPromptBuilder,
     )
     from src.application.prompts.extraction.specifications.specification_extraction_schema import (
         SPECIFICATION_GUIDANCE,
@@ -328,10 +328,10 @@ def test_full_and_narrowed_prompt_paths_share_identical_specification_guidance(
         [sample_chunk],
         requested_types=frozenset({ExtractionPromptType.SPECIFICATION}),
     )
-    legacy = LegacyExtractionPromptBuilder().build(sample_chunk.document_id, [sample_chunk])
+    full = FullExtractionPromptBuilder().build(sample_chunk.document_id, [sample_chunk])
 
     assert SPECIFICATION_GUIDANCE in narrowed
-    assert SPECIFICATION_GUIDANCE in legacy
+    assert SPECIFICATION_GUIDANCE in full
 
 
 def test_full_and_narrowed_prompt_paths_share_identical_cross_entity_rules(
@@ -340,8 +340,8 @@ def test_full_and_narrowed_prompt_paths_share_identical_cross_entity_rules(
     from src.application.prompts.extraction.common.cross_entity_disambiguation_rules import (
         CROSS_ENTITY_DISAMBIGUATION_RULES,
     )
-    from src.application.prompts.extraction.compatibility.legacy_extraction_prompt_builder import (
-        LegacyExtractionPromptBuilder,
+    from src.application.prompts.extraction.full.full_extraction_prompt_builder import (
+        FullExtractionPromptBuilder,
     )
 
     narrowed = ExtractionNarrowedPromptBuilder().build(
@@ -349,10 +349,10 @@ def test_full_and_narrowed_prompt_paths_share_identical_cross_entity_rules(
         [sample_chunk],
         requested_types=frozenset({ExtractionPromptType.TROUBLESHOOTING}),
     )
-    legacy = LegacyExtractionPromptBuilder().build(sample_chunk.document_id, [sample_chunk])
+    full = FullExtractionPromptBuilder().build(sample_chunk.document_id, [sample_chunk])
 
     assert CROSS_ENTITY_DISAMBIGUATION_RULES in narrowed
-    assert CROSS_ENTITY_DISAMBIGUATION_RULES in legacy
+    assert CROSS_ENTITY_DISAMBIGUATION_RULES in full
 
 
 def test_narrowed_prompt_unrelated_types_omit_unrequested_family_guidance(

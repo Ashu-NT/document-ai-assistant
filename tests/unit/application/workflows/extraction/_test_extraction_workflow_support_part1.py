@@ -1,6 +1,6 @@
 import pytest
 
-from src.application.prompts.extraction import IdentifierExtractionPromptBuilder
+from src.application.prompts.extraction import CombinedExtractionPromptBuilder
 
 from src.application.validation.extraction import ExtractionResultValidator
 
@@ -145,7 +145,7 @@ def make_workflow(
         extraction_service=fake_extraction_service,
         extraction_result_validator=spy_validator,
         id_generator=IdGenerator(),
-        prompt_builder=IdentifierExtractionPromptBuilder(),
+        prompt_builder=CombinedExtractionPromptBuilder(),
         extraction_model="qwen3:8b",
         confidence_threshold=0.8,
         require_human_review_default=False,
