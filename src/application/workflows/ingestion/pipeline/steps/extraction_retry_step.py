@@ -266,6 +266,7 @@ class ExtractionRetryStep:
                 "maintenance_task_count": len(extraction_result.maintenance_tasks),
                 "spare_part_count": len(extraction_result.spare_parts),
                 "unresolved_chunk_count": len(extraction_result.unresolved_chunk_ids),
+                "completeness_status": extraction_result.completeness_status.value,
                 "semantic_relationship_count": semantic_relationship_count,
                 **self.runtime_capabilities.as_diagnostics(),
             },

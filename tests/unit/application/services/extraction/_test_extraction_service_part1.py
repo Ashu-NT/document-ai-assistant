@@ -156,7 +156,22 @@ def test_save_extraction_result(sample_extraction_result) -> None:
     assert result.payload["safety_warning_count"] == 1
     assert result.payload["maintenance_interval_count"] == 1
     assert result.payload["troubleshooting_entry_count"] == 1
+    assert result.payload["completeness_status"] == "complete"
+    assert result.payload["unresolved_chunk_count"] == 0
     assert len(repository.results) == 1
+
+def test_save_extraction_result_surfaces_partial_completeness_in_payload(
+    sample_extraction_result,
+) -> None:
+    repository = FakeExtractionRepository()
+    service = make_service(repository)
+    sample_extraction_result.attempted_chunk_ids = ["chunk_1", "chunk_2"]
+    sample_extraction_result.unresolved_chunk_ids = ["chunk_2"]
+
+    result = service.save_extraction_result(sample_extraction_result)
+
+    assert result.payload["completeness_status"] == "partial"
+    assert result.payload["unresolved_chunk_count"] == 1
 
 def test_get_extraction_result(sample_extraction_result) -> None:
     repository = FakeExtractionRepository()

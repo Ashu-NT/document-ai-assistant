@@ -43,6 +43,24 @@ def build_success_result(
         diagnostics["extraction_unresolved_chunk_count"] = len(
             extraction_result.unresolved_chunk_ids
         )
+        # Surfaced explicitly (not just as a count) so a caller inspecting
+        # IngestionResult can see a PARTIAL/FAILED extraction without
+        # re-deriving it - IngestionStatus itself stays COMPLETE here since
+        # overall ingestion (parsing/classification/indexing) did finish;
+        # extraction completeness is a narrower, separate signal.
+        diagnostics["extraction_completeness_status"] = (
+            extraction_result.completeness_status.value
+        )
+        if not extraction_result.is_complete:
+            warnings = [
+                *warnings,
+                (
+                    f"Extraction is {extraction_result.completeness_status.value}: "
+                    f"{len(extraction_result.unresolved_chunk_ids)} chunk(s) could "
+                    "not be resolved after retry/splitting "
+                    f"({extraction_result.unresolved_chunk_ids})."
+                ),
+            ]
 
     return IngestionResult(
         status=IngestionStatus.COMPLETE,

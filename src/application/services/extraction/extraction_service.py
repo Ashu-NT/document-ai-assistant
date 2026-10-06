@@ -51,6 +51,8 @@ class ExtractionService:
                 "troubleshooting_entry_count": len(result.troubleshooting_entries),
                 "confidence_score": result.confidence_score,
                 "requires_human_review": result.requires_human_review,
+                "completeness_status": result.completeness_status.value,
+                "unresolved_chunk_count": len(result.unresolved_chunk_ids),
             },
         )
 
@@ -91,6 +93,8 @@ class ExtractionService:
                 "troubleshooting_entry_count": len(result.troubleshooting_entries),
                 "confidence_score": result.confidence_score,
                 "requires_human_review": result.requires_human_review,
+                "completeness_status": result.completeness_status.value,
+                "unresolved_chunk_count": len(result.unresolved_chunk_ids),
             },
         )
 

@@ -78,6 +78,11 @@ class IngestionStagePayloadBuilder:
                 if extraction_result is not None
                 else 0
             ),
+            "completeness_status": (
+                extraction_result.completeness_status.value
+                if extraction_result is not None
+                else None
+            ),
             "deterministic_identifier_count": (
                 extraction_stage_result.deterministic_identifier_count
             ),

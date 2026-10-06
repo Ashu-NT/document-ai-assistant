@@ -180,6 +180,8 @@ def test_replace_extraction_result(sample_extraction_result) -> None:
 
     assert result.entity_id == replacement.document_id
     assert result.payload["extraction_id"] == "extraction_002"
+    assert result.payload["completeness_status"] == "complete"
+    assert result.payload["unresolved_chunk_count"] == 0
     assert repository.replace_calls == [replacement]
     assert list(repository.results) == ["extraction_002"]
 

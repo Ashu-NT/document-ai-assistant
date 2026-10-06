@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from enum import StrEnum
 
 from src.domain.common import AuditMetadata
 from src.domain.extraction.contact_point import ContactPoint
@@ -13,6 +14,32 @@ from src.domain.extraction.spare_part import SparePart
 from src.domain.extraction.specification import Specification
 from src.domain.extraction.supplier import Supplier
 from src.domain.extraction.troubleshooting_entry import TroubleshootingEntry
+
+
+class ExtractionCompletenessStatus(StrEnum):
+    """Derived, read-only completeness state for one ExtractionResult.
+
+    Deliberately never stored as its own field - always computed live from
+    `attempted_chunk_ids`/`unresolved_chunk_ids` (see
+    `ExtractionResult.completeness_status`) so it can never drift from, or
+    contradict, those two lists. NOT inferred from entity counts: a
+    document/scope can legitimately contain zero extractable entities and
+    still be COMPLETE, and having some extracted entities does not imply
+    COMPLETE if unresolved chunks remain.
+
+    - COMPLETE: every requested chunk was either never attempted-and-failed
+      or was successfully processed - `unresolved_chunk_ids` is empty.
+    - PARTIAL: at least one requested chunk was successfully processed, but
+      one or more requested chunks remain unresolved after retry/splitting.
+      This is a legitimate resilient outcome, not an error.
+    - FAILED: every chunk extraction was attempted on ended up unresolved -
+      the requested extraction scope could not be successfully processed
+      at all (not merely incompletely).
+    """
+
+    COMPLETE = "complete"
+    PARTIAL = "partial"
+    FAILED = "failed"
 
 
 @dataclass(slots=True)
@@ -41,6 +68,36 @@ class ExtractionResult:
     requires_human_review: bool = True
 
     audit: AuditMetadata = field(default_factory=AuditMetadata)
+
+    @property
+    def completeness_status(self) -> ExtractionCompletenessStatus:
+        """Deterministic, derived from attempted_chunk_ids/unresolved_chunk_ids
+        only - never from entity counts. See ExtractionCompletenessStatus's
+        docstring for the exact invariant."""
+        if not self.unresolved_chunk_ids:
+            return ExtractionCompletenessStatus.COMPLETE
+        resolved_chunk_ids = set(self.attempted_chunk_ids) - set(
+            self.unresolved_chunk_ids
+        )
+        if resolved_chunk_ids:
+            return ExtractionCompletenessStatus.PARTIAL
+        return ExtractionCompletenessStatus.FAILED
+
+    @property
+    def is_complete(self) -> bool:
+        return self.completeness_status is ExtractionCompletenessStatus.COMPLETE
+
+    @property
+    def is_partial(self) -> bool:
+        return self.completeness_status is ExtractionCompletenessStatus.PARTIAL
+
+    @property
+    def is_failed(self) -> bool:
+        return self.completeness_status is ExtractionCompletenessStatus.FAILED
+
+    @property
+    def has_unresolved_chunks(self) -> bool:
+        return bool(self.unresolved_chunk_ids)
 
     def has_results(self) -> bool:
         return any(
