@@ -21,7 +21,16 @@ class UnresolvedExtractionWork:
 
     Always empty under MULTI_FAMILY execution - existing consumers that
     only ever read `unresolved_chunk_ids` see no behavior change.
+
+    `row_start`/`row_end` are additive, optional fields (default None) for
+    the table row-window experiment: when a specific row window of a large
+    structured table fails, this preserves exactly which rows were
+    unresolved rather than silently collapsing the failure into an
+    ambiguous chunk-only identity. Always None outside row-windowed
+    extraction - every pre-existing construction site is unaffected.
     """
 
     chunk_id: str
     entity_type: str
+    row_start: int | None = None
+    row_end: int | None = None

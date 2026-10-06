@@ -18,4 +18,9 @@ SAFETY_WARNING_GUIDANCE = (
     "(non-hazard advisory). If severity is not stated or implied, use "
     '"warning" as the default. message must be the warning text itself, not '
     "a paraphrase of the surrounding procedure.\n"
+    "Each structurally distinct source warning (its own heading/lead-in "
+    "plus the precautions tied to it, e.g. a crushing hazard vs. a "
+    "separate fire hazard) is its own entity - never combine multiple "
+    "distinct warnings into one message. A single coherent warning stays "
+    "one entity even when it spans multiple sentences; do not split it.\n"
 )

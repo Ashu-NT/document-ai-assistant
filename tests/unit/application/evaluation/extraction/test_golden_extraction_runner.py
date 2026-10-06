@@ -52,6 +52,9 @@ from src.application.evaluation.extraction.matchers.extraction_match_result impo
 from src.application.services.extraction import ExtractionService
 from src.application.validation.extraction import ExtractionResultValidator
 from src.application.workflows.extraction import ExtractionWorkflow
+from src.application.workflows.extraction.extraction_execution_strategy import (
+    ExtractionExecutionStrategy,
+)
 from src.domain.common import AuditMetadata, SourceLocation
 from src.domain.document import DocumentChunk, DocumentGraph
 from src.domain.document.entities.document import Document
@@ -137,6 +140,12 @@ def _workflow_factory_for(responses: list[str]):
             # extraction call), which the real run (not this fake-LLM test)
             # exercises as-is.
             enable_candidate_narrowing=False,
+            # Pinned for the same reason: these fixtures queue exactly one
+            # canned response per expected call, assuming MULTI_FAMILY's one
+            # combined call per batch. The ambient EXTRACTION_EXECUTION_STRATEGY
+            # setting is a separate, mutable experiment knob and must not
+            # change what this runner-level test exercises.
+            execution_strategy=ExtractionExecutionStrategy.MULTI_FAMILY,
         )
 
     return factory
@@ -236,6 +245,10 @@ class TestRunnerEndToEnd:
                 id_generator=IdGenerator(),
                 max_attempts=1,
                 enable_candidate_narrowing=False,
+                # Pinned for the same reason as _workflow_factory_for above:
+                # exactly one canned response is queued, assuming
+                # MULTI_FAMILY's one combined call per batch.
+                execution_strategy=ExtractionExecutionStrategy.MULTI_FAMILY,
             )
             original_extract = workflow.extract
 
@@ -305,6 +318,10 @@ class TestRunnerEndToEnd:
                 id_generator=IdGenerator(),
                 max_attempts=1,
                 enable_candidate_narrowing=False,
+                # Pinned for the same reason as _workflow_factory_for above:
+                # exactly one canned response is queued, assuming
+                # MULTI_FAMILY's one combined call per batch.
+                execution_strategy=ExtractionExecutionStrategy.MULTI_FAMILY,
             )
             original_extract = workflow.extract
 

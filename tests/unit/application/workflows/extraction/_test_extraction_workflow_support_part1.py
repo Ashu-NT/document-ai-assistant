@@ -6,6 +6,10 @@ from src.application.validation.extraction import ExtractionResultValidator
 
 from src.application.workflows.extraction import ExtractionWorkflow
 
+from src.application.workflows.extraction.extraction_execution_strategy import (
+    ExtractionExecutionStrategy,
+)
+
 from src.application.workflows.extraction.batching import ExtractionChunkBatcher
 
 from src.application.workflows.extraction.batching.extraction_table_chunk_hydrator import (
@@ -139,6 +143,15 @@ def make_workflow(
     workflow_kwargs.setdefault(
         "candidate_selector",
         ExtractionCandidateSelector(llm_router=None),
+    )
+    # Pinned for test determinism only - this suite's fixtures assume
+    # MULTI_FAMILY call counts/behavior throughout (one combined call per
+    # batch). The ambient EXTRACTION_EXECUTION_STRATEGY setting is a
+    # separate, mutable experiment knob (see ExtractionExecutionStrategy)
+    # that must not change what these tests exercise; SPECIALIZED_FAMILY
+    # has its own dedicated tests under workflows/extraction/specialized/.
+    workflow_kwargs.setdefault(
+        "execution_strategy", ExtractionExecutionStrategy.MULTI_FAMILY
     )
     workflow = ExtractionWorkflow(
         llm_service=fake_llm_service,

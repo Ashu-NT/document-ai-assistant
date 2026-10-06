@@ -121,3 +121,21 @@ def _default_extraction_execution_strategy():
         return ExtractionExecutionStrategy(extraction_settings.extraction_execution_strategy)
 
     return resolve_setting(_load, ExtractionExecutionStrategy.MULTI_FAMILY)
+
+
+def _default_maintenance_table_window_enabled() -> bool:
+    def _load() -> bool:
+        from src.config.settings import extraction_settings
+
+        return extraction_settings.maintenance_table_window_enabled
+
+    return resolve_setting(_load, False)
+
+
+def _default_maintenance_table_rows_per_window() -> int:
+    def _load() -> int:
+        from src.config.settings import extraction_settings
+
+        return extraction_settings.maintenance_table_rows_per_window
+
+    return resolve_setting(_load, 10)

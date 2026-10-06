@@ -83,3 +83,17 @@ class ExtractionSettings(AppBaseSettings):
         default="multi_family",
         alias="EXTRACTION_EXECUTION_STRATEGY",
     )
+
+    # PHASE 2B MAINTENANCE TABLE ROW-WINDOW EXTRACTION EXPERIMENT: default
+    # OFF (production behavior unchanged). When enabled, a large structured
+    # table under SPECIALIZED_FAMILY MaintenanceTask extraction is split
+    # into bounded row windows (see TableEvidenceWindowBuilder /
+    # TableWindowActivationPolicy) instead of one call covering every row.
+    maintenance_table_window_enabled: bool = Field(
+        default=False,
+        alias="MAINTENANCE_TABLE_WINDOW_ENABLED",
+    )
+    maintenance_table_rows_per_window: int = Field(
+        default=10,
+        alias="MAINTENANCE_TABLE_ROWS_PER_WINDOW",
+    )

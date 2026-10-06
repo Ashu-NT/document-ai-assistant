@@ -46,6 +46,8 @@ from src.application.workflows.extraction.extraction_workflow_settings import (
     _default_extraction_require_human_review,
     _default_extraction_temperature,
     _default_failure_preview_chars,
+    _default_maintenance_table_rows_per_window,
+    _default_maintenance_table_window_enabled,
     _default_max_chars_per_batch,
     _default_max_chunks_per_batch,
 )
@@ -58,6 +60,10 @@ from src.application.workflows.extraction.response import (
 )
 from src.application.workflows.extraction.specialized import (
     SpecializedFamilyExtractionRunner,
+)
+from src.application.workflows.extraction.table_windowing import (
+    TableEvidenceWindowBuilder,
+    TableWindowActivationPolicy,
 )
 from src.domain.assets import TableAsset
 from src.domain.document import DocumentChunk, DocumentSection
@@ -94,6 +100,8 @@ class ExtractionWorkflow:
         narrowed_prompt_builder: ExtractionNarrowedPromptBuilder | None = None,
         enable_candidate_narrowing: bool | None = None,
         execution_strategy: ExtractionExecutionStrategy | None = None,
+        maintenance_table_window_enabled: bool | None = None,
+        maintenance_table_rows_per_window: int | None = None,
     ) -> None:
         self.llm_service = llm_service
         self.extraction_service = extraction_service
@@ -164,6 +172,16 @@ class ExtractionWorkflow:
             if execution_strategy is not None
             else _default_extraction_execution_strategy()
         )
+        self.maintenance_table_window_enabled = (
+            maintenance_table_window_enabled
+            if maintenance_table_window_enabled is not None
+            else _default_maintenance_table_window_enabled()
+        )
+        self.maintenance_table_rows_per_window = (
+            maintenance_table_rows_per_window
+            if maintenance_table_rows_per_window is not None
+            else _default_maintenance_table_rows_per_window()
+        )
         self.last_batch_diagnostics: list[ExtractionBatchDiagnostics] = []
 
         self._builder_support = ExtractionBuilderSupport(
@@ -196,6 +214,10 @@ class ExtractionWorkflow:
             chunk_batcher=self.chunk_batcher,
             batch_executor=self._batch_executor,
         )
+        table_window_activation_policy = TableWindowActivationPolicy(
+            enabled=self.maintenance_table_window_enabled,
+            rows_per_window=self.maintenance_table_rows_per_window,
+        )
         self._specialized_runner = SpecializedFamilyExtractionRunner(
             llm_service=self.llm_service,
             extraction_model=self.extraction_model,
@@ -207,6 +229,10 @@ class ExtractionWorkflow:
             chunk_batcher=self.chunk_batcher,
             candidate_selector=self.candidate_selector,
             result_assembler=self._result_assembler,
+            table_window_activation_policy=table_window_activation_policy,
+            table_window_builder=TableEvidenceWindowBuilder(
+                rows_per_window=self.maintenance_table_rows_per_window
+            ),
         )
 
     @tracked_action(
@@ -264,6 +290,7 @@ class ExtractionWorkflow:
                 activity_context=activity_context,
                 progress_callback=progress_callback,
                 diagnostics_sink=self.last_batch_diagnostics,
+                tables=tables,
             )
             partial_results.extend(run_result.partial_results)
             attempted_chunk_ids.extend(run_result.attempted_chunk_ids)
