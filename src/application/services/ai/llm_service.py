@@ -1,6 +1,6 @@
 from typing import Any
 
-from src.application.contracts.ai import LLMProvider
+from src.application.contracts.ai import LLMGenerationResult, LLMProvider
 from src.shared.activity import ActivityContext
 from src.shared.execution import tracked_action
 
@@ -36,3 +36,38 @@ class LLMService:
         if num_ctx is not None:
             provider_kwargs["num_ctx"] = num_ctx
         return self.llm_provider.generate(prompt, model=model, **provider_kwargs)
+
+    @tracked_action(
+        action="ai.llm.generated",
+        activity=True,
+        audit=False,
+        event=False,
+    )
+    def generate_with_metadata(
+        self,
+        prompt: str,
+        model: str | None = None,
+        activity_context: ActivityContext | None = None,
+        *,
+        temperature: float | None = None,
+        json_mode: bool = False,
+        response_schema: dict[str, Any] | None = None,
+        num_ctx: int | None = None,
+    ) -> LLMGenerationResult:
+        """Same call as `generate()`, but returns the provider-neutral
+        `LLMGenerationResult` (token counts, timing, termination reason)
+        instead of a bare string. Additive - `generate()` itself is
+        unchanged, so every existing caller keeps getting exactly the same
+        `str` it always has."""
+        provider_kwargs: dict[str, Any] = {}
+        if temperature is not None:
+            provider_kwargs["temperature"] = temperature
+        if json_mode:
+            provider_kwargs["json_mode"] = json_mode
+        if response_schema is not None:
+            provider_kwargs["response_schema"] = response_schema
+        if num_ctx is not None:
+            provider_kwargs["num_ctx"] = num_ctx
+        return self.llm_provider.generate_with_metadata(
+            prompt, model=model, **provider_kwargs
+        )
