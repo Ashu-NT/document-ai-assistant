@@ -73,3 +73,13 @@ class ExtractionSettings(AppBaseSettings):
         default=False,
         alias="SEMANTIC_LINKING_ENABLED",
     )
+
+    # "multi_family" (default, current production behavior) or
+    # "specialized_family" (experimental - see
+    # ExtractionExecutionStrategy's docstring). A plain str here (not the
+    # enum) to keep this settings module free of an application-layer
+    # import; ExtractionWorkflow resolves it to the enum.
+    extraction_execution_strategy: str = Field(
+        default="multi_family",
+        alias="EXTRACTION_EXECUTION_STRATEGY",
+    )

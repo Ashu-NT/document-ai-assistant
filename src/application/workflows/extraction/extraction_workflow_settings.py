@@ -108,3 +108,16 @@ def _default_candidate_narrowing_enabled() -> bool:
         return extraction_settings.extraction_candidate_narrowing_enabled
 
     return resolve_setting(_load, False)
+
+
+def _default_extraction_execution_strategy():
+    from src.application.workflows.extraction.extraction_execution_strategy import (
+        ExtractionExecutionStrategy,
+    )
+
+    def _load():
+        from src.config.settings import extraction_settings
+
+        return ExtractionExecutionStrategy(extraction_settings.extraction_execution_strategy)
+
+    return resolve_setting(_load, ExtractionExecutionStrategy.MULTI_FAMILY)

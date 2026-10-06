@@ -29,6 +29,9 @@ from src.application.workflows.extraction.candidates import (
     ExtractionPromptNarrowingService,
 )
 from src.application.workflows.extraction.context import SemanticExtractionContextBuilder
+from src.application.workflows.extraction.extraction_execution_strategy import (
+    ExtractionExecutionStrategy,
+)
 from src.application.workflows.extraction.extraction_result_assembler import (
     ExtractionResultAssembler,
 )
@@ -36,6 +39,7 @@ from src.application.workflows.extraction.extraction_workflow_settings import (
     _default_allow_partial_batches,
     _default_candidate_narrowing_enabled,
     _default_extraction_confidence_threshold,
+    _default_extraction_execution_strategy,
     _default_extraction_json_mode,
     _default_extraction_max_attempts,
     _default_extraction_model,
@@ -52,9 +56,12 @@ from src.application.workflows.extraction.response import (
     ExtractionResponseParser,
     ExtractionResultMerger,
 )
+from src.application.workflows.extraction.specialized import (
+    SpecializedFamilyExtractionRunner,
+)
 from src.domain.assets import TableAsset
 from src.domain.document import DocumentChunk, DocumentSection
-from src.domain.extraction import ExtractionResult
+from src.domain.extraction import ExtractionResult, UnresolvedExtractionWork
 from src.shared.activity import ActivityContext
 from src.shared.collections.ordered_dedupe import unique_in_order
 from src.shared.execution import tracked_action
@@ -86,6 +93,7 @@ class ExtractionWorkflow:
         candidate_selector: ExtractionCandidateSelector | None = None,
         narrowed_prompt_builder: ExtractionNarrowedPromptBuilder | None = None,
         enable_candidate_narrowing: bool | None = None,
+        execution_strategy: ExtractionExecutionStrategy | None = None,
     ) -> None:
         self.llm_service = llm_service
         self.extraction_service = extraction_service
@@ -151,6 +159,11 @@ class ExtractionWorkflow:
             if json_mode is not None
             else _default_extraction_json_mode()
         )
+        self.execution_strategy = (
+            execution_strategy
+            if execution_strategy is not None
+            else _default_extraction_execution_strategy()
+        )
         self.last_batch_diagnostics: list[ExtractionBatchDiagnostics] = []
 
         self._builder_support = ExtractionBuilderSupport(
@@ -182,6 +195,18 @@ class ExtractionWorkflow:
             allow_partial_batches=self.allow_partial_batches,
             chunk_batcher=self.chunk_batcher,
             batch_executor=self._batch_executor,
+        )
+        self._specialized_runner = SpecializedFamilyExtractionRunner(
+            llm_service=self.llm_service,
+            extraction_model=self.extraction_model,
+            temperature=self.temperature,
+            json_mode=self.json_mode,
+            failure_preview_chars=self.failure_preview_chars,
+            max_attempts=self.max_attempts,
+            allow_partial_batches=self.allow_partial_batches,
+            chunk_batcher=self.chunk_batcher,
+            candidate_selector=self.candidate_selector,
+            result_assembler=self._result_assembler,
         )
 
     @tracked_action(
@@ -231,17 +256,31 @@ class ExtractionWorkflow:
         )
         attempted_chunk_ids: list[str] = []
         unresolved_chunk_ids: list[str] = []
-        for batch in batches:
-            outcome = self._batch_retry_coordinator.run(
+        unresolved_extraction_work: list[UnresolvedExtractionWork] = []
+        if self.execution_strategy is ExtractionExecutionStrategy.SPECIALIZED_FAMILY:
+            run_result = self._specialized_runner.run(
                 document_id=document_id,
-                batch=batch,
+                batches=batches,
                 activity_context=activity_context,
                 progress_callback=progress_callback,
                 diagnostics_sink=self.last_batch_diagnostics,
             )
-            partial_results.extend(outcome.partial_results)
-            attempted_chunk_ids.extend(outcome.attempted_chunk_ids)
-            unresolved_chunk_ids.extend(outcome.unresolved_chunk_ids)
+            partial_results.extend(run_result.partial_results)
+            attempted_chunk_ids.extend(run_result.attempted_chunk_ids)
+            unresolved_chunk_ids.extend(run_result.unresolved_chunk_ids)
+            unresolved_extraction_work.extend(run_result.unresolved_extraction_work)
+        else:
+            for batch in batches:
+                outcome = self._batch_retry_coordinator.run(
+                    document_id=document_id,
+                    batch=batch,
+                    activity_context=activity_context,
+                    progress_callback=progress_callback,
+                    diagnostics_sink=self.last_batch_diagnostics,
+                )
+                partial_results.extend(outcome.partial_results)
+                attempted_chunk_ids.extend(outcome.attempted_chunk_ids)
+                unresolved_chunk_ids.extend(outcome.unresolved_chunk_ids)
 
         if not partial_results:
             raise SchemaValidationError(
@@ -303,6 +342,7 @@ class ExtractionWorkflow:
             ]
         )
         extraction_result.unresolved_chunk_ids = final_unresolved_chunk_ids
+        extraction_result.unresolved_extraction_work = unresolved_extraction_work
         extraction_result, dropped_empty_count = drop_empty_entities(
             extraction_result
         )

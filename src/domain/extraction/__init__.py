@@ -21,6 +21,7 @@ from src.domain.extraction.spare_part import SparePart
 from src.domain.extraction.specification import Specification
 from src.domain.extraction.supplier import Supplier
 from src.domain.extraction.troubleshooting_entry import TroubleshootingEntry
+from src.domain.extraction.unresolved_extraction_work import UnresolvedExtractionWork
 
 __all__ = [
     "ContactPoint",
@@ -44,4 +45,5 @@ __all__ = [
     "Specification",
     "Supplier",
     "TroubleshootingEntry",
+    "UnresolvedExtractionWork",
 ]

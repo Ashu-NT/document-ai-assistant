@@ -14,6 +14,37 @@ from src.application.workflows.extraction.candidates.extraction_candidate_select
 _MAX_CONCURRENT_CANDIDATE_SELECTIONS = 8
 
 
+def resolve_requested_types(
+    batch: ExtractionBatch,
+    candidate_selector: ExtractionCandidateSelector,
+) -> frozenset[ExtractionPromptType]:
+    """Pure union-of-per-chunk-candidates computation: what entity families
+    are worth requesting for this batch, per `candidate_selector`.
+
+    Split out of `ExtractionPromptNarrowingService.build_prompt` (which still
+    calls this and keeps its own enable/fallback behavior) so the
+    SPECIALIZED_FAMILY execution strategy's plan-building
+    (`extraction.specialized.extraction_plan.build_extraction_plan`) can reuse
+    the EXACT SAME narrowing decision production's MULTI_FAMILY path already
+    makes, instead of reimplementing or diverging from it. Returns
+    `ExtractionCandidateSelector.all_types()` for an empty batch, matching
+    `build_prompt`'s own empty-batch fallback.
+    """
+    if not batch.chunks:
+        return ExtractionCandidateSelector.all_types()
+
+    # select_for_chunk() may call the (optional, off-by-default) LLM
+    # candidate router per GENERAL/UNKNOWN chunk -- each call is an
+    # independent, side-effect-free LLM request, so run them concurrently
+    # instead of one at a time across the batch.
+    selected_types = run_bounded_concurrent_map(
+        batch.chunks,
+        candidate_selector.select_for_chunk,
+        max_concurrency=_MAX_CONCURRENT_CANDIDATE_SELECTIONS,
+    )
+    return frozenset().union(*selected_types)
+
+
 class ExtractionPromptNarrowingService:
     """Builds the extraction prompt for a batch, optionally narrowing it to
     only the entity types a per-chunk candidate selector determined are
@@ -58,18 +89,7 @@ class ExtractionPromptNarrowingService:
                 None,
             )
 
-        # select_for_chunk() may call the (optional, off-by-default) LLM
-        # candidate router per GENERAL/UNKNOWN chunk -- each call is an
-        # independent, side-effect-free LLM request, so run them
-        # concurrently instead of one at a time across the batch.
-        selected_types = run_bounded_concurrent_map(
-            batch.chunks,
-            self.candidate_selector.select_for_chunk,
-            max_concurrency=_MAX_CONCURRENT_CANDIDATE_SELECTIONS,
-        )
-        requested_types: frozenset[ExtractionPromptType] = frozenset().union(
-            *selected_types
-        )
+        requested_types = resolve_requested_types(batch, self.candidate_selector)
 
         if requested_types == ExtractionCandidateSelector.all_types():
             return (

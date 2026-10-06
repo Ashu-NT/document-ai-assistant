@@ -14,6 +14,7 @@ from src.domain.extraction.spare_part import SparePart
 from src.domain.extraction.specification import Specification
 from src.domain.extraction.supplier import Supplier
 from src.domain.extraction.troubleshooting_entry import TroubleshootingEntry
+from src.domain.extraction.unresolved_extraction_work import UnresolvedExtractionWork
 
 
 class ExtractionCompletenessStatus(StrEnum):
@@ -63,6 +64,14 @@ class ExtractionResult:
     source_chunk_ids: list[str] = field(default_factory=list)
     attempted_chunk_ids: list[str] = field(default_factory=list)
     unresolved_chunk_ids: list[str] = field(default_factory=list)
+    # Finer-grained (chunk, entity_type) unresolved records - only ever
+    # populated under SPECIALIZED_FAMILY execution (see
+    # UnresolvedExtractionWork's docstring). Always empty under MULTI_FAMILY,
+    # and not yet persisted (no ORM column) - a deliberate, reported-not-
+    # implemented follow-up, not an oversight.
+    unresolved_extraction_work: list[UnresolvedExtractionWork] = field(
+        default_factory=list
+    )
 
     confidence_score: float | None = None
     requires_human_review: bool = True
