@@ -12,3 +12,12 @@ MAINTENANCE_TASK_SCHEMA_TEXT = (
     "    }\n"
     "  ]\n"
 )
+
+MAINTENANCE_TASK_GUIDANCE = (
+    "When a structured table row has its own component/equipment/item/"
+    "assembly/system field identifying what the row's task applies to, "
+    "copy that explicit field into component_name - prefer it over "
+    "inferring a component from the task text itself, even when the same "
+    "value repeats across several consecutive rows. Do not invent "
+    "component_name when the source provides none.\n"
+)

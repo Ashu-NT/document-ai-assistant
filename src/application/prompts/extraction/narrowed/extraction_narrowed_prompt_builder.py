@@ -45,6 +45,7 @@ from src.application.prompts.extraction.maintenance.maintenance_task_extraction_
     MAINTENANCE_TASK_EXTRACTION_EXAMPLE,
 )
 from src.application.prompts.extraction.maintenance.maintenance_task_extraction_schema import (
+    MAINTENANCE_TASK_GUIDANCE,
     MAINTENANCE_TASK_SCHEMA_TEXT,
 )
 from src.application.prompts.extraction.manufacturers.manufacturer_extraction_examples import (
@@ -147,8 +148,6 @@ _FAMILY_SCHEMA: dict[ExtractionPromptType, str] = {
     ExtractionPromptType.TROUBLESHOOTING: TROUBLESHOOTING_SCHEMA_TEXT,
 }
 
-# MAINTENANCE_TASK has no dedicated guidance paragraph in its modular
-# family - its schema field names are self-explanatory.
 _FAMILY_GUIDANCE: dict[ExtractionPromptType, str] = {
     ExtractionPromptType.IDENTIFIER: _identifier_guidance(),
     ExtractionPromptType.MANUFACTURER: MANUFACTURER_GUIDANCE,
@@ -157,6 +156,7 @@ _FAMILY_GUIDANCE: dict[ExtractionPromptType, str] = {
     ExtractionPromptType.EQUIPMENT: EQUIPMENT_GUIDANCE,
     ExtractionPromptType.SPARE_PART: SPARE_PART_GUIDANCE,
     ExtractionPromptType.SPECIFICATION: SPECIFICATION_GUIDANCE,
+    ExtractionPromptType.MAINTENANCE_TASK: MAINTENANCE_TASK_GUIDANCE,
     ExtractionPromptType.MAINTENANCE_INTERVAL: MAINTENANCE_INTERVAL_GUIDANCE,
     ExtractionPromptType.PROCEDURE: PROCEDURE_GUIDANCE,
     ExtractionPromptType.SAFETY_WARNING: SAFETY_WARNING_GUIDANCE,

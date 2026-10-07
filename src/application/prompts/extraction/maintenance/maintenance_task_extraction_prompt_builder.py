@@ -13,6 +13,7 @@ from src.application.prompts.extraction.maintenance.maintenance_task_extraction_
     MAINTENANCE_TASK_EXTRACTION_EXAMPLE,
 )
 from src.application.prompts.extraction.maintenance.maintenance_task_extraction_schema import (
+    MAINTENANCE_TASK_GUIDANCE,
     MAINTENANCE_TASK_SCHEMA_TEXT,
 )
 from src.domain.document import DocumentChunk
@@ -46,6 +47,7 @@ class MaintenanceTaskExtractionPromptBuilder:
             '  "requires_human_review": <true or false>,\n'
             f"{MAINTENANCE_TASK_SCHEMA_TEXT}"
             "}\n"
+            f"{MAINTENANCE_TASK_GUIDANCE}"
             f"{MAINTENANCE_TASK_EXTRACTION_EXAMPLE}"
             f"Allowed chunk_id values (use one of these EXACTLY, or null): {allowed_chunk_ids(chunks)}\n"
             f"Document id: {document_id}\n"
