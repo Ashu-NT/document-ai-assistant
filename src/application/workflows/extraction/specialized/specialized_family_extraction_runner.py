@@ -23,9 +23,15 @@ from src.application.workflows.extraction.extraction_execution_strategy import (
 from src.application.workflows.extraction.extraction_result_assembler import (
     ExtractionResultAssembler,
 )
+from src.application.prompts.extraction.common.extraction_prompt_type import (
+    ExtractionPromptType,
+)
 from src.application.workflows.extraction.specialized.extraction_plan import (
     ExtractionWorkItem,
     build_extraction_plan,
+)
+from src.application.workflows.extraction.specialized.maintenance_task_component_backfill import (
+    backfill_maintenance_task_component_names,
 )
 from src.application.workflows.extraction.specialized.specialized_extraction_batch_executor import (
     SpecializedExtractionBatchExecutor,
@@ -125,8 +131,8 @@ class SpecializedFamilyExtractionRunner:
         result = SpecializedFamilyExtractionRunResult()
 
         for work_item in plan.work_items:
-            windows = self._resolve_windows(work_item, tables=tables or {})
-            if windows is None:
+            resolved = self._resolve_windows(work_item, tables=tables or {})
+            if resolved is None:
                 self._run_single_work_item(
                     document_id=document_id,
                     work_item=work_item,
@@ -136,10 +142,12 @@ class SpecializedFamilyExtractionRunner:
                     result=result,
                 )
             else:
+                windows, composed_table = resolved
                 self._run_windowed_work_item(
                     document_id=document_id,
                     work_item=work_item,
                     windows=windows,
+                    composed_table=composed_table,
                     activity_context=activity_context,
                     progress_callback=progress_callback,
                     diagnostics_sink=diagnostics_sink,
@@ -153,8 +161,9 @@ class SpecializedFamilyExtractionRunner:
         work_item: ExtractionWorkItem,
         *,
         tables: dict[str, TableAsset],
-    ) -> list[TableEvidenceWindow] | None:
-        """Returns the row windows to use for this work item, or None when
+    ) -> tuple[list[TableEvidenceWindow], TableAsset] | None:
+        """Returns the row windows to use for this work item (plus the
+        composed canonical table they were built from), or None when
         windowing does not apply (the normal, unwindowed path runs
         instead). Deliberately conservative: only a batch consisting of
         EXACTLY ONE table-bearing chunk is considered - a mixed batch (the
@@ -183,7 +192,9 @@ class SpecializedFamilyExtractionRunner:
         windows = self.table_window_builder.build_windows(
             composed_table, source_chunk_id=chunk.chunk_id
         )
-        return windows or None
+        if not windows:
+            return None
+        return windows, composed_table
 
     def _run_single_work_item(
         self,
@@ -219,6 +230,7 @@ class SpecializedFamilyExtractionRunner:
         document_id: str,
         work_item: ExtractionWorkItem,
         windows: list[TableEvidenceWindow],
+        composed_table: TableAsset,
         activity_context: ActivityContext | None,
         progress_callback: Callable[[str], None] | None,
         diagnostics_sink: list[ExtractionBatchDiagnostics],
@@ -259,6 +271,30 @@ class SpecializedFamilyExtractionRunner:
                 progress_callback=progress_callback,
                 diagnostics_sink=diagnostics_sink,
             )
+
+            # PHASE 2B MAINTENANCE TASK COMPONENT GROUNDING FIX: a narrow,
+            # MaintenanceTask-row-window-only deterministic correction --
+            # see maintenance_task_component_backfill.py for the confirmed
+            # root cause and the exact, non-inventive matching rule. Never
+            # applies to any other family; a no-op whenever this window's
+            # table has no literal "Item" column or no unambiguous title
+            # match, so it cannot affect any other document/table shape.
+            if work_item.entity_type == ExtractionPromptType.MAINTENANCE_TASK:
+                for partial_result in outcome.partial_results:
+                    backfilled = backfill_maintenance_task_component_names(
+                        partial_result.maintenance_tasks,
+                        table=composed_table,
+                        row_start=window.row_start,
+                        row_end=window.row_end,
+                    )
+                    if backfilled and progress_callback is not None:
+                        progress_callback(
+                            f"Deterministically backfilled component_name for "
+                            f"{backfilled} maintenance task(s) in window "
+                            f"{window.window_index}/{window.window_count} "
+                            "from the source table's 'Item' column."
+                        )
+
             result.partial_results.extend(outcome.partial_results)
             result.attempted_chunk_ids.extend(outcome.attempted_chunk_ids)
             result.unresolved_chunk_ids.extend(outcome.unresolved_chunk_ids)

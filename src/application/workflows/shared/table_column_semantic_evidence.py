@@ -32,9 +32,22 @@ class ColumnSemanticEvidence:
     short machine-readable description and reference. `role` is None for a
     neutral/bookkeeping observation (e.g. "header examined, no match")
     that did not cast a vote for or against any role.
+
+    `deduplicated` is pure PROVENANCE, kept deliberately separate from
+    `category` (which is the evidence TYPE, unchanged by this field):
+    True means this specific item's contribution was zeroed because it
+    reproduced another item derived from the identical, already-counted
+    source text (see TableColumnSemanticClassifier's correlated-evidence
+    deduplication). It is a structural fact about where the weight went,
+    not a semantic judgment -- it does NOT mean "independent" when False,
+    and a False item is not thereby "corroborating" anything; whether any
+    given evidence category constitutes genuine independent semantic
+    corroboration is a separate, unresolved question this field does not
+    answer (see the evidence-weighting diagnostic report).
     """
 
     category: EvidenceCategory
     role: TableColumnSemanticRole | None
     description: str
     weight: float
+    deduplicated: bool = False

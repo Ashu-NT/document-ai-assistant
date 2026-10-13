@@ -267,6 +267,109 @@ def test_one_window_failure_does_not_erase_other_windows_success() -> None:
     ]
 
 
+def _task_response_with_null_component(*titles: str) -> str:
+    """Mirrors the REAL retained raw LLM response fixture for this exact
+    failure (phase2b_specialized_row_window_qwen2_5_7b_calls.json call
+    index 73): title extracted verbatim, component_name explicitly null."""
+    return json.dumps(
+        {
+            "confidence_score": 0.92,
+            "maintenance_tasks": [
+                {
+                    "title": title,
+                    "component_name": None,
+                    "source_chunk_id": _CANONICAL_CHUNK_ID,
+                }
+                for title in titles
+            ],
+        }
+    )
+
+
+def test_maintenance_task_component_grounding_fix_backfills_from_the_real_item_column() -> None:
+    """End-to-end integration test for the PHASE 2B component-grounding
+    fix, using the real MTU table shape (Task/Item/Maintenance tasks/
+    Option) and the two real, previously-failing golden titles, with a raw
+    LLM response shaped exactly like the retained fixture that confirmed
+    this bug (component_name explicitly null, title verbatim)."""
+    table = TableAsset(
+        table_id="table_001",
+        document_id="doc_001",
+        markdown="irrelevant canonical markdown",
+        rows=[
+            ["Task", "Item", "Maintenance tasks", "Option"],
+            ["WM00285", "ENGINE OPERATIONAL MONITORING", "Check engine oil level", ""],
+            [
+                "WM00286",
+                "ENGINE OPERATIONAL MONITORING",
+                "Visually inspect engine for leaks and general condition",
+                "",
+            ],
+        ],
+    )
+    canonical_chunk = _make_canonical_chunk("full 2-row canonical rendering")
+    batch = ExtractionBatch(
+        batch_index=1, batch_count=1, chunks=[canonical_chunk],
+        char_count=len(canonical_chunk.content), word_count=10,
+    )
+    llm_service = FakeSequentialLLMService(
+        [
+            # rows_per_window=1 forces 2 separate window calls (2 data
+            # rows) so this table actually exercises the windowed path
+            # (should_window requires data_row_count > rows_per_window).
+            _task_response_with_null_component("Check engine oil level"),
+            _task_response_with_null_component(
+                "Visually inspect engine for leaks and general condition"
+            ),
+        ]
+    )
+    runner = _make_runner(llm_service, windowing_enabled=True, rows_per_window=1)
+
+    result = runner.run(
+        document_id="doc_001",
+        batches=[batch],
+        activity_context=None,
+        progress_callback=None,
+        diagnostics_sink=[],
+        tables={"table_001": table},
+    )
+
+    all_tasks = [t for partial in result.partial_results for t in partial.maintenance_tasks]
+    assert len(all_tasks) == 2
+    assert all(t.component_name == "ENGINE OPERATIONAL MONITORING" for t in all_tasks)
+    # Provenance untouched: still the real canonical chunk id, not a
+    # synthetic per-window identifier.
+    assert all(t.source_chunk_id == _CANONICAL_CHUNK_ID for t in all_tasks)
+
+
+def test_component_grounding_fix_does_not_touch_other_families_or_tables_without_item_column() -> None:
+    """The existing _make_table fixture (Row ID/Component/Description, NO
+    literal "Item" header) must be completely unaffected by this fix --
+    proves the correction cannot apply outside its narrow, confirmed
+    condition."""
+    table = _make_table(5)
+    canonical_chunk = _make_canonical_chunk("full 5-row canonical rendering")
+    batch = ExtractionBatch(
+        batch_index=1, batch_count=1, chunks=[canonical_chunk],
+        char_count=len(canonical_chunk.content), word_count=10,
+    )
+    llm_service = FakeSequentialLLMService([_task_response("Task 1")])
+    runner = _make_runner(llm_service, windowing_enabled=True, rows_per_window=10)
+
+    result = runner.run(
+        document_id="doc_001",
+        batches=[batch],
+        activity_context=None,
+        progress_callback=None,
+        diagnostics_sink=[],
+        tables={"table_001": table},
+    )
+
+    all_tasks = [t for partial in result.partial_results for t in partial.maintenance_tasks]
+    assert len(all_tasks) == 1
+    assert all_tasks[0].component_name is None
+
+
 def test_windowing_disabled_falls_back_to_the_single_unwindowed_call() -> None:
     table = _make_table(39)
     canonical_chunk = _make_canonical_chunk("full 39-row canonical rendering")

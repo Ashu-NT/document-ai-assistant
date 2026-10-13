@@ -464,6 +464,7 @@ class TableColumnSemanticClassifier:
                             "vote already cast for the same role"
                         ),
                         weight=0.0,
+                        deduplicated=True,
                     )
                 )
             else:

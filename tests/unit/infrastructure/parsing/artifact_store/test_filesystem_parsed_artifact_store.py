@@ -162,6 +162,44 @@ class TestGetMissSemantics:
             is None
         )
 
+    def test_get_returns_none_when_parser_version_differs(
+        self, tmp_path: Path
+    ) -> None:
+        """Regression test: an artifact published while one parser version
+        was installed must never be returned to a lookup running under a
+        *different* installed parser version, even when the source file,
+        conversion fingerprint, and everything else about the key are
+        identical - `parser_version` is a literal, hashed component of
+        `ParsedArtifactKey.cache_key` by design. This is the exact
+        mechanism behind a real failure: a Docling package version drift
+        between the environment that published the golden-corpus cache and
+        the environment later reading it caused silent, total cache misses
+        for two previously-cached documents (see
+        outputs/architecture/phase2b_golden_evaluation_cache_restoration.md)."""
+        store = FilesystemParsedArtifactStore(root_dir=tmp_path / "artifacts")
+        store.put(
+            ParsedArtifactKey(
+                source_sha256="source-hash",
+                parser_name="docling",
+                parser_version="2.126.0",
+                conversion_fingerprint="fp-1",
+            ),
+            _build_raw_parsed_document("VERSIONED"),
+        )
+
+        assert (
+            store.get(
+                ParsedArtifactKey(
+                    source_sha256="source-hash",
+                    parser_name="docling",
+                    parser_version="2.111.0",
+                    conversion_fingerprint="fp-1",
+                ),
+                file_path="x.pdf",
+            )
+            is None
+        )
+
     def test_get_returns_none_when_manifest_schema_version_is_unsupported(
         self, tmp_path: Path
     ) -> None:

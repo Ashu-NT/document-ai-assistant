@@ -230,6 +230,56 @@ def test_different_enable_ocr_override_misses_cache_independently(
     assert len(parser.calls) == 2  # different conversion configuration, both misses
 
 
+def test_parser_version_drift_misses_cache_and_reparses(
+    tmp_path: Path, sample_document_graph
+) -> None:
+    """Regression test for a real production failure: an artifact
+    published while one Docling package version was installed is never
+    served to a later lookup running under a *different* installed
+    version, even though the source file and conversion configuration are
+    completely unchanged - `parser_version` is a literal component of
+    `ParsedArtifactKey.cache_key`. This is exactly the mechanism that
+    caused two golden-corpus documents to silently fail cache-only lookup
+    after the active environment's `docling` package drifted away from the
+    version that originally published their cached artifacts (see
+    outputs/architecture/phase2b_golden_evaluation_cache_restoration.md)."""
+    store = FilesystemParsedArtifactStore(root_dir=tmp_path / "artifacts")
+    raw_parsed_document = _build_raw_parsed_document(
+        "VERSIONDRIFT", file_path="data/input/manual.pdf"
+    )
+
+    publishing_parser = FakeParser(raw_parsed_document)
+    publishing_parser.parser_version = "2.126.0"
+    publishing_workflow, _ = _build_workflow(
+        parser=publishing_parser,
+        sample_document_graph=sample_document_graph,
+        parsed_artifact_store=store,
+    )
+    publishing_workflow.parse(
+        file_path="data/input/manual.pdf",
+        file_hash="hash-1",
+        content_hash=None,
+        document_id="doc_1",
+    )
+    assert len(publishing_parser.calls) == 1
+
+    drifted_parser = FakeParser(raw_parsed_document)
+    drifted_parser.parser_version = "2.111.0"
+    drifted_workflow, _ = _build_workflow(
+        parser=drifted_parser,
+        sample_document_graph=sample_document_graph,
+        parsed_artifact_store=store,
+    )
+    drifted_workflow.parse(
+        file_path="data/input/manual.pdf",
+        file_hash="hash-1",
+        content_hash=None,
+        document_id="doc_2",
+    )
+
+    assert len(drifted_parser.calls) == 1  # different parser_version: cache miss
+
+
 def test_failed_publication_does_not_fail_parsing(
     sample_document_graph,
 ) -> None:

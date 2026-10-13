@@ -633,6 +633,86 @@ def test_dedup_preserves_partial_resolution_and_safe_abstention():
     assert states[2] == ColumnResolutionState.UNKNOWN
 
 
+def test_provenance_deduplicated_flag_defaults_false_for_ordinary_evidence():
+    """PHASE 2B diagnostic-provenance task: `deduplicated` is pure
+    provenance, separate from `category` -- ordinary (non-deduplicated)
+    evidence items, including a column with NO duplicate-header condition
+    at all, must default to False."""
+    table = _table(
+        rows=[["Task", "Maintenance tasks"], ["WM00285", "Check oil level"], ["WM00286", "Inspect for leaks"]],
+        header_paths=[["Parameter"], ["Field", "Maintenance tasks"]],
+        table_category_confidence=0.95,
+        table_structure_quality=0.95,
+    )
+    result = classifier.classify(table)
+    task_header_column = result.columns[0]
+    # source "Task" vs structural "Parameter" genuinely differ -- no dedup.
+    for item in task_header_column.evidence:
+        assert item.deduplicated is False
+
+
+def test_provenance_deduplicated_flag_true_only_for_zeroed_structural_items():
+    table = _table(
+        rows=[["Label", "x"], ["Tank Capacity", "y"], ["Pump Capacity", "z"]],
+        header_paths=[["Label"], ["Other"]],
+        table_category_confidence=0.95,
+        table_structure_quality=0.95,
+    )
+    result = classifier.classify(table)
+    column = result.columns[0]
+    structural_label_items = [
+        item for item in column.evidence
+        if item.category == EvidenceCategory.STRUCTURAL and item.role == TableColumnSemanticRole.LABEL
+    ]
+    assert structural_label_items
+    assert structural_label_items[0].deduplicated is True
+    assert structural_label_items[0].weight == 0.0
+
+    lexical_label_items = [
+        item for item in column.evidence
+        if item.category == EvidenceCategory.LEXICAL and item.role == TableColumnSemanticRole.LABEL
+    ]
+    assert lexical_label_items
+    assert lexical_label_items[0].deduplicated is False
+    assert lexical_label_items[0].weight == TableColumnSemanticClassifier.LEXICAL_EXACT_WEIGHT
+
+
+def test_provenance_field_does_not_change_classifier_decisions():
+    """Diagnostic-provenance task's core guarantee: adding `deduplicated`
+    must not change any resolution_state, semantic_role, confidence, or
+    candidate_roles anywhere -- re-asserts the exact same outcomes already
+    pinned by the dedup-era tests above, as an explicit, named regression
+    anchor for this specific guarantee."""
+    mtu_table = _real_mtu_shaped_table()
+    result = classifier.classify(mtu_table)
+    by_index = {col.column_index: col for col in result.columns}
+
+    assert by_index[0].resolution_state == ColumnResolutionState.UNKNOWN
+    assert by_index[0].semantic_role is None
+
+    assert by_index[1].resolution_state == ColumnResolutionState.AMBIGUOUS
+    assert {role for role, _ in by_index[1].candidate_roles} == {
+        TableColumnSemanticRole.LABEL,
+        TableColumnSemanticRole.POSITION,
+    }
+
+    assert by_index[2].resolution_state == ColumnResolutionState.RESOLVED
+    assert by_index[2].semantic_role == TableColumnSemanticRole.TASK
+    assert by_index[2].confidence == pytest.approx(0.6)
+
+    clean_table = _table(
+        rows=[["Label", "Value"], ["Tank Capacity", "1,200L"], ["Pump Capacity", "16,000L/hr"]],
+        table_category="technical_data_table",
+        table_category_confidence=0.95,
+        table_structure_quality=0.95,
+    )
+    clean_result = classifier.classify(clean_table)
+    assert clean_result.columns[0].resolution_state == ColumnResolutionState.RESOLVED
+    assert clean_result.columns[0].semantic_role == TableColumnSemanticRole.LABEL
+    assert clean_result.columns[1].resolution_state == ColumnResolutionState.RESOLVED
+    assert clean_result.columns[1].semantic_role == TableColumnSemanticRole.VALUE
+
+
 def test_no_first_match_wins_shortcut_in_alias_lookup():
     """A header string that is a genuine alias of more than one role must
     surface every matching role, never only the first one a dict iterates
