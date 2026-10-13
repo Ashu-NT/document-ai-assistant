@@ -245,8 +245,12 @@ class TableColumnSemanticClassifier:
             obs.column_index: [] for obs in observations
         }
         for obs in observations:
-            evidence_by_column[obs.column_index].extend(self._lexical_evidence(obs))
-            evidence_by_column[obs.column_index].extend(self._structural_evidence(obs))
+            lexical_items = self._lexical_evidence(obs)
+            structural_items = self._deduplicate_structural_evidence(
+                obs, lexical_items, self._structural_evidence(obs)
+            )
+            evidence_by_column[obs.column_index].extend(lexical_items)
+            evidence_by_column[obs.column_index].extend(structural_items)
             evidence_by_column[obs.column_index].extend(self._content_evidence(obs))
 
         raw_scores = {
@@ -406,6 +410,65 @@ class TableColumnSemanticClassifier:
             )
             for role in roles
         ]
+
+    def _deduplicate_structural_evidence(
+        self,
+        obs: _ColumnObservation,
+        lexical_items: list[ColumnSemanticEvidence],
+        structural_items: list[ColumnSemanticEvidence],
+    ) -> list[ColumnSemanticEvidence]:
+        """Correlated-evidence deduplication (PHASE 2B root-cause audit,
+        finding #2): when `source_header` and `structural_header` normalize
+        to the IDENTICAL text, lexical and structural evidence are not two
+        independent signals -- both independently re-derive the same role
+        set from the same underlying string via the same lookup function.
+        In that case structural's contribution is capped so the COMBINED
+        lexical+structural weight for a given role never exceeds the
+        stronger of the two (structural's flat weight is always <= both
+        lexical weights, so this reduces to zeroing structural's score
+        contribution for roles lexical already voted for -- lexical's own
+        evidence is left untouched).
+
+        Genuinely differing source/structural headers (e.g. the MTU
+        "Task"/"Parameter" case) are explicitly NOT touched here -- this
+        experiment does not assume differing text proves true independence
+        (it does not verify that), it only removes the specific,
+        verified double-count that occurs when the text is identical.
+
+        Provenance is preserved, never discarded: a deduplicated structural
+        evidence item keeps its category/role and gains a note in its
+        description; its weight becomes 0.0 rather than the item being
+        dropped from the trace.
+        """
+        source_norm = _normalize_header_text(obs.source_header)
+        structural_norm = _normalize_header_text(obs.structural_header)
+        if not source_norm or not structural_norm or source_norm != structural_norm:
+            return structural_items
+
+        lexical_roles = {item.role for item in lexical_items if item.role is not None}
+        if not lexical_roles:
+            return structural_items
+
+        deduplicated: list[ColumnSemanticEvidence] = []
+        for item in structural_items:
+            if item.role is not None and item.role in lexical_roles:
+                deduplicated.append(
+                    ColumnSemanticEvidence(
+                        category=item.category,
+                        role=item.role,
+                        description=(
+                            item.description
+                            + " -- DEDUPLICATED: structural label normalizes to "
+                            "the identical text as the source header, so this "
+                            "contributes no additional score beyond the lexical "
+                            "vote already cast for the same role"
+                        ),
+                        weight=0.0,
+                    )
+                )
+            else:
+                deduplicated.append(item)
+        return deduplicated
 
     def _content_evidence(self, obs: _ColumnObservation) -> list[ColumnSemanticEvidence]:
         cells = obs.non_empty_cells

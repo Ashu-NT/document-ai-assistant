@@ -20,8 +20,13 @@ from __future__ import annotations
 
 import inspect
 
+import pytest
+
 from src.application.workflows.shared.table_column_resolution_state import (
     ColumnResolutionState,
+)
+from src.application.workflows.shared.table_column_semantic_evidence import (
+    EvidenceCategory,
 )
 from src.application.workflows.shared.table_column_semantic_classifier import (
     TableColumnSemanticClassifier,
@@ -435,6 +440,197 @@ def test_state_semantics_case_e_unmapped_is_currently_unreachable_by_design():
         result = classifier.classify(table)
         for column in result.columns:
             assert column.resolution_state != ColumnResolutionState.UNMAPPED
+
+
+def test_dedup_identical_headers_cap_combined_contribution_at_lexical_alone():
+    """PHASE 2B correlated-evidence correction: when source_header and
+    structural_header normalize to the identical text, the combined
+    lexical+structural contribution for a shared role must not exceed
+    lexical's own weight alone (structural's weight is always <= lexical's,
+    so this means structural contributes 0 additional score for that role).
+    Verified via a minimal two-column table isolated from content/
+    relational/contextual effects (high trust, content inconclusive)."""
+    table = _table(
+        rows=[["Label", "zzzz"], ["Tank Capacity", "xx yy"], ["Pump Capacity", "aa bb"]],
+        header_paths=[["Label"], ["Other"]],
+        table_category_confidence=0.95,
+        table_structure_quality=0.95,
+    )
+    result = classifier.classify(table)
+    label_column = result.columns[0]
+    assert label_column.source_header == "Label"
+    assert label_column.structural_header == "Label"
+    assert label_column.resolution_state == ColumnResolutionState.RESOLVED
+    assert label_column.semantic_role == TableColumnSemanticRole.LABEL
+    # lexical alone (0.5) is the cap; without dedup this would be 0.75.
+    assert label_column.confidence == pytest.approx(TableColumnSemanticClassifier.LEXICAL_EXACT_WEIGHT)
+
+    structural_items = [
+        item for item in label_column.evidence
+        if item.category == EvidenceCategory.STRUCTURAL and item.role == TableColumnSemanticRole.LABEL
+    ]
+    assert structural_items, "structural evidence must still be present for provenance"
+    assert structural_items[0].weight == 0.0
+    assert "DEDUPLICATED" in structural_items[0].description
+
+
+def test_dedup_case_and_whitespace_normalized_headers_are_still_deduplicated():
+    table = _table(
+        rows=[["  LABEL  ", "x"], ["Tank Capacity", "y"]],
+        header_paths=[["label"], ["Other"]],
+        table_category_confidence=0.95,
+        table_structure_quality=0.95,
+    )
+    result = classifier.classify(table)
+    column = result.columns[0]
+    assert column.confidence == pytest.approx(TableColumnSemanticClassifier.LEXICAL_EXACT_WEIGHT)
+    structural_items = [
+        item for item in column.evidence
+        if item.category == EvidenceCategory.STRUCTURAL and item.role == TableColumnSemanticRole.LABEL
+    ]
+    assert structural_items[0].weight == 0.0
+
+
+def test_dedup_applies_to_morphologically_matched_lexical_aliases_too():
+    """'Maintenance tasks' (plural) matches TASK only via singularization
+    (weight 0.4, not the 0.5 exact-match weight) -- dedup must cap at
+    whichever lexical weight actually applied, not always 0.5."""
+    table = _table(
+        rows=[
+            ["Maintenance tasks", "x"],
+            ["Check engine oil level and inspect for leaks", "y"],
+            ["Replace oil filter and tighten housing bolts", "z"],
+        ],
+        header_paths=[["Maintenance tasks"], ["Other"]],
+        table_category_confidence=0.95,
+        table_structure_quality=0.95,
+    )
+    result = classifier.classify(table)
+    column = result.columns[0]
+    assert column.source_header == "Maintenance tasks"
+    assert column.structural_header == "Maintenance tasks"
+    structural_items = [
+        item for item in column.evidence
+        if item.category == EvidenceCategory.STRUCTURAL and item.role == TableColumnSemanticRole.TASK
+    ]
+    assert structural_items[0].weight == 0.0
+    lexical_items = [
+        item for item in column.evidence
+        if item.category == EvidenceCategory.LEXICAL and item.role == TableColumnSemanticRole.TASK
+    ]
+    assert lexical_items[0].weight == pytest.approx(TableColumnSemanticClassifier.LEXICAL_MORPHOLOGICAL_WEIGHT)
+
+
+def test_dedup_does_not_apply_when_structural_header_genuinely_differs():
+    """Genuinely differing source/structural text (the MTU 'Task'/'Parameter'
+    case) must retain full, undeduplicated structural weight -- this
+    experiment does not assume differing text proves independence, it only
+    removes the specific verified duplicate-text double-count."""
+    table = _table(
+        rows=[["Task", "x"], ["WM00285", "y"]],
+        header_paths=[["Parameter"], ["Other"]],
+        table_category_confidence=0.95,
+        table_structure_quality=0.95,
+    )
+    result = classifier.classify(table)
+    column = result.columns[0]
+    assert column.source_header == "Task"
+    assert column.structural_header == "Parameter"
+    structural_items = [
+        item for item in column.evidence
+        if item.category == EvidenceCategory.STRUCTURAL and item.role == TableColumnSemanticRole.LABEL
+    ]
+    assert structural_items[0].weight == pytest.approx(TableColumnSemanticClassifier.STRUCTURAL_WEIGHT)
+    assert "DEDUPLICATED" not in structural_items[0].description
+
+
+def test_dedup_handles_missing_headers_without_error():
+    """Reuses the same construction already proven (elsewhere in this file)
+    to produce a column with no detectable header row at all."""
+    table = _table(rows=[["P19", "P16"], ["P20", "P4"], ["P21", "P2"]])
+    result = classifier.classify(table)
+    for column in result.columns:
+        assert column.source_header is None
+        # no structural evidence at all when there is no header_paths entry
+        assert not any(item.category == EvidenceCategory.STRUCTURAL for item in column.evidence)
+
+
+def test_dedup_handles_multiple_candidate_roles_from_the_same_duplicate_header():
+    """'Item' aliases to both LABEL and POSITION -- dedup must cap EACH
+    shared role independently, not just the first one found."""
+    table = _table(
+        rows=[["Task", "Item"], ["WM00285", "ENGINE OPERATIONAL MONITORING"], ["WM00286", "ENGINE MOUNTING"]],
+        header_paths=[["Task"], ["Item"]],
+        table_category_confidence=0.95,
+        table_structure_quality=0.95,
+    )
+    result = classifier.classify(table)
+    item_column = result.columns[1]
+    assert item_column.source_header == "Item"
+    assert item_column.structural_header == "Item"
+    for role in (TableColumnSemanticRole.LABEL, TableColumnSemanticRole.POSITION):
+        structural_items = [
+            item for item in item_column.evidence
+            if item.category == EvidenceCategory.STRUCTURAL and item.role == role
+        ]
+        assert structural_items, f"expected structural evidence for {role}"
+        assert structural_items[0].weight == 0.0
+
+
+def test_dedup_is_deterministic_across_repeated_calls():
+    table = _table(
+        rows=[["Label", "Value"], ["Tank Capacity", "1,200L"]],
+        header_paths=[["Label"], ["Value"]],
+        table_category_confidence=0.95,
+        table_structure_quality=0.95,
+    )
+    first = classifier.classify(table)
+    second = classifier.classify(table)
+    assert first == second
+
+
+def test_dedup_does_not_remove_independent_content_evidence():
+    """Deduplication must only zero the STRUCTURAL item for a role lexical
+    already voted for -- it must never touch CONTENT evidence, even for the
+    same role, even under a duplicate header."""
+    table = _table(
+        rows=[
+            ["Maintenance tasks", "x"],
+            ["Check engine oil level and inspect for leaks", "y"],
+            ["Replace oil filter and tighten housing bolts", "z"],
+        ],
+        header_paths=[["Maintenance tasks"], ["Other"]],
+        table_category_confidence=0.95,
+        table_structure_quality=0.95,
+    )
+    result = classifier.classify(table)
+    column = result.columns[0]
+    content_task_items = [
+        item for item in column.evidence
+        if item.category == EvidenceCategory.CONTENT and item.role == TableColumnSemanticRole.TASK
+    ]
+    assert content_task_items
+    assert content_task_items[0].weight == pytest.approx(TableColumnSemanticClassifier.CONTENT_STRONG_WEIGHT)
+
+
+def test_dedup_preserves_partial_resolution_and_safe_abstention():
+    """The correction must not change the partial-resolution contract --
+    resolved, ambiguous, and unknown columns can still coexist."""
+    table = _table(
+        rows=[
+            ["Label", "Value", "????"],
+            ["Tank Capacity", "1,200L", "qqqqq"],
+            ["Pump Capacity", "16,000L/hr", "wwwww"],
+        ],
+        header_paths=[["Label"], ["Value"], ["????"]],
+        table_category_confidence=0.95,
+        table_structure_quality=0.95,
+    )
+    result = classifier.classify(table)
+    states = {col.column_index: col.resolution_state for col in result.columns}
+    assert states[0] == ColumnResolutionState.RESOLVED
+    assert states[1] == ColumnResolutionState.RESOLVED
+    assert states[2] == ColumnResolutionState.UNKNOWN
 
 
 def test_no_first_match_wins_shortcut_in_alias_lookup():
