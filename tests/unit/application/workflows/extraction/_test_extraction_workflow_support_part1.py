@@ -1,4 +1,3 @@
-import pytest
 
 from src.application.prompts.extraction import CombinedExtractionPromptBuilder
 
@@ -10,43 +9,18 @@ from src.application.workflows.extraction.extraction_execution_strategy import (
     ExtractionExecutionStrategy,
 )
 
-from src.application.workflows.extraction.batching import ExtractionChunkBatcher
 
-from src.application.workflows.extraction.batching.extraction_table_chunk_hydrator import (
-    hydrate_table_chunks,
-)
 
 from src.application.workflows.extraction.candidates import (
     ExtractionCandidateSelector,
 )
 
-from src.application.workflows.extraction.pruning.empty_entity_pruner import (
-    drop_empty_entities,
-    has_meaningful_entity_content,
-)
 
-from src.domain.assets import TableAsset
 
 from src.domain.common import ChunkType
 
-from src.domain.document import DocumentChunk, DocumentSection
 
-from src.domain.extraction import (
-    EquipmentInfo,
-    ExtractionResult,
-    Manufacturer,
-    MaintenanceInterval,
-    MaintenanceTask,
-    Procedure,
-    ProcedureType,
-    SafetyWarning,
-    SparePart,
-    Specification,
-    Supplier,
-    TroubleshootingEntry,
-)
 
-from src.shared.exceptions import SchemaValidationError
 
 from src.shared.execution import ActionResult
 

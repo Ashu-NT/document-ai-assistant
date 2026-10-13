@@ -6,9 +6,6 @@ from src.application.prompts.answer_generation.prompt_context.models.prompt_sour
 from src.application.prompts.answer_generation.prompt_context.tables.prompt_table_label_mapper import (
     prompt_table_label_for_strategy,
 )
-from src.application.workflows.question_answering.answer_context.tables.table_query_strategy import (
-    TableQueryStrategy,
-)
 from src.application.workflows.question_answering.answer_context.tables.table_type_resolution_core import (
     resolve_table_type,
 )

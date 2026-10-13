@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import pytest
 
 from src.application.services.document.identifiers.identifier_promotion_service import (
     IdentifierPromotionService,
@@ -12,7 +11,7 @@ from src.domain.document import Document, DocumentChunk, DocumentGraph
 
 from src.domain.document.value_objects import DocumentHashes
 
-from src.domain.common import ChunkType, DocumentType, SourceLocation
+from src.domain.common import ChunkType, SourceLocation
 
 from src.domain.extraction.contact_point import ContactPoint, ContactPointType
 

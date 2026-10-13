@@ -331,8 +331,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             build_agent_services,
         )
         from src.bootstrap.startup import bootstrap_application
-        from src.infrastructure.db.base import Base
-        from src.infrastructure.db.orm_models import __all__ as _orm_models_loaded
         from src.infrastructure.db.schema_management import ensure_database_schema
         from src.infrastructure.db.session import SessionLocal, engine
 

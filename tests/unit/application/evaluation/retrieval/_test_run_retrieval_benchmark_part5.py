@@ -1,16 +1,13 @@
 import json
 
-from dataclasses import dataclass
 
 from pathlib import Path
 
 from scripts.run_retrieval_benchmark import (
     BenchmarkRuntime,
-    close_runtime,
     ensure_manifest_exists,
     main,
     resolve_resolution_warning_output_paths,
-    select_subset_dataset,
 )
 
 from src.application.evaluation import (

@@ -24,7 +24,7 @@ class RetrievalBenchmarkResolutionFailureMarkdownRenderer:
             "# Retrieval Benchmark Resolution Failure",
             "",
             "## Summary",
-            f"- status: `resolution_failed`",
+            "- status: `resolution_failed`",
             f"- subset: `{subset}`",
             f"- truth set path: `{truth_set_path}`",
             f"- manifest path: `{manifest_path}`",

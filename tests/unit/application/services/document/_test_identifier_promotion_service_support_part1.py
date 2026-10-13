@@ -1,24 +1,21 @@
 from __future__ import annotations
 
-import pytest
 
 from src.application.services.document.identifiers.identifier_promotion_service import (
     IdentifierPromotionService,
 )
 
-from src.domain.common.enums import IdentifierType
 
 from src.domain.document import Document, DocumentChunk, DocumentGraph
 
 from src.domain.document.value_objects import DocumentHashes
 
-from src.domain.common import ChunkType, DocumentType, SourceLocation
+from src.domain.common import ChunkType, SourceLocation
 
 from src.domain.extraction.contact_point import ContactPoint, ContactPointType
 
 from src.domain.extraction.equipment_info import EquipmentInfo
 
-from src.domain.extraction.extracted_identifier import ExtractedIdentifier
 
 from src.domain.extraction.extraction_result import ExtractionResult
 
@@ -28,7 +25,6 @@ from src.domain.extraction.semantic_relationship import SemanticEntityType
 
 from src.domain.extraction.spare_part import SparePart
 
-from src.shared.ids import IdGenerator
 
 def _make_document(document_id: str = "doc_001") -> Document:
     return Document(

@@ -3,7 +3,6 @@ from __future__ import annotations
 import io
 
 from src.application.agent_runtime.presenters.console_presenter import ConsolePresenter
-from src.application.agent_runtime.react_loop.react_trace_builder import ReactTraceBuilder
 from src.application.agent_runtime.policies.demo_visibility_policy import DemoVisibilityPolicy
 from src.application.agent_runtime.streaming.live_agent_event import (
     LiveAgentEvent,

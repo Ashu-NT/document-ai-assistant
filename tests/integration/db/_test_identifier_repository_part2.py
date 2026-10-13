@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import pytest
 
 from src.application.services.document import IdentifierPromotionService
 
-from src.domain.common import ChunkType, DocumentType, IdentifierType, SourceLocation
+from src.domain.common import ChunkType, DocumentType, SourceLocation
 
 from src.domain.document import Document, DocumentChunk, DocumentGraph, DocumentHashes
 

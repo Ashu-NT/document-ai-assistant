@@ -17,7 +17,6 @@ from src.domain.extraction import (
     SparePart,
 )
 
-from src.shared.exceptions import DatabaseError
 
 class _FakeExtractionService:
     def __init__(self) -> None:

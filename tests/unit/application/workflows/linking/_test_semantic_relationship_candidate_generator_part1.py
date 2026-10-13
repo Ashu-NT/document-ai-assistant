@@ -16,13 +16,10 @@ from src.application.workflows.linking.semantic_relationship_candidate_generator
 )
 
 from src.domain.extraction import (
-    EquipmentInfo,
     MaintenanceInterval,
     MaintenanceTask,
-    Procedure,
     SemanticEntityType,
     SemanticRelationshipType,
-    TroubleshootingEntry,
 )
 
 def _entity(entity_type, entity_id, **overrides) -> IndexedEntity:

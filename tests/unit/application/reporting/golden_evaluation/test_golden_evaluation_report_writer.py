@@ -1,8 +1,5 @@
 import json
 
-from src.application.evaluation.golden.aggregate_cross_reference_metrics import (
-    AggregateCrossReferenceTypeMetrics,
-)
 from src.application.evaluation.golden.corpus_coverage_summary import (
     CorpusCoverageSummary,
 )

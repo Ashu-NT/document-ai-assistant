@@ -14,7 +14,6 @@ from src.application.evaluation.extraction.extraction_field_extraction import (
 )
 from src.application.evaluation.extraction.matchers.entity_identity_keys import (
     ENTITY_IDENTITY_FIELD_NAMES,
-    compute_identity_key,
 )
 from src.application.evaluation.extraction.matchers.extraction_match_result import (
     ExtractionMatchOutcome,

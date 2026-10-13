@@ -20,9 +20,6 @@ from src.application.services.document_exploration.document_exploration_result i
     DocumentExplorationResult,
     DocumentOverview,
 )
-from src.application.services.document_exploration.document_exploration_service import (
-    DocumentNotFoundError,
-)
 from src.application.workflows.retrieval.retrieval_workflow_result import (
     RetrievalWorkflowResult,
 )

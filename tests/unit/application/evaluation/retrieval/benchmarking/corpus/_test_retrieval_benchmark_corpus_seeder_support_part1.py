@@ -1,18 +1,10 @@
 from pathlib import Path
 
-from types import SimpleNamespace
 
 from uuid import uuid4
 
-import pytest
 
-from src.application.evaluation.retrieval.benchmarking.corpus import (
-    RetrievalBenchmarkCorpusSeeder,
-)
 
-from src.application.evaluation.retrieval.benchmarking.corpus.retrieval_benchmark_corpus_hasher import (
-    compute_hashes,
-)
 
 from src.application.evaluation.retrieval.benchmarking.datasets import (
     RetrievalBenchmarkDataset,
@@ -28,35 +20,20 @@ from src.application.evaluation.retrieval.benchmarking.models import (
     RetrievalBenchmarkCase,
 )
 
-from src.application.workflows.ingestion import IngestionResult, IngestionStatus
+from src.application.workflows.ingestion import IngestionResult
 
 from src.application.workflows.ingestion.models.ingestion_request import IngestionRequest
 from src.application.workflows.ingestion.models.reingestion_request import ReingestionRequest
 
-from src.domain.classification import ClassificationResult, DocumentClassification
+from src.domain.classification import DocumentClassification
 
-from src.domain.common import (
-    ChunkType,
-    DocumentType,
-    ElementType,
-    ModelProcessingMetadata,
-    SourceLocation,
-)
 
 from src.domain.document import (
-    Document,
-    DocumentChunk,
     DocumentGraph,
-    DocumentHashes,
-    DocumentSection,
-    GeneratedQuestion,
 )
 
-from src.domain.document.value_objects import DocumentStatistics
 
-from src.domain.elements import CanonicalElement
 
-from src.shared.exceptions import SchemaValidationError
 
 from src.shared.execution import ActionResult
 

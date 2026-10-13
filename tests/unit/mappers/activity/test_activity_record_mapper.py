@@ -1,6 +1,6 @@
 from src.domain.activity import ActivityRecord
 from src.infrastructure.db.mappers import ActivityRecordMapper
-from src.shared.activity import ActivityContext, ActivityStatus
+from src.shared.activity import ActivityStatus
 
 
 def test_activity_record_mapper_round_trip() -> None:

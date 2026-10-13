@@ -2,7 +2,6 @@
 
 from datetime import datetime, timezone
 
-import pytest
 
 from src.domain.common import ChunkType, DocumentType
 

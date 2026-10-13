@@ -1,13 +1,9 @@
-import logging
 
 from src.application.services.answer_generation.intent import (
     AnswerIntent,
     AnswerIntentAnalyzer,
 )
 
-from src.application.services.answer_generation.intent.answer_intent_analyzer import (
-    ANSWER_INTENT_RULES_VERSION,
-)
 
 from src.domain.common import ChunkType
 

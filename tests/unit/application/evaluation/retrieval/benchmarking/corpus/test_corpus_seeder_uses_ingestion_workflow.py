@@ -3,7 +3,6 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-import pytest
 
 from src.application.evaluation.retrieval.benchmarking.corpus.resolution.retrieval_benchmark_corpus_document_resolver import (
     _seed_new_document,

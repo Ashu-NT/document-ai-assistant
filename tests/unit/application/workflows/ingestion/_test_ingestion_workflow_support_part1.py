@@ -2,29 +2,15 @@ from __future__ import annotations
 
 import copy
 
-from dataclasses import replace
 
 from types import SimpleNamespace
 
-import pytest
 
-from src.application.validation.ingestion import IngestionRequestValidator
 
-from src.application.workflows.embedding import EmbeddedChunk
 
-from src.application.workflows.ingestion import (
-    DocumentNotFoundForReingestionError,
-    IngestionRequest,
-    IngestionStage,
-    IngestionStatus,
-    IngestionWorkflow,
-    ReingestionRequest,
-    ReingestionNotSupportedError,
-)
 
 from src.application.workflows.parsing import ParsingWorkflowResult
 
-from src.domain.common import ChunkType, DocumentType
 
 from src.domain.document.value_objects import DocumentStatistics
 
@@ -32,7 +18,6 @@ from src.shared.exceptions import DocumentParsingError
 
 from src.shared.execution import ActionResult
 
-from src.shared.ids import IdGenerator
 
 class FakeIngestionRunRepository:
     def __init__(self) -> None:

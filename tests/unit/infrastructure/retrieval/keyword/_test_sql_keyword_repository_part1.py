@@ -10,7 +10,6 @@ from src.infrastructure.db.repositories.retrieval.sql_keyword_repository import 
     SqlKeywordRepository,
 )
 
-from src.infrastructure.retrieval.keyword.sql_keyword_query_terms import extract_query_terms
 
 class FakeExecuteResult:
     def __init__(self, rows) -> None:

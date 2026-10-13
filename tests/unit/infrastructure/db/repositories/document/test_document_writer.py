@@ -1,9 +1,8 @@
-from datetime import datetime, timezone
 
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
-from src.domain.common import ChunkType, ElementType, SourceLocation
+from src.domain.common import ChunkType, ElementType
 from src.domain.document import (
     Document,
     DocumentChunk,

@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from src.application.workflows.parsing.parsing_workflow_metrics import (
     compute_parse_confidence,

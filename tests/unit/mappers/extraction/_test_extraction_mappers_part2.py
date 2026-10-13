@@ -1,20 +1,6 @@
-import pytest
 
 from src.domain.extraction import (
-    ContactPoint,
-    ContactPointType,
-    EquipmentInfo,
-    Manufacturer,
-    MaintenanceInterval,
-    MaintenanceTask,
-    Procedure,
-    SafetyWarning,
     SemanticSourceMetadata,
-    SparePart,
-    Specification,
-    Supplier,
-    SemanticEntityType,
-    TroubleshootingEntry,
 )
 
 from src.infrastructure.db.mappers import (

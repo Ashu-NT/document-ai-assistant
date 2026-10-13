@@ -236,7 +236,6 @@ def test_morphological_section_path_hit_variants(
 ) -> None:
     """Morphological variant matching is applied specifically to section-path lookup."""
     from src.infrastructure.retrieval.keyword.scoring.sql_keyword_morphology import (
-        MORPH_VARIANTS,
         section_path_hit,
     )
     from src.infrastructure.retrieval.keyword.sql_keyword_query_terms import (

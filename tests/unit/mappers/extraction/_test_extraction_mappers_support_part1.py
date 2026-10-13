@@ -1,36 +1,8 @@
-import pytest
 
 from src.domain.extraction import (
-    ContactPoint,
-    ContactPointType,
-    EquipmentInfo,
-    Manufacturer,
-    MaintenanceInterval,
-    MaintenanceTask,
-    Procedure,
-    SafetyWarning,
     SemanticSourceMetadata,
-    SparePart,
-    Specification,
-    Supplier,
-    SemanticEntityType,
-    TroubleshootingEntry,
 )
 
-from src.infrastructure.db.mappers import (
-    ContactPointMapper,
-    EquipmentInfoMapper,
-    ExtractionResultMapper,
-    MaintenanceIntervalMapper,
-    MaintenanceTaskMapper,
-    ManufacturerMapper,
-    ProcedureMapper,
-    SafetyWarningMapper,
-    SparePartMapper,
-    SpecificationMapper,
-    SupplierMapper,
-    TroubleshootingEntryMapper,
-)
 
 _SAMPLE_SOURCE_METADATA = SemanticSourceMetadata(
     document_id="document_001",

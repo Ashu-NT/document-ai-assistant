@@ -13,14 +13,11 @@ from src.application.services.document import DocumentLookupService
 
 from src.application.services.document_exploration import (
     DocumentExplorationService,
-    DocumentNotFoundError,
 )
 
-from src.domain.common import ChunkType
 
-from src.domain.document import Document, DocumentChunk, DocumentGraph, DocumentSection
+from src.domain.document import DocumentGraph
 
-from src.domain.document.value_objects import DocumentStatistics
 
 class FakeDocumentRepository:
     def __init__(self) -> None:

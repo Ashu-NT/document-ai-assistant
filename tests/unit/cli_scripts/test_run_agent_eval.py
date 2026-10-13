@@ -1,4 +1,3 @@
-from pathlib import Path
 from types import SimpleNamespace
 
 from tests.unit.cli_scripts.test_cli_scripts import _load_script

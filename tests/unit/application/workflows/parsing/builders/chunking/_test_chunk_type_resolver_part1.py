@@ -1,4 +1,3 @@
-import pytest
 
 from src.application.workflows.parsing.builders.chunking.builders import (
     ChunkTypeResolver,
@@ -8,13 +7,7 @@ from src.application.workflows.parsing.builders.chunking.models.chunk_fragment i
     ChunkFragment,
 )
 
-from src.application.workflows.parsing.builders.chunking.policies.section_merge.section_merge_policy import (
-    SectionMergePolicy,
-)
 
-from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitter import (
-    ChunkTextSplitter,
-)
 
 from src.domain.common import ChunkType
 

@@ -8,7 +8,6 @@ from src.application.services.answer_generation.formatting.renderers.support imp
     simplify_section_path,
 )
 from src.application.workflows.question_answering.answer_context.models import (
-    AnswerStructuredEntity,
     StructuredAnswerContext,
 )
 

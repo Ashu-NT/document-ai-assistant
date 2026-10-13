@@ -1,7 +1,6 @@
 import pytest
 
 from src.infrastructure.db.orm_models import DocumentORM
-from src.shared.exceptions import DatabaseError
 
 
 def test_unit_of_work_commits_successfully(

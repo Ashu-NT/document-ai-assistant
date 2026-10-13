@@ -1,6 +1,5 @@
 import copy
 
-from src.domain.common import ElementType
 
 def test_document_repository_replaces_document_graph(
     db_uow,

@@ -6,7 +6,7 @@ from src.application.workflows.retrieval.retrieval_workflow_result import (
     RetrievalWorkflowResult,
 )
 from src.domain.common import ChunkType, SourceLocation
-from src.domain.retrieval import RetrievalQuery, RetrievalResult, RetrievedChunk
+from src.domain.retrieval import RetrievalResult, RetrievedChunk
 
 
 class FakeRetrievalWorkflow:

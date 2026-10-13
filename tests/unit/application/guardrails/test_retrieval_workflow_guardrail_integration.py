@@ -1,17 +1,11 @@
-import pytest
 
 from src.application.contracts.guardrails import GuardrailDecision
-from src.application.contracts.guardrails.guardrail_context import GuardrailContext
-from src.application.contracts.guardrails.guardrail_result import GuardrailResult
 from src.application.guardrails.policies.retrieval_guardrail_policy import (
     RetrievalGuardrailPolicy,
 )
 from src.application.guardrails.retrieval.query_scope_guardrail import QueryScopeGuardrail
 from src.application.guardrails.retrieval.retrieval_evidence_guardrail import (
     RetrievalEvidenceGuardrail,
-)
-from src.application.guardrails.retrieval.identifier_evidence_guardrail import (
-    IdentifierEvidenceGuardrail,
 )
 from src.application.guardrails.retrieval.retrieval_confidence_guardrail import (
     RetrievalConfidenceGuardrail,

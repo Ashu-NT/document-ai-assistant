@@ -4,7 +4,6 @@ import pytest
 
 from src.application.validation.common import ValidationResult
 
-from src.application.validation.document import DocumentGraphValidator
 
 from src.application.workflows.parsing import (
     ParsedCanonicalElement,

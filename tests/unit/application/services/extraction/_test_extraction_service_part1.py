@@ -1,10 +1,8 @@
-import pytest
 
 from src.application.services.extraction import ExtractionService
 
 from src.application.validation.extraction import ExtractionResultValidator
 
-from src.shared.exceptions import SchemaValidationError
 
 class FakeExtractionRepository:
     def __init__(self) -> None:

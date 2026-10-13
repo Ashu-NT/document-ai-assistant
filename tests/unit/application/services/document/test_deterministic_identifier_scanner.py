@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import pytest
 
 from src.application.services.document.identifiers.deterministic_identifier_scanner import (
     DeterministicIdentifierScanner,

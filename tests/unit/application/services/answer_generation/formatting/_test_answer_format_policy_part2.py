@@ -1,23 +1,13 @@
 from src.application.services.answer_generation import AnswerFormatPolicy, AnswerIntent
 
 from src.application.services.answer_generation.formatting.policy.answer_format_policy import (
-    _DIRECT_MAINTENANCE_RECORDS_INSTRUCTION,
-    _ENTITY_GRAPH_AVAILABLE_INSTRUCTION,
-    _EXACT_IDENTIFIER_ROWS_INSTRUCTION,
-    _LOW_CONFIDENCE_EVIDENCE_INSTRUCTION,
     _MULTI_DOCUMENT_EVIDENCE_INSTRUCTION,
     _RAW_SOURCE_DOMINANT_INSTRUCTION,
-    _RICH_STRUCTURED_EVIDENCE_INSTRUCTION,
     _SPARSE_EVIDENCE_INSTRUCTION,
-    _TABLE_ROWS_AVAILABLE_INSTRUCTION,
 )
 
 from src.application.workflows.question_answering.answer_context import (
-    AnswerKeyValue,
-    AnswerRelationship,
-    AnswerMaintenanceEntry,
     AnswerSource,
-    AnswerStructuredEntity,
     StructuredAnswerContext,
 )
 

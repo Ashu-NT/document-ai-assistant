@@ -2,7 +2,7 @@ from src.application.contracts.document import DocumentRepository
 from src.domain.document import DocumentGraph
 from src.domain.document.entities import DocumentChunk, Identifier
 from src.shared.activity import ActivityContext
-from src.shared.execution import ActionResult, tracked_action
+from src.shared.execution import tracked_action
 
 
 class DocumentLookupService:

@@ -165,7 +165,6 @@ def build_benchmark_runtime() -> BenchmarkRuntime:
         build_retrieval_runtime,
     )
     from src.bootstrap.startup import bootstrap_application  # noqa: WPS433
-    from src.infrastructure.db.base import Base  # noqa: WPS433
     from src.infrastructure.db.schema_management import ensure_database_schema  # noqa: WPS433
     from src.infrastructure.db.orm_models import (  # noqa: WPS433,F401
         __all__ as _orm_models_loaded,
@@ -245,7 +244,7 @@ def run_benchmark(
     resolved_dataset = selected_dataset
     emit_progress(
         progress_callback,
-        f"Benchmark case resolution completed"
+        "Benchmark case resolution completed"
         + (
             f" ({len(skipped_case_ids)} case(s) skipped — see resolution warning report)."
             if skipped_case_ids

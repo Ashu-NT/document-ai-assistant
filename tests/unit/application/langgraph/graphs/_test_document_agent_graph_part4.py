@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import field
 
 from src.application.langgraph import (
     ConversationMemory,

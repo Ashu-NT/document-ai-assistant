@@ -1,4 +1,3 @@
-import pytest
 
 from src.application.services.ai.chunk_embedding_enricher import (
     maintenance_spec_aliases as _maintenance_spec_aliases,

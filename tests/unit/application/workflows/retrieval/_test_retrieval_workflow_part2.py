@@ -1,6 +1,4 @@
-import pytest
 
-from src.domain.common import ChunkType
 
 from src.application.validation.retrieval import RetrievalQueryValidator
 
@@ -8,7 +6,6 @@ from src.application.workflows.retrieval import RetrievalWorkflow
 
 from src.domain.retrieval import RetrievalResult
 
-from src.shared.exceptions import NoEvidenceFoundError, SchemaValidationError
 
 class FakeHybridRetrievalService:
     def __init__(self, result: RetrievalResult) -> None:

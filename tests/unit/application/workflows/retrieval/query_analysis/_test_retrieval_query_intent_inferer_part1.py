@@ -1,6 +1,5 @@
 """Unit tests for RetrievalQueryIntentInferer."""
 
-import pytest
 
 from src.application.workflows.retrieval.retrieval_query_intent import RetrievalQueryIntent
 

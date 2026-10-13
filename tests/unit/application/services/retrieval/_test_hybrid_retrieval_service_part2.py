@@ -1,14 +1,10 @@
-import pytest
 
 from src.application.services.retrieval import HybridRetrievalService
 
 from src.application.validation.retrieval import RetrievalQueryValidator
 
-from src.domain.document.value_objects import ChunkStatistics
 
-from src.domain.retrieval import RetrievalResult
 
-from src.shared.exceptions import SchemaValidationError
 
 from src.shared.ids import IdGenerator
 

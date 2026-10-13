@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import pytest
 
 from src.application.evaluation.retrieval.benchmarking.corpus.models import (
     RetrievalBenchmarkCorpusDocument,
@@ -31,7 +30,6 @@ from src.domain.document import Document, DocumentChunk, DocumentGraph, Document
 
 from src.domain.document.value_objects import DocumentStatistics
 
-from src.shared.exceptions import SchemaValidationError
 
 class FakeDocumentLookupService:
     def __init__(self, graphs: dict[str, DocumentGraph]) -> None:

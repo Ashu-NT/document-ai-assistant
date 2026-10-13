@@ -1,4 +1,4 @@
-from src.application.langgraph.research.models import ResearchPlan, ResearchResult
+from src.application.langgraph.research.models import ResearchResult
 from src.application.prompts.research.research_prompt_version import (
     RESEARCH_SYNTHESIS_PROMPT_VERSION,
 )

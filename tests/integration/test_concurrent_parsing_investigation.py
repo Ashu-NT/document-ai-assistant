@@ -41,10 +41,9 @@ from __future__ import annotations
 import threading
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, field
-from typing import Any, Callable
+from dataclasses import dataclass
+from typing import Any
 
-from src.application.contracts.pdf_links import PdfLinkExtractionResult
 from src.application.validation.document import DocumentGraphValidator
 from src.application.workflows.parsing import ParsingWorkflow
 from src.application.workflows.parsing.builders import DocumentGraphBuilder, SectionBuilder

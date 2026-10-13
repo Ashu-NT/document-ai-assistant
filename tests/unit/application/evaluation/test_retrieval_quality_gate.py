@@ -1,8 +1,6 @@
-import json
 from dataclasses import replace
 
 import pytest
-from pathlib import Path
 
 from src.application.evaluation.retrieval.retrieval_quality_gate import (
     RetrievalQualityGate,

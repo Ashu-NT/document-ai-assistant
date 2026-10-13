@@ -4,7 +4,6 @@ from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.retrieval_strategy.models import (
     RetrievalPlan,
     RetrievalPlanStep,
-    RetrievalStrategy,
 )
 from src.application.langgraph.retrieval_strategy.policies import (
     RetrievalStrategyPolicy,

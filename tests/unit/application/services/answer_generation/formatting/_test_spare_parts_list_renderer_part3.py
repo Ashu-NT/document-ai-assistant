@@ -2,9 +2,6 @@ from src.application.services.answer_generation.formatting.spare_parts.spare_par
     SparePartsListRenderer,
 )
 
-from src.application.services.answer_generation.formatting.spare_parts.spare_parts_table_parser import (
-    SPARE_PARTS_TABLE_PARSER_RULES_VERSION,
-)
 
 from src.application.services.answer_generation.intent.answer_intent import (
     AnswerIntent,

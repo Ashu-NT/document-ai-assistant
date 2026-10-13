@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import MagicMock
 
 from src.application.validation.document_quality import (
@@ -14,7 +13,6 @@ from src.application.validation.document_quality.chunking_quality_checks import 
 from src.application.validation.document_quality.parser_quality_checks import (
     check_elements_have_pages,
     check_orphan_element_ratio,
-    check_section_count,
 )
 from src.domain.common import ElementType, SourceLocation
 from src.domain.elements import CanonicalElement

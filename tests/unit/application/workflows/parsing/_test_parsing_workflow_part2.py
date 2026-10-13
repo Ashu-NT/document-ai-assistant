@@ -1,10 +1,8 @@
 import copy
 
-import pytest
 
 from src.application.validation.common import ValidationResult
 
-from src.application.validation.document import DocumentGraphValidator
 
 from src.application.workflows.parsing import (
     ParsedCanonicalElement,
@@ -18,7 +16,6 @@ from src.application.workflows.parsing.ocr.parsing_ocr_policy import ParsingOCRP
 
 from src.domain.common import ElementType
 
-from src.shared.exceptions import SchemaValidationError
 
 from src.shared.ids import IdGenerator
 

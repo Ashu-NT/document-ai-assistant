@@ -9,7 +9,6 @@ from src.application.evaluation.ingestion.models.chunk_token_budget_result impor
     ChunkTokenBudgetStatus,
 )
 from src.domain.assets import TableAsset
-from src.domain.assets.asset_metadata import AssetMetadata
 from src.domain.assets.picture_asset import PictureAsset
 from src.domain.common import ChunkType, DocumentType, ElementType, SourceLocation
 from src.domain.document.aggregates.document_graph import DocumentGraph

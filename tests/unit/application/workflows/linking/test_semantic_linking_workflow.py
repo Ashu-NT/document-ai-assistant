@@ -22,7 +22,6 @@ from src.domain.extraction import (
     SemanticSourceMetadata,
     SparePart,
     Specification,
-    Supplier,
     TroubleshootingEntry,
 )
 from src.shared.ids import IdGenerator

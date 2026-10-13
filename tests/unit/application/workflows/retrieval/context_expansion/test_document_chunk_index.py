@@ -1,7 +1,7 @@
 from src.application.workflows.retrieval.context_expansion.document_chunk_index import (
     DocumentChunkIndex,
 )
-from src.domain.common import ChunkType, SourceLocation
+from src.domain.common import SourceLocation
 from src.domain.document.entities.chunk import DocumentChunk
 
 

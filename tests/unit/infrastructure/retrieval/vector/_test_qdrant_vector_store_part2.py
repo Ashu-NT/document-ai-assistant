@@ -8,15 +8,12 @@ from src.domain.common import DocumentType
 
 from src.domain.document import Document, DocumentGraph
 
-from src.domain.document.value_objects import ChunkStatistics
 
 from src.domain.document.value_objects import DocumentHashes
 
-from src.application.workflows.embedding.embedding_workflow import EmbeddedChunk
 
 from src.infrastructure.retrieval.vector import QdrantVectorStore
 
-from src.shared.exceptions import VectorStoreError
 
 class FakeQdrantClient:
     def __init__(self) -> None:

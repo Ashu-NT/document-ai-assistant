@@ -5,22 +5,13 @@ from src.application.workflows.linking.semantic_entity_index import (
 
 from src.application.workflows.linking.semantic_relationship_candidate_generator import (
     EVIDENCE_EXISTING_FK,
-    EVIDENCE_NEARBY_CHUNK,
-    EVIDENCE_NEARBY_PAGE,
-    EVIDENCE_SAME_CHUNK,
-    EVIDENCE_SAME_PARENT_SECTION,
-    EVIDENCE_SAME_SECTION,
-    EVIDENCE_SAME_TABLE_AND_CHUNK_PROXIMITY,
     SemanticRelationshipCandidateGenerator,
     generate_fk_passthrough_candidates,
 )
 
 from src.domain.extraction import (
     EquipmentInfo,
-    MaintenanceInterval,
-    MaintenanceTask,
     Procedure,
-    SemanticEntityType,
     SemanticRelationshipType,
     TroubleshootingEntry,
 )

@@ -8,7 +8,6 @@ from src.application.workflows.parsing.tables.normalization import (
     TableRowSemanticNormalizer,
 )
 from src.domain.document import DocumentGraph
-from src.domain.elements import CanonicalElement
 
 
 class TableSemanticResolver:

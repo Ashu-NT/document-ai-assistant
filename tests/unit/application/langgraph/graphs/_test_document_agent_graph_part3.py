@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import field
 
 from src.application.langgraph import (
     ConversationMemory,
@@ -8,7 +8,6 @@ from src.application.langgraph import (
     ToolRegistry,
 )
 
-from src.application.langgraph.planning import LLMPlanProposer
 
 from src.application.langgraph.routing import RouteDecision, RouteType
 

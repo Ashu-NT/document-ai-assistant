@@ -7,7 +7,6 @@ from src.application.validation.document_quality.quality_check_result import (
 )
 
 if TYPE_CHECKING:
-    from src.domain.common import ChunkType
     from src.domain.document import DocumentChunk
 
 _MAX_GENERAL_CHUNK_RATIO = 0.6

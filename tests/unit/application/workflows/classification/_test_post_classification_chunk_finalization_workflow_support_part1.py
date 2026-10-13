@@ -1,22 +1,14 @@
 import copy
 
-import pytest
 
 from src.application.workflows.classification import (
     DocumentTypeDecision,
-    PostClassificationChunkFinalizationWorkflow,
 )
 
-from src.application.workflows.parsing.builders.document_graph.graph_chunk_builder import (
-    GraphChunkBuilder,
-)
 from src.application.workflows.parsing.builders.document_graph.graph_chunk_build_result import (
     GraphChunkBuildResult,
 )
 
-from src.application.workflows.parsing.builders.chunking.builders.section_chunk.section_chunk_builder import (
-    SectionChunkBuilder,
-)
 
 from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
@@ -39,19 +31,15 @@ from src.application.workflows.parsing.builders.chunking.policies.document_chunk
     ResolvedChunkingPolicy,
 )
 
-from src.domain.assets import AssetMetadata, PictureAsset, TableAsset
 
-from src.domain.common import ChunkType, DocumentType, ElementType, ParserMetadata
+from src.domain.common import ChunkType
 
-from src.domain.document import DocumentChunk, DocumentGraph, DocumentSection, GeneratedQuestion
+from src.domain.document import DocumentChunk, GeneratedQuestion
 
-from src.domain.elements import CanonicalElement
 
-from src.shared.exceptions import ApplicationError
 
 from src.shared.execution import ActionResult
 
-from src.shared.ids import IdGenerator
 
 class FakeDocumentLookupService:
     def __init__(self, graph) -> None:

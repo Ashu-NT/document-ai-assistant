@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 
 from src.application.langgraph.factories import ToolRegistry
 from src.application.langgraph.nodes.documents import (

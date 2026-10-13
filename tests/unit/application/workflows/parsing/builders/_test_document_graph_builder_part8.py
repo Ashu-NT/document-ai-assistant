@@ -3,9 +3,6 @@ from src.application.workflows.parsing import (
     RawParsedDocument,
 )
 
-from src.application.workflows.parsing.builders.chunking.text.tokenization.chunk_token_counter_factory import (
-    ChunkTokenCounterFactory,
-)
 
 from src.application.workflows.parsing.builders import (
     DocumentGraphBuilder,

@@ -1,4 +1,3 @@
-from typing import Any
 
 from src.application.contracts.document.document_repository import DocumentRepository
 from src.application.prompts.classification import (

@@ -8,7 +8,7 @@ from src.domain.document import DocumentChunk
 
 from src.domain.document.value_objects import ChunkStatistics
 
-from src.domain.retrieval import RetrievalQuery, RetrievedChunk
+from src.domain.retrieval import RetrievedChunk
 
 class FakeDocumentLookupService:
     def __init__(self, chunks_by_document: dict[str, list[DocumentChunk]]) -> None:
