@@ -276,7 +276,7 @@ def load_document_records(
 
 
 def apply_deletion_plans(plans: Sequence[DuplicateDeletionPlan]) -> tuple[int, list[str]]:
-    from src.application.orchestrator.ingestion.ingestion_orchestrator import (  # noqa: WPS433
+    from src.application.composition.ingestion.ingestion_composition import (  # noqa: WPS433
         build_ingestion_runtime,
     )
 

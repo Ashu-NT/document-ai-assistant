@@ -3,10 +3,10 @@ from __future__ import annotations
 from src.application.contracts import UnitOfWork
 from src.application.contracts.ai import EmbeddingProvider
 from src.application.contracts.guardrails.guardrail import Guardrail
-from src.application.orchestrator.ingestion.vector_runtime_builder import (
+from src.application.composition.ingestion.vector_runtime_builder import (
     build_vector_store,
 )
-from src.application.orchestrator.retrieval.retrieval_runtime import RetrievalRuntime
+from src.application.composition.retrieval.retrieval_runtime import RetrievalRuntime
 from src.application.services.document import DocumentLookupService
 from src.application.services.document_exploration import DocumentExplorationService
 from src.application.services.extraction import ExtractionService

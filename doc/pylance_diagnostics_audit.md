@@ -78,7 +78,7 @@ self.table_semantic_resolver = TableSemanticResolver()                # zero-arg
 ```
 Pyright reports **"Arguments missing for parameters `logical_table_family_id`, `family_index`, `family_total`, `continuation_role`"** on both lines. Neither `LogicalTableFamilyResolver` nor `TableSemanticResolver` takes those parameters — `LogicalTableFamilyAssignment` does (a dataclass with exactly those 4 required fields), and it's a **different name from the same lazy `__getattr__`** in `src/application/workflows/parsing/tables/__init__.py`. Pyright checked the zero-arg call against the wrong union member.
 
-**`src/application/orchestrator/ingestion/parsing_runtime_builder.py:51-63`** — constructing `ParsingWorkflow(parser=..., normalizer=..., ...)` (all correct kwargs for `ParsingWorkflow.__init__`) reports "No parameter named 'parser'", "No parameter named 'normalizer'", etc., because `ParsingWorkflow` is imported from `src/application/workflows/parsing/__init__.py`'s lazy `__getattr__` alongside `ParsingWorkflowResult`, and pyright checked the call against `ParsingWorkflowResult`'s (unrelated) dataclass signature too.
+**`src/application/composition/ingestion/parsing_runtime_builder.py:51-63`** — constructing `ParsingWorkflow(parser=..., normalizer=..., ...)` (all correct kwargs for `ParsingWorkflow.__init__`) reports "No parameter named 'parser'", "No parameter named 'normalizer'", etc., because `ParsingWorkflow` is imported from `src/application/workflows/parsing/__init__.py`'s lazy `__getattr__` alongside `ParsingWorkflowResult`, and pyright checked the call against `ParsingWorkflowResult`'s (unrelated) dataclass signature too.
 
 **`src/application/agent_runtime/bootstrap/agent_service_builder.py:106-109`** — `AnswerGenerationService(llm_service=..., answer_generation_model=...)` reports "No parameter named 'llm_service'" / "No parameter named 'answer_generation_model'", because `AnswerGenerationService` is imported from `src/application/services/answer_generation/__init__.py` alongside `AnswerIntent`, `AnswerFormatPolicy`, etc., none of which have those constructor params.
 
@@ -88,14 +88,14 @@ Pyright reports **"Arguments missing for parameters `logical_table_family_id`, `
 
 ```
 11  src/application/workflows/question_answering/evidence/table_evidence_hydrator.py
- 9  src/application/orchestrator/ingestion/parsing_runtime_builder.py
+ 9  src/application/composition/ingestion/parsing_runtime_builder.py
  8  src/application/workflows/parsing/tables/semantics/table_semantic_classifier.py
  7  scripts/ask_document.py
  7  src/application/agent_runtime/bootstrap/agent_service_builder.py
  6  src/application/workflows/extraction/batching/extraction_table_chunk_hydrator.py
  6  src/application/workflows/parsing/builders/document_graph_builder.py
  5  src/application/workflows/parsing/tables/table_semantic_resolver.py
- 1  src/application/orchestrator/retrieval/retrieval_runtime_builder.py
+ 1  src/application/composition/retrieval/retrieval_runtime_builder.py
 ```
 Plus all 34 `reportUnsupportedDunderAll` hits (9 files) and a further ~50-70 diagnostics scattered as single-line "No parameter named X" / "Cannot access attribute Y for class Z1/Z2/Z3" entries inside `src/application/workflows/parsing/tables/*` and `src/application/workflows/question_answering/*` consumers not individually re-verified line-by-line here (same symptom signature, same 9-file cause).
 
@@ -283,7 +283,7 @@ These don't share a root cause — each was read directly and is reported here w
 | `src/shared/execution/events/event_tracker.py:23` | `event_service: EventService = getattr(service_instance, "event_service", None)` — declared non-Optional, but the very next line does `if event_service is None: return`, proving the code itself expects `None`. | 🟢 Simple annotation-only bug. Fix: `event_service: EventService | None = ...`. |
 | `src/application/agent_runtime/session/conversation_turn.py:15` | `def from_message(...) -> "ConversationTurn" \| None:` — invalid mixed quoted/unquoted union syntax. | 🟢 The file already has `from __future__ import annotations`, so quoting is unnecessary anywhere in it. Fix: `-> ConversationTurn | None:` (drop the quotes). |
 | `src/application/workflows/retrieval/tracing/retrieval_trace_recorder.py:29-37` | `str \| None` passed to constructor params typed `float \| None` (`fused_score`) / `int \| None` (`dedup_group_size`). | 🟡 **Worth checking** — this isn't just an optionality mismatch, the base types disagree (`str` vs `float`/`int`). Check whether a value is being read as a raw string somewhere upstream without being parsed to a number first. |
-| `src/application/orchestrator/ingestion/vector_runtime_builder.py:65,76,103(x2),122` | "Variable not allowed in type expression" — `QdrantClient` (and others) used as a return-type/parameter annotation while actually being a runtime-resolved variable (a different lazy-import mechanism than Priority 1's `__getattr__`, but the same underlying tension between deferred imports and static typing). | 🟡 Needs the same general remedy as Priority 1 — a `TYPE_CHECKING`-guarded static import of the *real* `QdrantClient` type for annotation purposes, separate from the runtime lazy-resolution path. |
+| `src/application/composition/ingestion/vector_runtime_builder.py:65,76,103(x2),122` | "Variable not allowed in type expression" — `QdrantClient` (and others) used as a return-type/parameter annotation while actually being a runtime-resolved variable (a different lazy-import mechanism than Priority 1's `__getattr__`, but the same underlying tension between deferred imports and static typing). | 🟡 Needs the same general remedy as Priority 1 — a `TYPE_CHECKING`-guarded static import of the *real* `QdrantClient` type for annotation purposes, separate from the runtime lazy-resolution path. |
 | `src/application/workflows/ingestion/pipeline/stage_lifecycle/ingestion_stage_sequence_executor.py:99` | "Function with declared return type `IngestionResult` must return value on all code paths" — the `except Exception as exc: self.exception_handler.handle(...)` branch never explicitly returns, relying on `handle()` being declared `-> NoReturn`. | 🟡 Root cause: **every constructor parameter on this class is untyped** (`stage_lifecycle`, `duplicate_coordinator`, `exception_handler`, …), so pyright can't see `exception_handler`'s real type or its `NoReturn` signature. Fix: add type annotations to the constructor — this is a good representative example of a broader "many DI-heavy classes in this codebase have fully untyped constructors" pattern worth a dedicated follow-up if the team wants stronger type coverage generally (out of scope to enumerate exhaustively here). |
 | `src/application/workflows/parsing/normalizers/docling_document_normalizer.py:215-216` | `.sort(key=lambda entry: entry[1].metadata.get("layout_page_order") if ... else entry[0])` — the lambda's return type is `Any \| int \| None`; `None` can't be compared with `<`. | 🟡 Real narrow-typing gap in this specific sort key, unrelated to the other patterns above. Fix: normalize the lambda's return type to always be `int` (fall back to `entry[0]` — already an `int` — instead of `None` in the falsy branch, or coerce explicitly). |
 
@@ -308,7 +308,7 @@ Top 20 files by raw diagnostic count (several are already explained above; the r
 11  src/domain/assets/table_cell_span.py
 11  src/infrastructure/db/repositories/extraction/extraction_reader.py
  9  scripts/ask_document.py
- 9  src/application/orchestrator/ingestion/parsing_runtime_builder.py
+ 9  src/application/composition/ingestion/parsing_runtime_builder.py
  8  src/application/workflows/parsing/tables/semantics/table_semantic_classifier.py
  7  src/application/agent_runtime/bootstrap/agent_service_builder.py
  7  src/application/services/answer_generation/__init__.py

@@ -312,7 +312,7 @@ copies of it.
 every existing caller/test is unaffected). When provided, `link()` loads the document's `DocumentGraph`,
 pulls `graph.cross_references`, and folds the new candidate source into the existing FK + proximity + ownership
 candidate list before scoring/persisting. Wired into both real construction sites
-(`ingestion_orchestrator.py`'s `semantic_linking_workflow` construction, and `scripts/link_existing_documents.py`'s
+(`ingestion_composition.py`'s `semantic_linking_workflow` construction, and `scripts/link_existing_documents.py`'s
 standalone backfill).
 
 8 unit tests for `SemanticLinkingWorkflow` (5 pre-existing + 3 new: fuses a cross-reference into a relationship

@@ -46,7 +46,7 @@ from src.domain.assets import TableAsset
 from src.domain.extraction import ExtractionResult, UnresolvedExtractionWork
 from src.shared.activity import ActivityContext
 
-# Top-level SPECIALIZED_FAMILY orchestrator: given the SAME batches
+# Top-level SPECIALIZED_FAMILY composition: given the SAME batches
 # ExtractionChunkBatcher already built for MULTI_FAMILY, expands them into an
 # ExtractionPlan (one work item per (batch, family) pair) and runs each work
 # item through its OWN independent ExtractionBatchRetryCoordinator instance,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from src.application.orchestrator.ingestion.ingestion_runtime import IngestionRuntime
+from src.application.composition.ingestion.ingestion_runtime import IngestionRuntime
 
 
 def _make_runtime(*, unit_of_work, qdrant_client=None) -> IngestionRuntime:

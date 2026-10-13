@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from src.application.orchestrator.ingestion.ingestion_input_limits import (
+from src.application.composition.ingestion.ingestion_input_limits import (
     resolve_ingestion_input_limits,
 )
-from src.application.orchestrator.ingestion.parsing_chunking_settings import (
+from src.application.composition.ingestion.parsing_chunking_settings import (
     resolve_parsing_chunking_settings,
 )
 from src.application.validation.document import DocumentGraphValidator

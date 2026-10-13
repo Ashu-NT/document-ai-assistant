@@ -1,4 +1,4 @@
-from src.application.orchestrator.ingestion import (
+from src.application.composition.ingestion import (
     IngestionRuntime,
     build_ingestion_runtime,
 )

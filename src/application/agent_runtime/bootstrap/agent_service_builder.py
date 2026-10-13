@@ -50,7 +50,7 @@ def build_agent_services(
         SeedEvidenceGuardrail,
     )
     from src.application.langgraph.strategy_advisor.advisor import StrategyAdvisor
-    from src.application.orchestrator.retrieval import build_retrieval_runtime
+    from src.application.composition.retrieval import build_retrieval_runtime
     from src.application.services.ai import LLMService
     from src.application.services.answer_generation import AnswerGenerationService
     from src.application.services.document import DocumentCatalogService

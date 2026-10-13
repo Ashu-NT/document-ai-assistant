@@ -33,10 +33,10 @@ from src.application.reporting.document_parsing.graph_build_profiling import (
     build_structured_family_timing_summary,
     render_structured_family_timing_console_lines,
 )
-from src.application.orchestrator.ingestion.ingestion_input_limits import (
+from src.application.composition.ingestion.ingestion_input_limits import (
     resolve_ingestion_input_limits,
 )
-from src.application.orchestrator.ingestion.parsing_chunking_settings import (
+from src.application.composition.ingestion.parsing_chunking_settings import (
     resolve_parsing_chunking_settings,
 )
 from src.application.workflows.parsing.profiling import (

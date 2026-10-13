@@ -32,7 +32,7 @@ for import_root in (PROJECT_ROOT, SRC_ROOT):
 from src.application.evaluation.parsing import (  # noqa: E402
     ParsingPerformanceGate,
 )
-from src.application.orchestrator.ingestion import build_parsing_runtime  # noqa: E402
+from src.application.composition.ingestion import build_parsing_runtime  # noqa: E402
 from src.shared.ids import IdGenerator  # noqa: E402
 
 

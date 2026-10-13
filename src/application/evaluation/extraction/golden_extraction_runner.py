@@ -434,7 +434,7 @@ def run_extraction_golden_evaluation(
             }
         )
         if needs_real_parsing:
-            from src.application.orchestrator.ingestion.parsing_runtime_builder import (
+            from src.application.composition.ingestion.parsing_runtime_builder import (
                 build_parsing_runtime,
             )
 

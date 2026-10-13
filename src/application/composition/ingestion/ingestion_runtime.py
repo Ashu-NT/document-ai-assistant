@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 @dataclass(slots=True)
 class IngestionRuntime:
-    """Fully-wired ingestion dependency graph produced by the ingestion orchestrator.
+    """Fully-wired ingestion dependency graph produced by the ingestion composition.
 
     Bundles the canonical `IngestionWorkflow` with the supporting services
     that ingestion entrypoints commonly need alongside it (benchmark corpus

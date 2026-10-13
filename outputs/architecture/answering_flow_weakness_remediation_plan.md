@@ -867,7 +867,7 @@ most-confident/most-dangerous first:
    the file's own header comment already documents the tradeoff ("`semantic_contexts` is (re)populated once per
    `extract()` call... mirroring the mutable instance state `ExtractionWorkflow` used to hold directly before
    this split"). `ExtractionBuilderSupport` is constructed once per `ExtractionWorkflow`, which is itself built
-   once at the ingestion composition root (`ingestion_orchestrator.py`) and reused across every document a run
+   once at the ingestion composition root (`ingestion_composition.py`) and reused across every document a run
    processes. Two overlapping `extract()` calls would let one document's `semantic_contexts` overwrite another's
    mid-flight — a correctness bug in extracted *data*, not just stale diagnostics.
 2. **`ExtractionBuilderSupport.invalid_source_chunk_id_events`** (same file, `:41,48-49,135`) — same shared

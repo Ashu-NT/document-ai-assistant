@@ -15,7 +15,7 @@ their own definitions — nothing in retrieval or QA ever reads it back.
 consumer and no other phase in this plan depends on it.
 
 Ordered deletions/edits:
-1. `src/application/orchestrator/ingestion/ingestion_orchestrator.py` — remove
+1. `src/application/composition/ingestion/ingestion_composition.py` — remove
    `ChunkClassificationWorkflow` construction and the kwarg passed into
    `PostClassificationChunkFinalizationWorkflow(...)`.
 2. `post_classification_chunk_finalization_workflow.py` — remove the

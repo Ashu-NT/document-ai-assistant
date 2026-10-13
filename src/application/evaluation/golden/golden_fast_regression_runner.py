@@ -33,7 +33,7 @@ from src.application.evaluation.ingestion.models.ingestion_expectation_case impo
     IngestionExpectationCase,
 )
 from src.application.evaluation.reproducibility import build_evaluation_run_metadata
-from src.application.orchestrator.ingestion.parsing_runtime_builder import (
+from src.application.composition.ingestion.parsing_runtime_builder import (
     build_parsing_runtime,
 )
 from src.shared.exceptions import SchemaValidationError
