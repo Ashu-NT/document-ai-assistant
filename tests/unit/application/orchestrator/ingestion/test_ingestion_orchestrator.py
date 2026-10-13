@@ -4,11 +4,11 @@ from types import SimpleNamespace
 
 import pytest
 
-from src.application.orchestrator.ingestion import ingestion_orchestrator
-from src.application.orchestrator.ingestion.ingestion_input_limits import (
+from src.application.composition.ingestion import ingestion_composition
+from src.application.composition.ingestion.ingestion_input_limits import (
     IngestionInputLimits,
 )
-from src.application.orchestrator.ingestion.ingestion_orchestrator import (
+from src.application.composition.ingestion.ingestion_composition import (
     build_ingestion_runtime,
 )
 
@@ -32,24 +32,24 @@ def _fake_uow():
 
 @pytest.fixture()
 def patched(monkeypatch):
-    """Patch every external/heavy dependency the orchestrator wires together."""
+    """Patch every external/heavy dependency the composition wires together."""
     calls: dict[str, list] = {"bootstrap_application": [], "ensure_database_schema": []}
 
     monkeypatch.setattr(
-        ingestion_orchestrator,
+        ingestion_composition,
         "bootstrap_application",
         lambda: calls["bootstrap_application"].append(True),
     )
     monkeypatch.setattr(
-        ingestion_orchestrator,
+        ingestion_composition,
         "ensure_database_schema",
         lambda engine: calls["ensure_database_schema"].append(engine),
     )
-    monkeypatch.setattr(ingestion_orchestrator, "engine", "fake_engine")
-    monkeypatch.setattr(ingestion_orchestrator, "SessionLocal", lambda: "fake_session")
-    monkeypatch.setattr(ingestion_orchestrator, "SqlAlchemyUnitOfWork", lambda session: _fake_uow())
+    monkeypatch.setattr(ingestion_composition, "engine", "fake_engine")
+    monkeypatch.setattr(ingestion_composition, "SessionLocal", lambda: "fake_session")
+    monkeypatch.setattr(ingestion_composition, "SqlAlchemyUnitOfWork", lambda session: _fake_uow())
     monkeypatch.setattr(
-        ingestion_orchestrator,
+        ingestion_composition,
         "resolve_ingestion_input_limits",
         lambda: IngestionInputLimits(
             max_file_size_bytes=4096,
@@ -59,20 +59,20 @@ def patched(monkeypatch):
     )
 
     monkeypatch.setattr(
-        ingestion_orchestrator,
+        ingestion_composition,
         "build_parsing_runtime",
         lambda *, id_generator: ("fake_parsing_workflow", SimpleNamespace(chunk_builder="chunk_builder")),
     )
-    monkeypatch.setattr(ingestion_orchestrator, "LLMService", _Recorder)
-    monkeypatch.setattr(ingestion_orchestrator, "OllamaLLMProvider", _Recorder)
-    monkeypatch.setattr(ingestion_orchestrator, "create_embedding_provider", lambda: "fake_embedding_provider")
+    monkeypatch.setattr(ingestion_composition, "LLMService", _Recorder)
+    monkeypatch.setattr(ingestion_composition, "OllamaLLMProvider", _Recorder)
+    monkeypatch.setattr(ingestion_composition, "create_embedding_provider", lambda: "fake_embedding_provider")
     monkeypatch.setattr(
-        ingestion_orchestrator,
+        ingestion_composition,
         "build_vector_store",
         lambda *, unit_of_work, embedding_provider: ("fake_vector_store", "fake_qdrant_client"),
     )
     monkeypatch.setattr(
-        ingestion_orchestrator,
+        ingestion_composition,
         "build_embedding_workflow",
         lambda *, vector_store, embedding_provider: "fake_embedding_workflow",
     )
@@ -98,28 +98,28 @@ def patched(monkeypatch):
         "IngestionWorkflow",
         "DeleteDocumentWorkflow",
     ):
-        monkeypatch.setattr(ingestion_orchestrator, name, _Recorder)
+        monkeypatch.setattr(ingestion_composition, name, _Recorder)
 
     monkeypatch.setattr(
-        ingestion_orchestrator.embedding_settings, "model_name", "bge-small", raising=False
+        ingestion_composition.embedding_settings, "model_name", "bge-small", raising=False
     )
     monkeypatch.setattr(
-        ingestion_orchestrator.qdrant_settings, "collection", "document_chunks", raising=False
+        ingestion_composition.qdrant_settings, "collection", "document_chunks", raising=False
     )
     monkeypatch.setattr(
-        ingestion_orchestrator.extraction_settings,
+        ingestion_composition.extraction_settings,
         "extraction_enabled",
         True,
         raising=False,
     )
     monkeypatch.setattr(
-        ingestion_orchestrator.extraction_settings,
+        ingestion_composition.extraction_settings,
         "identifier_extraction_enabled",
         True,
         raising=False,
     )
     monkeypatch.setattr(
-        ingestion_orchestrator.extraction_settings, "identifier_min_length", 3, raising=False
+        ingestion_composition.extraction_settings, "identifier_min_length", 3, raising=False
     )
 
     return calls
@@ -142,7 +142,7 @@ def test_bootstrap_skipped_when_disabled(patched):
 def test_uses_provided_unit_of_work_instead_of_constructing_one(monkeypatch, patched):
     calls = []
     monkeypatch.setattr(
-        ingestion_orchestrator,
+        ingestion_composition,
         "SqlAlchemyUnitOfWork",
         lambda session: calls.append(session) or _fake_uow(),
     )
@@ -184,7 +184,7 @@ def test_identifier_services_wired_when_enabled(patched):
 
 def test_identifier_services_are_none_when_disabled(monkeypatch, patched):
     monkeypatch.setattr(
-        ingestion_orchestrator.extraction_settings,
+        ingestion_composition.extraction_settings,
         "identifier_extraction_enabled",
         False,
         raising=False,
@@ -199,7 +199,7 @@ def test_identifier_services_are_none_when_disabled(monkeypatch, patched):
 
 def test_ingestion_workflow_receives_extraction_enabled_flag(monkeypatch, patched):
     monkeypatch.setattr(
-        ingestion_orchestrator.extraction_settings,
+        ingestion_composition.extraction_settings,
         "extraction_enabled",
         False,
         raising=False,
@@ -212,7 +212,7 @@ def test_ingestion_workflow_receives_extraction_enabled_flag(monkeypatch, patche
 
 def test_semantic_linking_workflow_wired_when_enabled(monkeypatch, patched):
     monkeypatch.setattr(
-        ingestion_orchestrator.extraction_settings,
+        ingestion_composition.extraction_settings,
         "semantic_linking_enabled",
         True,
         raising=False,
@@ -234,7 +234,7 @@ def test_semantic_linking_workflow_wired_when_enabled(monkeypatch, patched):
 
 def test_semantic_linking_workflow_is_none_when_disabled(monkeypatch, patched):
     monkeypatch.setattr(
-        ingestion_orchestrator.extraction_settings,
+        ingestion_composition.extraction_settings,
         "semantic_linking_enabled",
         False,
         raising=False,
@@ -247,13 +247,13 @@ def test_semantic_linking_workflow_is_none_when_disabled(monkeypatch, patched):
 
 def test_semantic_linking_workflow_is_none_when_extraction_is_disabled(monkeypatch, patched):
     monkeypatch.setattr(
-        ingestion_orchestrator.extraction_settings,
+        ingestion_composition.extraction_settings,
         "semantic_linking_enabled",
         True,
         raising=False,
     )
     monkeypatch.setattr(
-        ingestion_orchestrator.extraction_settings,
+        ingestion_composition.extraction_settings,
         "extraction_enabled",
         False,
         raising=False,
@@ -334,7 +334,7 @@ def test_delete_document_workflow_is_wired_with_the_same_unit_of_work_and_vector
 def test_reuses_a_provided_vector_store_instead_of_building_a_new_one(monkeypatch, patched):
     calls = []
     monkeypatch.setattr(
-        ingestion_orchestrator,
+        ingestion_composition,
         "build_vector_store",
         lambda **kwargs: calls.append(kwargs) or ("should_not_be_used", "should_not_be_used"),
     )

@@ -97,7 +97,7 @@ os.environ.setdefault(
     "false" if _args.disable_fuzzy else "true",
 )
 
-from src.application.orchestrator.ingestion.parsing_runtime_builder import (  # noqa: E402
+from src.application.composition.ingestion.parsing_runtime_builder import (  # noqa: E402
     build_parsing_runtime,
 )
 from src.bootstrap.startup import bootstrap_application  # noqa: E402

@@ -57,11 +57,11 @@ To rule out a bug specific to that one call site, I implemented an independent, 
 
 **What happened:** with both set to `false`/`true` respectively in `.env` (as they already were), a real ingestion run still attempted to call the classification LLM (and failed, since no Ollama is available here).
 
-**Confirmed via exhaustive grep across `src/`:** `classification_settings.enabled` (backing `CLASSIFICATION_ENABLED`) and `classification_settings.use_llm` (backing `CLASSIFICATION_USE_LLM`) have **zero consumers anywhere in the codebase** — not in the classification workflow, not in orchestrator wiring, nowhere. They're defined as `Field`s on `ClassificationSettings`, documented in `.env`/`.env.example`, and then never read again. Setting either has no effect on runtime behavior whatsoever; the classification LLM call runs unconditionally regardless.
+**Confirmed via exhaustive grep across `src/`:** `classification_settings.enabled` (backing `CLASSIFICATION_ENABLED`) and `classification_settings.use_llm` (backing `CLASSIFICATION_USE_LLM`) have **zero consumers anywhere in the codebase** — not in the classification workflow, not in composition wiring, nowhere. They're defined as `Field`s on `ClassificationSettings`, documented in `.env`/`.env.example`, and then never read again. Setting either has no effect on runtime behavior whatsoever; the classification LLM call runs unconditionally regardless.
 
 **Impact:** this is a real operability gap. Anyone trying to run this pipeline without an LLM available (exactly this environment's situation) has no documented, working way to disable classification — the settings that look like they should do exactly that are vestigial.
 
-**What it would take to fix:** either wire `classification_settings.enabled` into the actual gate that decides whether the classification stage runs at all (likely in the ingestion orchestrator or `ClassificationService`), or remove the dead settings entirely if they're truly obsolete — leaving them in place, unused, is actively misleading.
+**What it would take to fix:** either wire `classification_settings.enabled` into the actual gate that decides whether the classification stage runs at all (likely in the ingestion composition or `ClassificationService`), or remove the dead settings entirely if they're truly obsolete — leaving them in place, unused, is actively misleading.
 
 ---
 

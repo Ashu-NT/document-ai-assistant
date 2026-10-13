@@ -6,7 +6,7 @@ from pathlib import Path
 from docling_core.types.doc import DoclingDocument
 
 from src.application.evaluation.corpus import EvaluationCorpusTier, GoldenCorpusManifest
-from src.application.orchestrator.ingestion.parsing_runtime_builder import (
+from src.application.composition.ingestion.parsing_runtime_builder import (
     build_parsing_runtime,
 )
 from src.application.workflows.ingestion.hashing.file_hash_service import (

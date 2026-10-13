@@ -31,8 +31,8 @@ These are the findings that can take down ingestion for every team, not just deg
 **Affected files**:
 - `src/infrastructure/parsing/docling/docling_parser.py` (wrap the `convert()` call)
 - `src/config/settings/ingestion_settings.py` (new `parse_timeout_seconds` setting)
-- `src/application/orchestrator/ingestion/ingestion_input_limits.py` (thread the setting through)
-- `src/application/orchestrator/ingestion/parsing_runtime_builder.py` (pass timeout into `DoclingParser`)
+- `src/application/composition/ingestion/ingestion_input_limits.py` (thread the setting through)
+- `src/application/composition/ingestion/parsing_runtime_builder.py` (pass timeout into `DoclingParser`)
 - `src/shared/exceptions/ingestion_exceptions.py` (new `DocumentParsingTimeoutError`)
 
 **Fix**: run the blocking `convert()` call in a worker thread and bound it with `Future.result(timeout=...)` — this works cross-platform, unlike `signal`. Docling's converter isn't cancellable mid-call, so this bounds *our* wait, not Docling's internal work; the orphaned thread is abandoned (acceptable — the process should alert/restart on repeated timeouts rather than pretend to cancel uncancellable C-extension work).

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from src.application.orchestrator.retrieval import retrieval_runtime_builder
-from src.application.orchestrator.retrieval.retrieval_runtime_builder import (
+from src.application.composition.retrieval import retrieval_runtime_builder
+from src.application.composition.retrieval.retrieval_runtime_builder import (
     build_retrieval_runtime,
 )
 from src.config.settings import guardrail_settings

@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from src.application.contracts import UnitOfWork
-from src.application.orchestrator.ingestion.ingestion_input_limits import (
+from src.application.composition.ingestion.ingestion_input_limits import (
     resolve_ingestion_input_limits,
 )
-from src.application.orchestrator.ingestion.ingestion_runtime import IngestionRuntime
-from src.application.orchestrator.ingestion.parsing_runtime_builder import (
+from src.application.composition.ingestion.ingestion_runtime import IngestionRuntime
+from src.application.composition.ingestion.parsing_runtime_builder import (
     build_parsing_runtime,
 )
-from src.application.orchestrator.ingestion.vector_runtime_builder import (
+from src.application.composition.ingestion.vector_runtime_builder import (
     build_embedding_workflow,
     build_vector_store,
 )

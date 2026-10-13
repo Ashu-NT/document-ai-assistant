@@ -28,7 +28,7 @@ The retrieval strategy layer (`IDENTIFIER_LOOKUP` → `retrieve_identifiers`) is
 
 | Component | File | Class | Role |
 |-----------|------|-------|------|
-| Orchestrator node | `src/application/langgraph/nodes/planning/create_plan_node.py` | `CreatePlanNode` | Runs deterministic first, then optional LLM; decides which plan wins |
+| composition node | `src/application/langgraph/nodes/planning/create_plan_node.py` | `CreatePlanNode` | Runs deterministic first, then optional LLM; decides which plan wins |
 | Executor node | `src/application/langgraph/nodes/planning/execute_plan_node.py` | `ExecutePlanNode` | Reconstructs `ExecutionPlan`, calls `PlanExecutor` |
 | Deterministic planner | `src/application/langgraph/planning/deterministic_planner.py` | `DeterministicPlanner` | Rule-based compound plan creation; handles `list_and_find`, `compare`, `explore_and_answer`, `retrieve_and_answer` |
 | LLM proposer | `src/application/langgraph/planning/llm_plan_proposer.py` | `LLMPlanProposer` | Builds prompt, calls LLM, returns raw text; does NOT call tools directly |
@@ -56,7 +56,7 @@ The retrieval strategy layer (`IDENTIFIER_LOOKUP` → `retrieve_identifiers`) is
 
 | Component | File | Class | Role |
 |-----------|------|-------|------|
-| Orchestrator node | `src/application/langgraph/nodes/research/create_research_plan_node.py` | `CreateResearchPlanNode` | Calls `research_service.plan_research()` with `use_llm_planner` flag |
+| composition node | `src/application/langgraph/nodes/research/create_research_plan_node.py` | `CreateResearchPlanNode` | Calls `research_service.plan_research()` with `use_llm_planner` flag |
 | Deterministic planner | `src/application/langgraph/research/planners/deterministic_research_planner.py` | `DeterministicResearchPlanner` | `_CATEGORY_PATTERNS` includes identifier pattern; maps to `IDENTIFIER_LOOKUP` strategy hint via `_strategy_for_concept()` |
 | LLM planner | `src/application/langgraph/research/planners/llm_research_planner.py` | `LLMResearchPlanner` | Calls LLM, parses JSON, builds tasks via `ResearchPlanBuilder`; tasks have `strategy_hint` but no `identifier_value` field |
 

@@ -32,7 +32,7 @@ from src.application.evaluation.retrieval import (  # noqa: E402
 from src.application.evaluation.retrieval.benchmarking.corpus.models.retrieval_benchmark_corpus_manifest import (  # noqa: E402
     RetrievalBenchmarkCorpusManifest,
 )
-from src.application.orchestrator.ingestion import build_ingestion_runtime  # noqa: E402
+from src.application.composition.ingestion import build_ingestion_runtime  # noqa: E402
 from src.application.workflows.parsing.ocr import (  # noqa: E402
     resolve_parsing_ocr_policy,
 )
@@ -284,11 +284,11 @@ def default_output_path() -> Path:
 
 
 def build_corpus_seeder() -> CorpusSeederRuntime:
-    """Build the corpus seeder on top of the canonical ingestion orchestrator.
+    """Build the corpus seeder on top of the canonical ingestion composition.
 
     All ingestion dependency wiring (parsing, classification, extraction,
     identifier promotion/scanning, embedding, vector storage) lives in
-    `src.application.orchestrator.ingestion.build_ingestion_runtime`. This
+    `src.application.composition.ingestion.build_ingestion_runtime`. This
     function only adds the benchmark-specific wrapping (`RetrievalBenchmarkCorpusSeeder`).
     """
     runtime = build_ingestion_runtime()

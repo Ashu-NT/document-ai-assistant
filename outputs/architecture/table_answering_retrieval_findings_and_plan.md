@@ -332,7 +332,7 @@ The system already pays the cost to compute layout intelligence, but not enough 
 
 Primary file:
 
-- `src/application/orchestrator/ingestion/vector_runtime_builder.py`
+- `src/application/composition/ingestion/vector_runtime_builder.py`
 
 What is happening now:
 

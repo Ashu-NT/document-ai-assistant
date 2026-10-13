@@ -13,7 +13,7 @@ def test_lazy_ingestion_workflow_does_not_build_until_called(monkeypatch) -> Non
         return SimpleNamespace(ingestion_workflow=_FakeIngestionWorkflow())
 
     monkeypatch.setattr(
-        "src.application.orchestrator.ingestion.build_ingestion_runtime",
+        "src.application.composition.ingestion.build_ingestion_runtime",
         _fake_build_ingestion_runtime,
     )
 
@@ -52,7 +52,7 @@ def test_lazy_ingestion_workflow_builds_once_and_reuses_the_same_ingestion_workf
         return SimpleNamespace(ingestion_workflow=fake_ingestion_workflow)
 
     monkeypatch.setattr(
-        "src.application.orchestrator.ingestion.build_ingestion_runtime",
+        "src.application.composition.ingestion.build_ingestion_runtime",
         _fake_build_ingestion_runtime,
     )
 
@@ -91,7 +91,7 @@ def test_lazy_ingestion_workflow_run_and_reingest_share_the_same_build(
         return SimpleNamespace(ingestion_workflow=fake_ingestion_workflow)
 
     monkeypatch.setattr(
-        "src.application.orchestrator.ingestion.build_ingestion_runtime",
+        "src.application.composition.ingestion.build_ingestion_runtime",
         _fake_build_ingestion_runtime,
     )
 

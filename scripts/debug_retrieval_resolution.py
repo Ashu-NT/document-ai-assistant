@@ -249,7 +249,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             deduplicate_structured_entities,
             resolve_structured_entities,
         )
-        from src.application.orchestrator.retrieval import build_retrieval_runtime
+        from src.application.composition.retrieval import build_retrieval_runtime
         from src.application.services.extraction import ExtractionService
         from src.application.tools.retrieval.retrieve_structured_entities_tool import (
             RetrieveStructuredEntitiesTool,

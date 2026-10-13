@@ -364,7 +364,7 @@ Remaining, narrower gap (this is now a Phase 6 concern, not a Phase 0/architectu
 Relevant files:
 
 - `src/config/settings/*.py`
-- `src/application/orchestrator/`
+- `src/application/composition/`
 - `src/application/workflows/common/settings_resolver.py`
 
 Current strength:
@@ -391,7 +391,7 @@ Why this matters:
 Relevant files:
 
 - `src/infrastructure/retrieval/vector/qdrant_vector_store.py`
-- runtime builders under `src/application/orchestrator/`
+- runtime builders under `src/application/composition/`
 
 Current weakness:
 
@@ -1202,8 +1202,8 @@ Status:
 - `IngestionWorkflow` now delegates internal collaborator assembly to a dedicated pipeline builder and delegates the full parse/register/classify/finalize/extract/embed/index/quality stage sequence to a dedicated sequence executor
 - `AnswerGenerationService` now delegates settings resolution, prompt execution/retry, result assembly, and compound-question limitation handling to dedicated collaborators
 - `SqlKeywordScorer` now delegates morphology helpers, scoring config, penalties, and score-component assembly to grouped scoring modules
-- parser file-size and page-count limits are now resolved explicitly in the orchestrator layer instead of failing open inside `DoclingParser` or `IngestionRequestValidator`
-- parsing chunking settings are now resolved explicitly in the orchestrator layer instead of failing open inside `DocumentGraphBuilder`
+- parser file-size and page-count limits are now resolved explicitly in the composition layer instead of failing open inside `DoclingParser` or `IngestionRequestValidator`
+- parsing chunking settings are now resolved explicitly in the composition layer instead of failing open inside `DocumentGraphBuilder`
 - debug/profile parser entrypoints now consume the same shared input-limit resolver as the production parsing runtime
 
 Actions:
@@ -1237,12 +1237,12 @@ Implemented in this slice:
   - `ExtractionStageResult`
   - `VectorIndexStageRunner`
   - `VectorIndexStageResult`
-- `src/application/orchestrator/ingestion/ingestion_orchestrator.py`
+- `src/application/composition/ingestion/ingestion_composition.py`
   - resolves runtime capabilities from settings once at composition time
   - resolves explicit ingestion input limits for request validation
-- `src/application/orchestrator/ingestion/ingestion_input_limits.py`
+- `src/application/composition/ingestion/ingestion_input_limits.py`
   - owns explicit file-size and page-count limit resolution for parsing and ingestion validation
-- `src/application/orchestrator/ingestion/parsing_chunking_settings.py`
+- `src/application/composition/ingestion/parsing_chunking_settings.py`
   - owns explicit chunk-size, overlap, and minimum-section-text resolution for production and debug parsing entrypoints
 - `src/application/workflows/ingestion/ingestion_workflow.py`
   - consumes resolved capabilities and blocks implicit semantic-linking drift

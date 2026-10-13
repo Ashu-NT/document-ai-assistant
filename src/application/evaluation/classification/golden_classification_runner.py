@@ -37,7 +37,7 @@ from src.application.evaluation.golden.golden_document_parse_stage import (
     parse_golden_document,
 )
 from src.application.evaluation.reproducibility import build_evaluation_run_metadata
-from src.application.orchestrator.ingestion.parsing_runtime_builder import (
+from src.application.composition.ingestion.parsing_runtime_builder import (
     build_parsing_runtime,
 )
 from src.application.prompts.classification import DOCUMENT_CLASSIFICATION_PROMPT_VERSION

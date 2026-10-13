@@ -48,7 +48,7 @@ from src.shared.ids import IdGenerator, IdPrefix
 # parses the response, then fans out each payload list to its per-entity
 # builder, then aggregates the overall `requires_human_review` flag. Split
 # out of extraction_workflow.py's `_build_extraction_result` -- the
-# orchestrator (ExtractionWorkflow) now just calls `build()` once per
+# composition (ExtractionWorkflow) now just calls `build()` once per
 # batch attempt instead of implementing entity construction inline.
 
 

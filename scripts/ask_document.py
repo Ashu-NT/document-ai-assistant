@@ -257,7 +257,7 @@ def build_qa_runtime(session, *, enable_generation: bool) -> QARuntime:
         QueryScopeGuardrail,
         RetrievalEvidenceGuardrail,
     )
-    from src.application.orchestrator.retrieval import (  # noqa: WPS433
+    from src.application.composition.retrieval import (  # noqa: WPS433
         build_retrieval_runtime,
     )
     from src.application.services.ai import LLMService  # noqa: WPS433

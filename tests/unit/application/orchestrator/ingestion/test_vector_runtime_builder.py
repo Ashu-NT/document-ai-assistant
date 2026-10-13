@@ -6,8 +6,8 @@ import pytest
 pytest.importorskip("qdrant_client")
 from qdrant_client.models import Distance, PayloadSchemaType
 
-from src.application.orchestrator.ingestion import vector_runtime_builder
-from src.application.orchestrator.ingestion.vector_runtime_builder import (
+from src.application.composition.ingestion import vector_runtime_builder
+from src.application.composition.ingestion.vector_runtime_builder import (
     build_embedding_workflow,
     build_vector_store,
     create_qdrant_client,

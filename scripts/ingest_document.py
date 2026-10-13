@@ -126,7 +126,7 @@ def print_status(message: str) -> None:
 
 
 def _build_runtime():
-    from src.application.orchestrator.ingestion import (  # noqa: WPS433
+    from src.application.composition.ingestion import (  # noqa: WPS433
         build_ingestion_runtime,
     )
 

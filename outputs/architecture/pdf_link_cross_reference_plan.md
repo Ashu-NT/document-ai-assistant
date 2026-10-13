@@ -249,7 +249,7 @@ path exists), but makes any future threading/web-server introduction around inge
   `pdf_link_cross_reference_enabled: bool = Field(default=False, alias="CHUNK_CROSS_REFERENCE_PDF_LINKS_ENABLED")`
   — disabled by default.
 - `.env.example`: document the new var, left unset/false until corpus-validated.
-- `src/application/orchestrator/ingestion/parsing_runtime_builder.py`: import the concrete
+- `src/application/composition/ingestion/parsing_runtime_builder.py`: import the concrete
   `PdfLinkAnnotationExtractor` and construct the `CrossReferencePipeline` (wiring the existing fuzzy linker,
   the new native linker if enabled, and `CrossReferenceReconciliationService`) here — the only place any of
   the three concrete collaborators are imported, mirroring the existing `DoclingParser` composition-root

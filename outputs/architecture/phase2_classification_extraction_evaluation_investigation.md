@@ -65,7 +65,7 @@ DocumentGraph
 
 `ClassificationResult` (`src/domain/classification/classification_result.py`): `classification_id, document_id, predicted_label: str, confidence_score: float|None, rationale: str|None, evidence: list[str], processing_metadata: ModelProcessingMetadata|None, audit`. `is_confident(threshold)` → `False` if `confidence_score is None`.
 
-Pipeline order (`ClassificationStageRunner`, wired in `ingestion_orchestrator.py`): runs **after** parsing/chunking, on the already-built `DocumentGraph` — not before. Chunking uses a provisional profile first; `DocumentTypeDecision.should_rechunk` signals a re-chunk when the resolved profile disagrees, handled by a separate post-classification finalization workflow.
+Pipeline order (`ClassificationStageRunner`, wired in `ingestion_composition.py`): runs **after** parsing/chunking, on the already-built `DocumentGraph` — not before. Chunking uses a provisional profile first; `DocumentTypeDecision.should_rechunk` signals a re-chunk when the resolved profile disagrees, handled by a separate post-classification finalization workflow.
 
 ### 2. Classification taxonomy
 

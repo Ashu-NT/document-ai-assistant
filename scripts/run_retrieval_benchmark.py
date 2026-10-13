@@ -161,7 +161,7 @@ def ensure_manifest_exists(
 
 
 def build_benchmark_runtime() -> BenchmarkRuntime:
-    from src.application.orchestrator.retrieval import (  # noqa: WPS433
+    from src.application.composition.retrieval import (  # noqa: WPS433
         build_retrieval_runtime,
     )
     from src.bootstrap.startup import bootstrap_application  # noqa: WPS433

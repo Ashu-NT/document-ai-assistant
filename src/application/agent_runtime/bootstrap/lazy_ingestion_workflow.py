@@ -40,7 +40,7 @@ class _LazyIngestionWorkflow:
 
     def _resolve(self) -> Any:
         if self._ingestion_workflow is None:
-            from src.application.orchestrator.ingestion import (
+            from src.application.composition.ingestion import (
                 build_ingestion_runtime,
             )
 

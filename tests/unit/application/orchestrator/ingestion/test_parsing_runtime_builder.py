@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from src.application.orchestrator.ingestion import parsing_runtime_builder
+from src.application.composition.ingestion import parsing_runtime_builder
 from src.shared.ids import IdGenerator
 
 
