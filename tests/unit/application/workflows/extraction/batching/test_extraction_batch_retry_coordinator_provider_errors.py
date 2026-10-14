@@ -18,7 +18,7 @@ class _FailThenSucceedExecutor:
         self.calls = 0
 
     def execute_once(self, *, document_id, batch, activity_context, progress_callback,
-                      previous_error, diagnostics_sink, candidate_routing_diagnostics_sink=None):
+                      previous_error, diagnostics_sink, candidate_routing_diagnostics_sink=None, tables=None):
         self.calls += 1
         if self.calls <= self.fail_times:
             raise LLMProviderError(
@@ -32,7 +32,7 @@ class _AlwaysFailExecutor:
         self.calls = 0
 
     def execute_once(self, *, document_id, batch, activity_context, progress_callback,
-                      previous_error, diagnostics_sink, candidate_routing_diagnostics_sink=None):
+                      previous_error, diagnostics_sink, candidate_routing_diagnostics_sink=None, tables=None):
         self.calls += 1
         raise LLMProviderError("boom", details={"failure_kind": "read_timeout"})
 

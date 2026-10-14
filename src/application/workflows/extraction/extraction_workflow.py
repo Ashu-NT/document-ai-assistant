@@ -376,6 +376,7 @@ class ExtractionWorkflow:
                         diagnostics_sink=self.last_batch_diagnostics,
                         candidate_routing_diagnostics_sink=self.last_candidate_routing_diagnostics,
                         budget=budget,
+                        tables=tables,
                     )
                     partial_results.extend(outcome.partial_results)
                     attempted_chunk_ids.extend(outcome.attempted_chunk_ids)

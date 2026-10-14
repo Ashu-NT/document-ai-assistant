@@ -13,9 +13,11 @@ def _dedup_key(item: MaintenanceTask) -> tuple:
     # original (title, interval, component) key whenever no verified code
     # is available on either side, preserving existing behavior there.
     if item.task_code:
+        table_id = item.source_metadata.table_id if item.source_metadata else None
         return (
             "code",
             item.document_id,
+            table_id,
             normalize_for_dedup_key(item.task_code),
             normalize_for_dedup_key(item.title),
         )

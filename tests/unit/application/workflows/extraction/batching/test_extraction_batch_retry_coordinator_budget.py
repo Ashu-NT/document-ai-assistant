@@ -33,7 +33,7 @@ class _AlwaysFailExecutor:
         self.extraction_model = "fake-model"
 
     def execute_once(self, *, document_id, batch, activity_context, progress_callback,
-                      previous_error, diagnostics_sink, candidate_routing_diagnostics_sink=None):
+                      previous_error, diagnostics_sink, candidate_routing_diagnostics_sink=None, tables=None):
         self.calls += 1
         self.clock.advance(self.seconds_per_call)
         raise LLMProviderError("boom", details={"failure_kind": "read_timeout"})
@@ -46,7 +46,7 @@ class _SucceedExecutor:
         self.calls = 0
 
     def execute_once(self, *, document_id, batch, activity_context, progress_callback,
-                      previous_error, diagnostics_sink, candidate_routing_diagnostics_sink=None):
+                      previous_error, diagnostics_sink, candidate_routing_diagnostics_sink=None, tables=None):
         self.calls += 1
         return ExtractionResult(extraction_id="ext_1", document_id=document_id)
 

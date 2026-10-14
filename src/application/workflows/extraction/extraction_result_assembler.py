@@ -40,6 +40,7 @@ from src.application.workflows.extraction.builders.troubleshooting_entry_builder
     TroubleshootingEntryBuilder,
 )
 from src.application.workflows.extraction.response import ExtractionResponseParser
+from src.domain.assets import TableAsset
 from src.domain.document import DocumentChunk
 from src.domain.extraction import ExtractionResult
 from src.shared.ids import IdGenerator, IdPrefix
@@ -93,6 +94,8 @@ class ExtractionResultAssembler:
         document_id: str,
         chunks: list[DocumentChunk],
         response: str,
+        *,
+        tables: dict[str, TableAsset] | None = None,
     ) -> ExtractionResult:
         self._support.reset_invalid_source_chunk_id_events()
         payload = self._response_parser.parse(response)
@@ -121,6 +124,7 @@ class ExtractionResultAssembler:
                 chunk_lookup=chunk_lookup,
                 default_source_chunk_id=default_source_chunk_id,
                 default_confidence=overall_confidence,
+                tables=tables,
             )
             for item in maintenance_task_payloads
         ]

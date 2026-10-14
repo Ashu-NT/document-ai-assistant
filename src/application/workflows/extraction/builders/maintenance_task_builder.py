@@ -6,15 +6,13 @@ from typing import Any
 from src.application.workflows.extraction.builders.extraction_builder_support import (
     ExtractionBuilderSupport,
 )
+from src.application.workflows.extraction.builders.maintenance_task_code_grounding import (
+    verify_task_code_against_canonical_row,
+)
+from src.domain.assets import TableAsset
 from src.domain.document import DocumentChunk
 from src.domain.extraction import MaintenanceTask
 from src.shared.ids import IdGenerator
-
-
-def _verify_task_code(task_code: str | None, chunk_content: str) -> bool:
-    if not task_code:
-        return False
-    return task_code in chunk_content
 
 
 class MaintenanceTaskBuilder:
@@ -34,6 +32,7 @@ class MaintenanceTaskBuilder:
         chunk_lookup: dict[str, DocumentChunk],
         default_source_chunk_id: str | None,
         default_confidence: float,
+        tables: dict[str, TableAsset] | None = None,
     ) -> MaintenanceTask:
         support = self._support
         title = support.required_text(
@@ -57,20 +56,24 @@ class MaintenanceTaskBuilder:
         claimed_task_code = support.optional_text(payload, "task_code", "code", "task_reference")
         verified_task_code: str | None = None
         code_unverified = False
-        if claimed_task_code is not None and source_chunk_id is not None and not chunk_id_invalid:
-            source_chunk = chunk_lookup.get(source_chunk_id)
-            if source_chunk is not None and _verify_task_code(claimed_task_code, source_chunk.content):
+        if claimed_task_code is not None:
+            source_chunk = (
+                chunk_lookup.get(source_chunk_id)
+                if source_chunk_id is not None and not chunk_id_invalid
+                else None
+            )
+            if source_chunk is not None and verify_task_code_against_canonical_row(
+                task_code=claimed_task_code,
+                title=title,
+                source_chunk=source_chunk,
+                tables=tables,
+            ):
                 verified_task_code = claimed_task_code
             else:
                 code_unverified = True
                 support.maintenance_task_unverified_code_events.append(
                     {"source_chunk_id": source_chunk_id, "claimed_task_code": claimed_task_code}
                 )
-        elif claimed_task_code is not None:
-            code_unverified = True
-            support.maintenance_task_unverified_code_events.append(
-                {"source_chunk_id": source_chunk_id, "claimed_task_code": claimed_task_code}
-            )
 
         source_metadata = support.build_source_metadata(
             source_chunk_id=source_chunk_id,

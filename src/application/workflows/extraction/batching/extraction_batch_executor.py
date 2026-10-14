@@ -23,6 +23,7 @@ from src.application.workflows.extraction.extraction_result_assembler import (
     ExtractionResultAssembler,
 )
 from src.application.workflows.extraction.response import build_extraction_response_json_schema
+from src.domain.assets import TableAsset
 from src.domain.extraction import ExtractionResult
 from src.shared.activity import ActivityContext
 from src.shared.exceptions import LLMProviderError, SchemaValidationError
@@ -71,6 +72,7 @@ class ExtractionBatchExecutor:
         candidate_routing_diagnostics_sink: (
             list[ExtractionCandidateRoutingDiagnostics] | None
         ) = None,
+        tables: dict[str, TableAsset] | None = None,
     ) -> ExtractionResult:
         emit_progress(
             progress_callback,
@@ -181,6 +183,7 @@ class ExtractionBatchExecutor:
                 document_id,
                 batch.chunks,
                 response,
+                tables=tables,
             )
         except SchemaValidationError as exc:
             preview = safe_response_preview(

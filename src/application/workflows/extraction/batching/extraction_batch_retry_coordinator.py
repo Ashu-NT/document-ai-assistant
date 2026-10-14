@@ -22,6 +22,7 @@ from src.application.workflows.extraction.execution_budget import (
     ExtractionExecutionBudget,
     describe_budget_exhaustion,
 )
+from src.domain.assets import TableAsset
 from src.shared.activity import ActivityContext
 from src.shared.exceptions import LLMProviderError, SchemaValidationError
 from src.shared.progress.progress_emitter import emit_progress
@@ -56,6 +57,7 @@ class ExtractionBatchRetryCoordinator:
             list[ExtractionCandidateRoutingDiagnostics] | None
         ) = None,
         budget: ExtractionExecutionBudget | None = None,
+        tables: dict[str, TableAsset] | None = None,
     ) -> ExtractionBatchOutcome:
         last_exc: SchemaValidationError | LLMProviderError | None = None
         for attempt_index in range(1, self.max_attempts + 1):
@@ -98,6 +100,7 @@ class ExtractionBatchRetryCoordinator:
                             ),
                             diagnostics_sink=diagnostics_sink,
                             candidate_routing_diagnostics_sink=candidate_routing_diagnostics_sink,
+                            tables=tables,
                         )
                     ],
                     attempted_chunk_ids=list(batch.chunk_ids),
@@ -130,6 +133,7 @@ class ExtractionBatchRetryCoordinator:
                 diagnostics_sink=diagnostics_sink,
                 candidate_routing_diagnostics_sink=candidate_routing_diagnostics_sink,
                 budget=budget,
+                tables=tables,
             )
 
         if self.allow_partial_batches:
@@ -165,6 +169,7 @@ class ExtractionBatchRetryCoordinator:
             list[ExtractionCandidateRoutingDiagnostics] | None
         ) = None,
         budget: ExtractionExecutionBudget | None = None,
+        tables: dict[str, TableAsset] | None = None,
     ) -> ExtractionBatchOutcome:
         single_chunk_batches = self.chunk_batcher.build_single_chunk_batches(batch)
         emit_progress(
@@ -194,6 +199,7 @@ class ExtractionBatchRetryCoordinator:
                     diagnostics_sink=diagnostics_sink,
                     candidate_routing_diagnostics_sink=candidate_routing_diagnostics_sink,
                     budget=budget,
+                    tables=tables,
                 )
             )
         return outcome

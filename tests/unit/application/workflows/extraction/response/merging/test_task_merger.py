@@ -1,5 +1,5 @@
 from src.application.workflows.extraction.response.merging.task_merger import merge_tasks
-from src.domain.extraction import ExtractionResult, MaintenanceTask
+from src.domain.extraction import ExtractionResult, MaintenanceTask, SemanticSourceMetadata
 
 
 def _result_with_task(**task_kwargs) -> ExtractionResult:
@@ -10,6 +10,10 @@ def _result_with_task(**task_kwargs) -> ExtractionResult:
         document_id="doc_001",
         maintenance_tasks=[MaintenanceTask(**task_kwargs)],
     )
+
+
+def _source_metadata(table_id: str) -> SemanticSourceMetadata:
+    return SemanticSourceMetadata(document_id="doc_001", chunk_id="chunk_x", table_id=table_id)
 
 
 def test_results_from_every_window_are_accumulated() -> None:
@@ -109,6 +113,25 @@ def test_same_verified_task_code_from_overlapping_windows_merges() -> None:
 
     assert len(merged) == 1
     assert merged[0].task_code == "WM00285"
+
+
+def test_identical_task_codes_in_different_tables_of_the_same_document_are_not_merged() -> None:
+    """Two independently-coded maintenance tables in the same document
+    (e.g. two separate manuals bound into one PDF) could both legitimately
+    restart numbering from the same code - the table identity, not just
+    the document, must disambiguate them."""
+    table_a = _result_with_task(
+        title="Replace filter", task_code="WM00085",
+        source_metadata=_source_metadata("table_a"),
+    )
+    table_b = _result_with_task(
+        title="Replace filter", task_code="WM00085",
+        source_metadata=_source_metadata("table_b"),
+    )
+
+    merged = merge_tasks([table_a, table_b])
+
+    assert len(merged) == 2
 
 
 def test_identical_task_codes_in_different_documents_are_not_merged() -> None:

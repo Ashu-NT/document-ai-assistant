@@ -181,6 +181,7 @@ class SpecializedFamilyExtractionRunner:
                         diagnostics_sink=diagnostics_sink,
                         result=result,
                         budget=budget,
+                        tables=tables,
                     )
                 else:
                     windows, composed_table = resolved
@@ -194,6 +195,7 @@ class SpecializedFamilyExtractionRunner:
                         diagnostics_sink=diagnostics_sink,
                         result=result,
                         budget=budget,
+                        tables=tables,
                     )
 
         return result
@@ -248,6 +250,7 @@ class SpecializedFamilyExtractionRunner:
         diagnostics_sink: list[ExtractionBatchDiagnostics],
         result: SpecializedFamilyExtractionRunResult,
         budget: ExtractionExecutionBudget | None = None,
+        tables: dict[str, TableAsset] | None = None,
     ) -> None:
         if budget is not None and budget.is_expired():
             emit_progress(
@@ -268,6 +271,7 @@ class SpecializedFamilyExtractionRunner:
             progress_callback=progress_callback,
             diagnostics_sink=diagnostics_sink,
             budget=budget,
+            tables=tables,
         )
         result.partial_results.extend(outcome.partial_results)
         result.attempted_chunk_ids.extend(outcome.attempted_chunk_ids)
@@ -291,6 +295,7 @@ class SpecializedFamilyExtractionRunner:
         diagnostics_sink: list[ExtractionBatchDiagnostics],
         result: SpecializedFamilyExtractionRunResult,
         budget: ExtractionExecutionBudget | None = None,
+        tables: dict[str, TableAsset] | None = None,
     ) -> None:
         canonical_chunk = work_item.batch.chunks[0]
         original_batch = work_item.batch
@@ -339,6 +344,7 @@ class SpecializedFamilyExtractionRunner:
                 progress_callback=progress_callback,
                 diagnostics_sink=diagnostics_sink,
                 budget=budget,
+                tables=tables,
             )
 
             # PHASE 2B MAINTENANCE TASK COMPONENT GROUNDING FIX: a narrow,
