@@ -25,6 +25,7 @@ from src.application.workflows.extraction.builders.extraction_builder_support im
 )
 from src.application.workflows.extraction.candidates import (
     ExtractionCandidateLLMRouter,
+    ExtractionCandidateRoutingDiagnostics,
     ExtractionCandidateSelector,
     ExtractionPromptNarrowingService,
 )
@@ -183,6 +184,9 @@ class ExtractionWorkflow:
             else _default_maintenance_table_rows_per_window()
         )
         self.last_batch_diagnostics: list[ExtractionBatchDiagnostics] = []
+        self.last_candidate_routing_diagnostics: list[
+            ExtractionCandidateRoutingDiagnostics
+        ] = []
 
         self._builder_support = ExtractionBuilderSupport(
             confidence_threshold=self.confidence_threshold,
@@ -260,6 +264,7 @@ class ExtractionWorkflow:
         )
         self._validate_input(document_id, chunk_list)
         self.last_batch_diagnostics = []
+        self.last_candidate_routing_diagnostics = []
 
         if tables:
             chunk_list = hydrate_table_chunks(chunk_list, tables)
@@ -291,6 +296,7 @@ class ExtractionWorkflow:
                 progress_callback=progress_callback,
                 diagnostics_sink=self.last_batch_diagnostics,
                 tables=tables,
+                candidate_routing_diagnostics_sink=self.last_candidate_routing_diagnostics,
             )
             partial_results.extend(run_result.partial_results)
             attempted_chunk_ids.extend(run_result.attempted_chunk_ids)
@@ -304,6 +310,7 @@ class ExtractionWorkflow:
                     activity_context=activity_context,
                     progress_callback=progress_callback,
                     diagnostics_sink=self.last_batch_diagnostics,
+                    candidate_routing_diagnostics_sink=self.last_candidate_routing_diagnostics,
                 )
                 partial_results.extend(outcome.partial_results)
                 attempted_chunk_ids.extend(outcome.attempted_chunk_ids)

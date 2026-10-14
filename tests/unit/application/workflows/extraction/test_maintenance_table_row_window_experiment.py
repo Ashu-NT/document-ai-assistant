@@ -15,7 +15,7 @@ class _FixedFamilyCandidateSelector:
     def __init__(self, families: frozenset) -> None:
         self._families = families
 
-    def select_for_chunk(self, chunk):
+    def select_for_chunk(self, chunk, **_kwargs):
         return self._families
 
 

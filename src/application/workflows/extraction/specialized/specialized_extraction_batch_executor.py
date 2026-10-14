@@ -11,7 +11,11 @@ from src.application.services.ai import LLMService
 from src.application.workflows.extraction.batching.extraction_batch import ExtractionBatch
 from src.application.workflows.extraction.batching.extraction_batch_diagnostics import (
     ExtractionBatchDiagnostics,
+    hash_prompt,
     safe_response_preview,
+)
+from src.application.workflows.extraction.candidates.extraction_candidate_routing_diagnostics import (
+    ExtractionCandidateRoutingDiagnostics,
 )
 from src.application.workflows.extraction.extraction_result_assembler import (
     ExtractionResultAssembler,
@@ -64,7 +68,18 @@ class SpecializedExtractionBatchExecutor:
         progress_callback: Callable[[str], None] | None,
         previous_error: str | None,
         diagnostics_sink: list[ExtractionBatchDiagnostics],
+        candidate_routing_diagnostics_sink: (
+            list[ExtractionCandidateRoutingDiagnostics] | None
+        ) = None,
     ) -> ExtractionResult:
+        # candidate_routing_diagnostics_sink is accepted-but-unused here:
+        # SPECIALIZED_FAMILY's candidate routing decision already happened
+        # once at plan-build time (build_extraction_plan), not per
+        # attempt/executor call -- this parameter exists only so
+        # ExtractionBatchRetryCoordinator can drive either executor
+        # identically via duck typing (see this class's own module
+        # docstring).
+        del candidate_routing_diagnostics_sink
         label = f"specialized:{self.entity_type.value}"
         emit_progress(
             progress_callback,
@@ -82,6 +97,7 @@ class SpecializedExtractionBatchExecutor:
                 previous_error=previous_error,
             ),
         )
+        prompt_sha256 = hash_prompt(prompt_result.prompt_text)
         emit_progress(
             progress_callback,
             (
@@ -125,6 +141,7 @@ class SpecializedExtractionBatchExecutor:
                 parse_success=False,
                 parse_error=str(exc),
                 raw_response_preview=preview,
+                prompt_sha256=prompt_sha256,
             )
             diagnostics_sink.append(diagnostics)
             compact_preview = " ".join(preview.split())
@@ -163,6 +180,7 @@ class SpecializedExtractionBatchExecutor:
                 word_count=batch.word_count,
                 model_name=self.extraction_model,
                 parse_success=True,
+                prompt_sha256=prompt_sha256,
             )
         )
         return extraction_result

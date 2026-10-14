@@ -14,6 +14,9 @@ from src.application.workflows.extraction.batching.extraction_batch_retry_coordi
 from src.application.workflows.extraction.batching.extraction_chunk_batcher import (
     ExtractionChunkBatcher,
 )
+from src.application.workflows.extraction.candidates.extraction_candidate_routing_diagnostics import (
+    ExtractionCandidateRoutingDiagnostics,
+)
 from src.application.workflows.extraction.candidates.extraction_candidate_selector import (
     ExtractionCandidateSelector,
 )
@@ -124,9 +127,15 @@ class SpecializedFamilyExtractionRunner:
         progress_callback: Callable[[str], None] | None,
         diagnostics_sink: list[ExtractionBatchDiagnostics],
         tables: dict[str, TableAsset] | None = None,
+        candidate_routing_diagnostics_sink: (
+            list[ExtractionCandidateRoutingDiagnostics] | None
+        ) = None,
     ) -> SpecializedFamilyExtractionRunResult:
         plan = build_extraction_plan(
-            batches, candidate_selector=self.candidate_selector
+            batches,
+            candidate_selector=self.candidate_selector,
+            document_id=document_id,
+            candidate_routing_diagnostics_sink=candidate_routing_diagnostics_sink,
         )
         result = SpecializedFamilyExtractionRunResult()
 

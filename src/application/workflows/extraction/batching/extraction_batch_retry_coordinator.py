@@ -15,6 +15,9 @@ from src.application.workflows.extraction.batching.extraction_batch_outcome impo
 from src.application.workflows.extraction.batching.extraction_chunk_batcher import (
     ExtractionChunkBatcher,
 )
+from src.application.workflows.extraction.candidates.extraction_candidate_routing_diagnostics import (
+    ExtractionCandidateRoutingDiagnostics,
+)
 from src.shared.activity import ActivityContext
 from src.shared.exceptions import SchemaValidationError
 from src.shared.progress.progress_emitter import emit_progress
@@ -49,6 +52,9 @@ class ExtractionBatchRetryCoordinator:
         activity_context: ActivityContext | None,
         progress_callback: Callable[[str], None] | None,
         diagnostics_sink: list[ExtractionBatchDiagnostics],
+        candidate_routing_diagnostics_sink: (
+            list[ExtractionCandidateRoutingDiagnostics] | None
+        ) = None,
     ) -> ExtractionBatchOutcome:
         last_exc: SchemaValidationError | None = None
         for attempt_index in range(1, self.max_attempts + 1):
@@ -66,6 +72,7 @@ class ExtractionBatchRetryCoordinator:
                                 else None
                             ),
                             diagnostics_sink=diagnostics_sink,
+                            candidate_routing_diagnostics_sink=candidate_routing_diagnostics_sink,
                         )
                     ],
                     attempted_chunk_ids=list(batch.chunk_ids),
@@ -90,6 +97,7 @@ class ExtractionBatchRetryCoordinator:
                 activity_context=activity_context,
                 progress_callback=progress_callback,
                 diagnostics_sink=diagnostics_sink,
+                candidate_routing_diagnostics_sink=candidate_routing_diagnostics_sink,
             )
 
         if self.allow_partial_batches:
@@ -117,6 +125,9 @@ class ExtractionBatchRetryCoordinator:
         activity_context: ActivityContext | None,
         progress_callback: Callable[[str], None] | None,
         diagnostics_sink: list[ExtractionBatchDiagnostics],
+        candidate_routing_diagnostics_sink: (
+            list[ExtractionCandidateRoutingDiagnostics] | None
+        ) = None,
     ) -> ExtractionBatchOutcome:
         single_chunk_batches = self.chunk_batcher.build_single_chunk_batches(batch)
         emit_progress(
@@ -144,6 +155,7 @@ class ExtractionBatchRetryCoordinator:
                     activity_context=activity_context,
                     progress_callback=progress_callback,
                     diagnostics_sink=diagnostics_sink,
+                    candidate_routing_diagnostics_sink=candidate_routing_diagnostics_sink,
                 )
             )
         return outcome

@@ -1,0 +1,2654 @@
+{
+  "run_metadata": {
+    "timestamp": "2026-10-13T14:51:42.649434+00:00",
+    "git_commit": "b273f74682fb45a4d78d7dfb964a2cd3f686f7bb",
+    "artifact_schema_version": 1,
+    "parser_name": null,
+    "parser_version": null,
+    "conversion_fingerprint": null,
+    "evaluation_config": {
+      "phase": "2B",
+      "run": "phase2b_maintenance_component_backfill_qwen2_5_7b_full_corpus",
+      "independent_variable": "qwen2.5:3b -> qwen2.5:7b, current improved SPECIALIZED_FAMILY + TableEvidenceWindow + MaintenanceTask/SafetyWarning guidance architecture held fixed",
+      "primary_comparison": "extraction_golden_evaluation_report_phase2b_maintenance_table_row_window_qwen2_5_3b (qwen2.5:3b, same architecture)",
+      "secondary_reference": "extraction_golden_evaluation_report_prompt_improvement_1 (3B MULTI_FAMILY), extraction_golden_evaluation_report_phase2b_model_capacity_qwen2_5_7b (7B MULTI_FAMILY), extraction_golden_evaluation_report_phase2b_specialized_family_qwen2_5_3b (3B SPECIALIZED initial), extraction_golden_evaluation_report_phase2b_specialized_family_safetywarning_atomicity_qwen2_5_3b (3B SPECIALIZED + atomicity)",
+      "maintenance_table_rows_per_window": 10,
+      "execution_strategy": "specialized_family",
+      "specialized_family_prompt_versions": {
+        "identifier": "v1",
+        "manufacturer": "v1",
+        "supplier": "v1",
+        "contact_point": "v1",
+        "equipment": "v1",
+        "spare_part": "v1",
+        "specification": "v1",
+        "maintenance_task": "v1",
+        "maintenance_interval": "v1",
+        "procedure": "v2",
+        "safety_warning": "v1",
+        "troubleshooting": "v1"
+      },
+      "wall_clock_seconds": 3110.2
+    },
+    "classification_model": null,
+    "extraction_model": "qwen2.5:7b",
+    "embedding_model": null,
+    "retrieval_configuration": null,
+    "classification_execution_mode": null,
+    "classification_confidence_threshold": null,
+    "classification_allow_reclassification": null,
+    "classification_use_cache": null,
+    "classification_prompt_version": null,
+    "extraction_execution_mode": "fresh_model",
+    "extraction_prompt_version": "specialized_family_v1 (12 per-family builders - see evaluation_config.specialized_family_prompt_versions)",
+    "extraction_temperature": 0.0,
+    "extraction_max_attempts": 3,
+    "extraction_allow_partial_batches": true,
+    "extraction_candidate_narrowing_enabled": true,
+    "extraction_confidence_threshold": 0.7
+  },
+  "corpus_coverage": {
+    "expected": 3,
+    "available": 3,
+    "evaluated": 3,
+    "missing_aliases": [],
+    "hash_mismatch_aliases": []
+  },
+  "summary": {
+    "structural_passed_count": 0,
+    "structural_failed_count": 0,
+    "structural_assertion_failure_count": 0,
+    "chunk_invariant_failure_count": 0,
+    "chunk_token_budget_hard_violation_count": 0,
+    "chunk_token_budget_oversized_indivisible_count": 0,
+    "chunk_token_budget_unresolved_aliases": [],
+    "documents_not_evaluated": []
+  },
+  "cross_reference_type_metrics": [],
+  "reconciliation_outcome_counts": {},
+  "documents": [],
+  "classification": {
+    "metrics": {
+      "executed_count": 0,
+      "execution_failed_count": 0,
+      "skipped_parsing_unavailable_count": 0,
+      "unknown_count": 0,
+      "unknown_rate": null,
+      "low_confidence_rejected_count": 0,
+      "low_confidence_rejection_rate": null,
+      "confidence_count": 0,
+      "confidence_min": null,
+      "confidence_max": null,
+      "confidence_mean": null,
+      "confidence_median": null,
+      "reviewed_eligible_document_count": 0,
+      "raw_correct_count": 0,
+      "raw_accuracy": null,
+      "accepted_count": 0,
+      "accepted_correct_count": 0,
+      "accepted_classification_accuracy": null,
+      "accuracy_among_accepted": null,
+      "ambiguous_document_count": 0,
+      "ambiguous_raw_match_count": 0,
+      "confusion_matrix": {}
+    },
+    "documents": []
+  },
+  "extraction": {
+    "applicability_counts": {
+      "applicable": 0,
+      "not_applicable": 1,
+      "not_assessed": 0
+    },
+    "metrics_reviewed": [
+      {
+        "entity_type": "equipment_info",
+        "completeness": "presence_only",
+        "true_positive_count": 0,
+        "false_positive_count": 0,
+        "false_negative_count": 2,
+        "precision": null,
+        "recall": 0.0,
+        "f1": null,
+        "evidence_correct_count": 0,
+        "evidence_incorrect_count": 0,
+        "evidence_not_checked_count": 0,
+        "ambiguous_count": 0
+      },
+      {
+        "entity_type": "extracted_identifier",
+        "completeness": "presence_only",
+        "true_positive_count": 0,
+        "false_positive_count": 0,
+        "false_negative_count": 1,
+        "precision": null,
+        "recall": 0.0,
+        "f1": null,
+        "evidence_correct_count": 0,
+        "evidence_incorrect_count": 0,
+        "evidence_not_checked_count": 0,
+        "ambiguous_count": 0
+      },
+      {
+        "entity_type": "maintenance_task",
+        "completeness": "presence_only",
+        "true_positive_count": 2,
+        "false_positive_count": 0,
+        "false_negative_count": 0,
+        "precision": null,
+        "recall": 1.0,
+        "f1": null,
+        "evidence_correct_count": 2,
+        "evidence_incorrect_count": 0,
+        "evidence_not_checked_count": 0,
+        "ambiguous_count": 0
+      },
+      {
+        "entity_type": "manufacturer",
+        "completeness": "presence_only",
+        "true_positive_count": 1,
+        "false_positive_count": 0,
+        "false_negative_count": 0,
+        "precision": null,
+        "recall": 1.0,
+        "f1": null,
+        "evidence_correct_count": 0,
+        "evidence_incorrect_count": 0,
+        "evidence_not_checked_count": 1,
+        "ambiguous_count": 0
+      },
+      {
+        "entity_type": "procedure",
+        "completeness": "presence_only",
+        "true_positive_count": 0,
+        "false_positive_count": 0,
+        "false_negative_count": 1,
+        "precision": null,
+        "recall": 0.0,
+        "f1": null,
+        "evidence_correct_count": 0,
+        "evidence_incorrect_count": 0,
+        "evidence_not_checked_count": 0,
+        "ambiguous_count": 0
+      },
+      {
+        "entity_type": "safety_warning",
+        "completeness": "presence_only",
+        "true_positive_count": 1,
+        "false_positive_count": 0,
+        "false_negative_count": 2,
+        "precision": null,
+        "recall": 0.3333333333333333,
+        "f1": null,
+        "evidence_correct_count": 0,
+        "evidence_incorrect_count": 1,
+        "evidence_not_checked_count": 0,
+        "ambiguous_count": 1
+      },
+      {
+        "entity_type": "specification",
+        "completeness": "presence_only",
+        "true_positive_count": 1,
+        "false_positive_count": 0,
+        "false_negative_count": 0,
+        "precision": null,
+        "recall": 1.0,
+        "f1": null,
+        "evidence_correct_count": 1,
+        "evidence_incorrect_count": 0,
+        "evidence_not_checked_count": 0,
+        "ambiguous_count": 0
+      }
+    ],
+    "metrics_candidate_non_authoritative": [],
+    "documents": [
+      {
+        "alias": "certificate_mtu_engine_set_ham2152268",
+        "was_evaluated": true,
+        "has_execution_failures": false,
+        "scope_outcomes": [
+          {
+            "scope": {
+              "scope_type": "whole_document",
+              "page_start": null,
+              "page_end": null
+            },
+            "stage_status": "evaluated",
+            "execution_error": null,
+            "batch_summary": {
+              "batch_count": 12,
+              "parse_success_count": 12,
+              "parse_failure_count": 0,
+              "dropped_empty_count": 0,
+              "invalid_source_chunk_id_event_count": 0
+            },
+            "applicability_declarations": [],
+            "matches": [
+              {
+                "outcome": "matched",
+                "entity_type": "manufacturer",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": "extr_core_mtu_cert_manufacturer",
+                "actual_entity_id": "manufacturer_ac586f3b5fe74bfe8780c59ada80129e",
+                "identity_fields_used": [
+                  "name"
+                ],
+                "differing_fields": [],
+                "normalized_expected": {
+                  "name": "MTU Friedrichshafen GmbH",
+                  "website": null,
+                  "country": "Germany"
+                },
+                "normalized_actual": {
+                  "name": "MTU Friedrichshafen GmbH",
+                  "website": null,
+                  "country": "Germany"
+                },
+                "match_reason": "identity fields matched",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": "no expected evidence declared for this case"
+              },
+              {
+                "outcome": "unmatched_expected",
+                "entity_type": "extracted_identifier",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": "extr_core_mtu_cert_identifier",
+                "actual_entity_id": null,
+                "identity_fields_used": [
+                  "raw_value",
+                  "identifier_type"
+                ],
+                "differing_fields": [],
+                "normalized_expected": {
+                  "raw_value": "HAM2152268",
+                  "identifier_type": "certificate_number"
+                },
+                "normalized_actual": null,
+                "match_reason": "no actual entity matched identity fields",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "extracted_identifier",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "extracted_identifier::0",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "raw_value": "Hamburg",
+                  "identifier_type": "unknown"
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "extracted_identifier",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "extracted_identifier::1",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "raw_value": "1196054 / 3145306",
+                  "identifier_type": "manufacturer_order_number"
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "extracted_identifier",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "extracted_identifier::2",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "raw_value": "MTU 20V4000M53B",
+                  "identifier_type": "product_name"
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "extracted_identifier",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "extracted_identifier::3",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "raw_value": "LR2002664TA",
+                  "identifier_type": "type_approval_number"
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "extracted_identifier",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "extracted_identifier::4",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "raw_value": "ENS 23549-09",
+                  "identifier_type": "design_appraisal_document_number"
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "extracted_identifier",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "extracted_identifier::5",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "raw_value": "MTU Friedrichshafen GmbH",
+                  "identifier_type": "manufacturer_name"
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "extracted_identifier",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "extracted_identifier::6",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "raw_value": "L\u00fcrssen-Kr\u00f6ger Werft GmbH & Co KG",
+                  "identifier_type": "manufacturer_name"
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "extracted_identifier",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "extracted_identifier::7",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "raw_value": "QAM 030",
+                  "identifier_type": "quality_assurance_certificate_number"
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "extracted_identifier",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "extracted_identifier::8",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "raw_value": "528106062",
+                  "identifier_type": "engine_serial_number"
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "extracted_identifier",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "extracted_identifier::9",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "raw_value": "528106066",
+                  "identifier_type": "engine_serial_number"
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "extracted_identifier",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "extracted_identifier::10",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "raw_value": "Mr. Stotz Wolfgang Quality Manager",
+                  "identifier_type": "manufacturer_representative"
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "extracted_identifier",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "extracted_identifier::11",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "raw_value": "M.H. Santer mhs",
+                  "identifier_type": "surveyor_name"
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "alias": "challenge_mtu_marine_engine_generator_part1",
+        "was_evaluated": true,
+        "has_execution_failures": false,
+        "scope_outcomes": [
+          {
+            "scope": {
+              "scope_type": "page_range",
+              "page_start": 1,
+              "page_end": 2
+            },
+            "stage_status": "evaluated",
+            "execution_error": null,
+            "batch_summary": {
+              "batch_count": 12,
+              "parse_success_count": 12,
+              "parse_failure_count": 0,
+              "dropped_empty_count": 0,
+              "invalid_source_chunk_id_event_count": 0
+            },
+            "applicability_declarations": [],
+            "matches": [
+              {
+                "outcome": "unmatched_expected",
+                "entity_type": "equipment_info",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": "extr_mtu_cover_equipment_info",
+                "actual_entity_id": null,
+                "identity_fields_used": [
+                  "name",
+                  "model_number"
+                ],
+                "differing_fields": [],
+                "normalized_expected": {
+                  "name": "Marine engine-generator set",
+                  "model_number": "20V4000M53B",
+                  "serial_number": null,
+                  "manufacturer_name": null
+                },
+                "normalized_actual": null,
+                "match_reason": "no actual entity matched identity fields",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              }
+            ]
+          },
+          {
+            "scope": {
+              "scope_type": "page_range",
+              "page_start": 12,
+              "page_end": 15
+            },
+            "stage_status": "evaluated",
+            "execution_error": null,
+            "batch_summary": {
+              "batch_count": 28,
+              "parse_success_count": 28,
+              "parse_failure_count": 0,
+              "dropped_empty_count": 0,
+              "invalid_source_chunk_id_event_count": 0
+            },
+            "applicability_declarations": [],
+            "matches": [
+              {
+                "outcome": "unmatched_expected",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": "extr_mtu_safety_general_provisions",
+                "actual_entity_id": null,
+                "identity_fields_used": [
+                  "message"
+                ],
+                "differing_fields": [],
+                "normalized_expected": {
+                  "warning_type": null,
+                  "message": "risk of injury or damage",
+                  "component_name": null
+                },
+                "normalized_actual": null,
+                "match_reason": "no actual entity matched identity fields",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_2879d5073ca64df5a6845fcc9b5a0ea3",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "The product must not be operated in explosive atmospheres unless the engine fulfills the conditions for such use and approval has been granted. Any other use, particularly misuse, is considered as being contrary to the intended purpose. Such improper use increases the risk of injury and damage when working with the product. The manufacturer shall not be held liable for any damage resulting from improper, non-intended use",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_027c9b991a644a72b89c2daaec47e04f",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Always wear appropriate personal protective equipment, e.g. safety shoes, ear protectors, protective gloves, goggles, breathing mask. Follow the instructions concerning personal protective equipment in the respective descriptions of the individual activities or the manufacturer's documentation included in the delivery",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_ad4637e21bfc4617a03eecd876f1bd26",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Safe handling of Substances of Very High Concern pursuant to the REACH regulation (Registration, Evaluation, Authorization and restriction of CHemicals): We recommend wearing protective gloves at all times in order to reduce risk when working",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_8eaba46058d8481cbed8403b6b5fb07d",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "In the first few hours of operation, the product emits gases as a result of smoldering e.g. lacquers or oil. These gases may be hazardous to health. Always wear respiratory protection in the operating room during this period",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_ba70c4bc80df4ba5bc301a5c2661fe24",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Do not remain in the operating room when the product is running unless absolutely necessary. Keep your stay as short as possible",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_543e63f0b07445f3ac3ae8fc138815b9",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "In applications with potentially fluctuating gas qualities, stay away from the engine during start-up",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_4ea9d786d61f477ab742d8d766592fa0",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Keep a safe distance away from the product if possible. Do not touch the product unless expressly instructed to do so following a written procedure",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_e961fa7b05ca4d62b100b0c72e5ce5b9",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Do not inhale exhaust gases emitted by the product",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_6964c32581774198bc911eb86b5b0423",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Wear hearing protection",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_70a43cae9c0b407c81af071425599ba0",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Mop up any leaked or spilled fluids and lubricants immediately or soak up with a suitable binding agent",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_b0477aa4fb844919b2ee2dc237551d15",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Some appliances or parts of the electrical system are electrically live (high voltage) in operation. Follow the applicable operating and safety instructions when operating the appliances and heed warnings at all times",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              }
+            ]
+          },
+          {
+            "scope": {
+              "scope_type": "page_range",
+              "page_start": 67,
+              "page_end": 68
+            },
+            "stage_status": "evaluated",
+            "execution_error": null,
+            "batch_summary": {
+              "batch_count": 15,
+              "parse_success_count": 15,
+              "parse_failure_count": 0,
+              "dropped_empty_count": 0,
+              "invalid_source_chunk_id_event_count": 0
+            },
+            "applicability_declarations": [],
+            "matches": [
+              {
+                "outcome": "matched",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": "extr_mtu_task_check_oil_level",
+                "actual_entity_id": "task_6760caefd50e46d994db1e02973ba355",
+                "identity_fields_used": [
+                  "title",
+                  "component_name"
+                ],
+                "differing_fields": [],
+                "normalized_expected": {
+                  "title": "Check engine oil level",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "ENGINE OPERATIONAL MONITORING",
+                  "equipment_id": null
+                },
+                "normalized_actual": {
+                  "title": "Check engine oil level",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "ENGINE OPERATIONAL MONITORING",
+                  "equipment_id": null
+                },
+                "match_reason": "identity fields matched",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": true,
+                "evidence_detail": "evidence matched"
+              },
+              {
+                "outcome": "matched",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": "extr_mtu_task_visual_inspection",
+                "actual_entity_id": "task_7013a041b5474a8fac373f198aef20d2",
+                "identity_fields_used": [
+                  "title",
+                  "component_name"
+                ],
+                "differing_fields": [],
+                "normalized_expected": {
+                  "title": "Visually inspect engine for leaks and general condition",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "ENGINE OPERATIONAL MONITORING",
+                  "equipment_id": null
+                },
+                "normalized_actual": {
+                  "title": "Visually inspect engine for leaks and general condition",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "ENGINE OPERATIONAL MONITORING",
+                  "equipment_id": null
+                },
+                "match_reason": "identity fields matched",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": true,
+                "evidence_detail": "evidence matched"
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_4a872b92706b40fdb292ebf382d6fe3e",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Check maintenance indicator of air filter",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "ENGINE OPERATIONAL MONITORING",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_df120819fdc045f6bd5bbf2aae8ecc8a",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Check relief bore of coolant pump",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "ENGINE OPERATIONAL MONITORING",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_73721ffc8cc94d32934cf9ec49a00a3f",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Check for abnormal running noises, exhaust gas color and vibrations when the engine is running",
+                  "description": null,
+                  "interval": null,
+                  "component_name": null,
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_3382a0ecc67c48c5be362ec6146d638c",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Drain water and contamination from fuel prefilter",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "ENGINE OPERATIONAL MONITORING",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_0999c795845e4a6895039fdbb15fa6e3",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Check position of fuel prefilter contamination indicator",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "ENGINE OPERATIONAL MONITORING",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_fdb1e5addbf54b56baf21f24af77db5b",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Check coupling (visual inspection), replace as necessary",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "BENDING/TORSIONALLY RESILIENT COUPLING AND STEEL-SPRING COUPLING",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_9783c901f8d6405a80350721ada519d0",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Measure height of rubber element",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "ENGINE MOUNTING",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_e76f35ba185c4c14ad94286933c15e78",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Measure buffer clearance, adjust as necessary",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "ENGINE MOUNTING",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_f7fbb7c795e34d669d835868a6d5a2e5",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Check layer thickness of oil residue on automatic centrifugal oil filter",
+                  "description": "Clean, and replace paper element at every engine oil change at the latest",
+                  "interval": null,
+                  "component_name": "LUBE OIL SYSTEM",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_5f53f165f76d48f0b5283588a991e7e8",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Check and clean filtering screen",
+                  "description": "Automatic oil filter: Check and clean filtering screen",
+                  "interval": null,
+                  "component_name": "AUTOMATIC OIL FILTER",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_998d2b13528a4127be772fe838dc4fd3",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Replace filter",
+                  "description": "Fuel prefilter, replace filter",
+                  "interval": null,
+                  "component_name": "FUEL SYSTEM (LOW PRESSURE)",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_794f909731d2446381bd4a69787bdd57",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Replace easy-change fuel filter",
+                  "description": "Additional fuel filter: Replace easy-change fuel filter",
+                  "interval": null,
+                  "component_name": "FUEL SYSTEM (LOW PRESSURE)",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_baf5c5f7ffda454aa543f3514661ee97",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Check general condition of resilient mounts (visual inspection)",
+                  "description": "Check general condition of resilient mounts (visual inspection)",
+                  "interval": null,
+                  "component_name": "ENGINE MOUNTING",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_d3584b4ce8bf4f2ba8e79efbfdaec2c4",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Check firm seating of securing screws",
+                  "description": "Check firm seating of securing screws",
+                  "interval": null,
+                  "component_name": "ENGINE MOUNTING",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_95aea012b02c4c99991a5d961ddd1724",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Replace air filter",
+                  "description": "Replace air filter",
+                  "interval": null,
+                  "component_name": "AIR SUPPLY SYSTEM",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_4952e18de7394e709a3b8389661dab94",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Replace valve cover",
+                  "description": "Replace valve cover",
+                  "interval": null,
+                  "component_name": "COOLANT SYSTEM",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_6fd198b20b4d4cdcb6258f43515d0830",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Replace filter or filter element (HE200)",
+                  "description": "Replace filter or filter element (HE200)",
+                  "interval": null,
+                  "component_name": "CRANKCASE BREATHER",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_4caf354bdb5549618a2b7460623f5a2d",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Check valve clearance, adjust as necessary",
+                  "description": "First adjustment after 1,000 operating hours on a new engine and after 1,000 operating hours following each cylinder head overhaul",
+                  "interval": "1,000 operating hours",
+                  "component_name": "VALVE GEAR",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_5c6364dacae94747a2fab25eb982349c",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Reset drift correction parameters (DC)",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "GOVERNOR",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_4eead32866b7430f969329201b45980d",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Replace fuel injection valve/injector",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "FUEL SYSTEM (HIGH PRESSURE)",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_c52bff477d9446da8fc105c313dba65a",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Measure valve protrusion",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "CYLINDER HEAD",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_88bf58e725ba4edd85c1d574031c6e1c",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Inspect cylinder liner with endoscope",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "CRANK DRIVE",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_aab21b6788cd42d09548e0a0fd408902",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Replace oil separator (impactor)",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "CRANKCASE BREATHER",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_7b292765b68e4570b9516b331f947eb7",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Check nozzle alignment of reducing agent nozzle",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "EXHAUST GAS AFTERTREATMENT",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_662eff7565c14143a06cd5224ba15aef",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Visually inspect for leaks and general condition of exhaust gas aftertreatment",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "EXHAUST GAS AFTERTREATMENT OPERATIONAL MONITORING",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_76ebf5844a3f4b7d941e79a25524fe05",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Replace NH3 sensor",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "EXHAUST GAS AFTERTREATMENT",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_9955ded5a4824aeabd2639147a07e2ab",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Replace NOx sensor(s)",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "SENSOR TECHNOLOGY AND WIRING HARNESS",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_d4e9b93e64d44632ab34984dd149a8a7",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Replace compression gland",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "EXHAUST GAS AFTERTREATMENT",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_e8f792ef49904ddb93c5ae8875c8bdc1",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Check function of oil priming system",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "LUBE OIL PRIMING",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_fc10daef20054b34b83f1de5424076f8",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Check function and leak-tightness of preheater",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "PREHEATING",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_6ee97898deb14324af56222a6eac9944",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Replace preheater thermostat (electric)",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "PREHEATING",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_179c19ead56c4e30a741ae3b3abdc59d",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Check water drain valve",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "FUEL TREATMENT PLANT",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_d7c53e0856ca4dcfa3ebc1a5950ad547",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Check alarm function",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "FUEL TREATMENT PLANT",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_4b397640b5df4ce69594c654bed8c4a0",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Check pump performance",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "FUEL TREATMENT PLANT",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_cb89a9c036fb49abbc3125753d0753cc",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Replace filter element",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "FUEL TREATMENT PLANT",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "maintenance_task",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "task_cd30718aceff47ffb3bc7ace68271c64",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Check function of rod electrode",
+                  "description": null,
+                  "interval": null,
+                  "component_name": "FUEL TREATMENT PLANT",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              }
+            ]
+          },
+          {
+            "scope": {
+              "scope_type": "page_range",
+              "page_start": 162,
+              "page_end": 167
+            },
+            "stage_status": "evaluated",
+            "execution_error": null,
+            "batch_summary": {
+              "batch_count": 24,
+              "parse_success_count": 24,
+              "parse_failure_count": 0,
+              "dropped_empty_count": 0,
+              "invalid_source_chunk_id_event_count": 0
+            },
+            "applicability_declarations": [],
+            "matches": [
+              {
+                "outcome": "matched",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": "extr_mtu_fuel_filter_safety_warning_crushing",
+                "actual_entity_id": "safety_warning_a9e06244c6384fd8b7cc7bb2a501317e",
+                "identity_fields_used": [
+                  "message"
+                ],
+                "differing_fields": [
+                  "warning_type"
+                ],
+                "normalized_expected": {
+                  "warning_type": null,
+                  "message": "Risk of crushing",
+                  "component_name": null
+                },
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Risk of crushing, danger of parts of the body being caught or pulled in!",
+                  "component_name": null
+                },
+                "match_reason": "identity fields matched",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": false,
+                "evidence_detail": "expected page 163-164, actual 165-165"
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_e26c0c23687d43c2afd9a168e499f172",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "danger",
+                  "message": "Depressurize the hydraulic line before removing the filter housing to avoid injury from pressurized fluid",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_eb1a252cf1524fe6aa97c7e8100feb29",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Risk of fatal injury through swallowing; risk of poisoning through inhalation; irritation to eyes and skin!",
+                  "component_name": "Fuel"
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_a144a271041e4dfe80e1a087e84e5df0",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Do not inhale vapors or smoke",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_c6816d763dbd43a5be106aae597c3649",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Wear protective clothing, protective gloves, and safety glasses",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_e635bc8a909b4a1e84e0062278b03258",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "If contact is made with skin, wash off with water and soap",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_f6ddc08b74644bc8a61815f49cc7192c",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Keep the engine room well ventilated at all times",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_d568e5f5fa80415198f8f8e67c02c4db",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "danger",
+                  "message": "Fuels are combustible and explosive",
+                  "component_name": "Fuel"
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_4f5f52c7a9484adda8f8874c5ffa7b97",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Risk of fire and explosion!",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_d66c9f3dcd8e4c3aaee2943692e6e84e",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Avoid open flames, electrical sparks and ignition sources",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_a2a003e3f7ed45d480d57cbafbc002c1",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Do not smoke",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_78e98a4789c44b078739386e2307232b",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Wear protective clothing, protective gloves, and safety glasses / facial protection",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_d5ca4701f08e4d378bf10c96d7bf01f3",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "A high level of noise is produced when the system is running",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_91e29bb8bb094a32b8f3f9c15eac2044",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "danger",
+                  "message": "Severe material damage!",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_a1df26680c99481c994f5a8368d5d358",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "For filter replacement with the engine running, operate the engine at low engine load",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_0b905f0eca9f4289b309d8e2e5404a7c",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "The filter which is to be replaced must be cut out for a brief period only",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_39cecb5f5bf7482a90908fe6cdd79d24",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Components are moving or rotating",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_a8738f2ea2ce4cf49ea3ee65de1626f0",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Operate the engine at low load only. Keep clear of the danger zone of the engine",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_c846f1ccf274492b8657fe095cdab27c",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "danger",
+                  "message": "The pressure gage could be damaged",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_03a2ebb9d11a4dbeaac41a6b2a4b7264",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Fuel in the prefilter can be pressurized. Risk of injury through spraying fuel!",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_6e176200c4a14dbebfcbbe10b9b16108",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Wear protective gloves and eye protectors/safety mask",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_a5e8e24bb8604580b042021c4c995bc8",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Tank is pressurized. Risk of eye injuries resulting from fluid escaping under high pressure!",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_1301e881e0c045beb4d35705d65d2e0a",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Wear goggles or safety mask",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_2b64275502f3495b9643a45244e99db5",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Liquid or gaseous media, e.g. fuel, are poisonous. Escaping vapors of highly volatile media, e.g. fuel or ether. Risk of fatal injury through swallowing; risk of poisoning through inhalation; irritation to eyes and skin!",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_9dfbe1e6f017457fbed0cae43e1069bf",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Seek medical attention immediately; do not induce vomiting",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_31cbf18902c44a929209ab0fe5580867",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Fuels are combustible and explosive. Risk of fire and explosion!",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_57b9a7ca42204cbc97d0cff1ceb3316f",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Hot components/surfaces. Risk of burns!",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_c28beea7c0d640b1a1ef0fb98e58f239",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Allow the system to cool down to below 50 \u00b0C before beginning work",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_108975bdfab845b8b88a85ace09ba559",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Wear suitable protective equipment/thermal gloves",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_fcb8a98790cc4a2994d6e22c6b210bcc",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "warning",
+                  "message": "Avoid unprotected contact with hot surfaces",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "safety_warning_56ca9fcb8279467e895e9a702db642e4",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "warning_type": "danger",
+                  "message": "Damage to component! Severe material damage!",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_expected",
+                "entity_type": "procedure",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": "extr_mtu_fuel_filter_procedure",
+                "actual_entity_id": null,
+                "identity_fields_used": [
+                  "title"
+                ],
+                "differing_fields": [],
+                "normalized_expected": {
+                  "title": "Additional fuel filter \u2013 Replacement",
+                  "procedure_type": null,
+                  "steps": "Replace left filter",
+                  "component_name": null,
+                  "equipment_id": null
+                },
+                "normalized_actual": null,
+                "match_reason": "no actual entity matched identity fields",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "procedure",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "procedure_34f70ff0e5544f2194df101f4504a5c5",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Replace additional fuel filter",
+                  "procedure_type": "replacement",
+                  "steps": "Place a suitable vessel underneath to collect the fuel. Replace left filter (1). Put lever (3) to position (b). Remove filter (1) using an oil filter wrench. Clean sealing face on filter head. Moisten sealing ring of new filter with fuel. Fit SOLAS shielding (\u2192 Page 134). Install new filter and tighten by hand. Turn lever (3) to position (a). Replace right filter (2). Put lever (3) to position (c). Remove filter (2) using an oil filter wrench. Clean sealing face on filter head. Moisten sealing ring of new filter with fuel. Fit SOLAS shielding (\u2192 Page 134). Install new filter and tighten by hand. Turn lever (3) to position (a). Vent additional fuel filter at screw (1). Remove vessel underneath for collecting the fuel.",
+                  "component_name": "Additional fuel filter",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "procedure",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "procedure_88b6cba23ca44719be22ccd94ba51989",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "title": "Fuel prefilter \u2013 Vacuum gage check",
+                  "procedure_type": "testing",
+                  "steps": "With the engine running, read off at pressure gage (1) the vacuum (contamination level) at the filter output indicated by the red pointer (3). If the red pointer (3) is continuously in the yellow area (B) at the latest, or at a high flow rate moves into the red area (C), switch over to second, clean filter (\u2192 Page 166). Replace contaminated filter (\u2192 Page 167). The black trailing pointer (2) shows the maximum measured vacuum. It can be reset by turning the button (4).",
+                  "component_name": "Fuel prefilter",
+                  "equipment_id": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              }
+            ]
+          },
+          {
+            "scope": {
+              "scope_type": "whole_document",
+              "page_start": null,
+              "page_end": null
+            },
+            "stage_status": "no_expectations",
+            "execution_error": null,
+            "batch_summary": null,
+            "applicability_declarations": [
+              {
+                "declaration_id": "appl_mtu_maintenance_interval_not_applicable",
+                "entity_type": "maintenance_interval",
+                "applicability": "not_applicable",
+                "review_status": "reviewed",
+                "reason": "Page 67 (\"6 Maintenance > 6.1 Maintenance task reference table [QL1]\"), verbatim: \"The maintenance tasks and intervals required for this product are defined in the Maintenance Schedule. The Maintenance Schedule is a separate publication.\" This document explicitly defers interval/ frequency data to an external publication not included in this file.\n",
+                "notes": "REVIEWED (human decision, 2026-09) - approved as currently grounded, unchanged. This is the concrete motivating example for MaintenanceInterval = NOT_APPLICABLE. This is NOT a false negative and NOT automatically a true negative - it is excluded from FN/TN scoring entirely (see ExtractionApplicability's docstring). No other entity type is marked NOT_APPLICABLE for this document merely because it was not annotated - absence of a declaration means NOT_ASSESSED, never inferred. Human review explicitly declined to extend a similar NOT_APPLICABLE declaration to SparePart (see the fuel-filter window below): deferring detailed spare-part identification to an external Spare Parts Catalog is NOT equivalent to the SparePart entity concept being inapplicable to this document - SparePart remains unassessed/unrepresented instead.\n"
+              }
+            ],
+            "matches": []
+          }
+        ]
+      },
+      {
+        "alias": "manual_fwc12",
+        "was_evaluated": true,
+        "has_execution_failures": false,
+        "scope_outcomes": [
+          {
+            "scope": {
+              "scope_type": "page_range",
+              "page_start": 1,
+              "page_end": 2
+            },
+            "stage_status": "evaluated",
+            "execution_error": null,
+            "batch_summary": {
+              "batch_count": 12,
+              "parse_success_count": 12,
+              "parse_failure_count": 0,
+              "dropped_empty_count": 0,
+              "invalid_source_chunk_id_event_count": 0
+            },
+            "applicability_declarations": [],
+            "matches": [
+              {
+                "outcome": "unmatched_expected",
+                "entity_type": "equipment_info",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": "extr_core_fwc12_equipment_info",
+                "actual_entity_id": null,
+                "identity_fields_used": [
+                  "model_number",
+                  "serial_number"
+                ],
+                "differing_fields": [],
+                "normalized_expected": {
+                  "name": null,
+                  "model_number": "FWC12",
+                  "serial_number": "19P006-900-010-01",
+                  "manufacturer_name": null
+                },
+                "normalized_actual": null,
+                "match_reason": "no actual entity matched identity fields",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              }
+            ]
+          },
+          {
+            "scope": {
+              "scope_type": "page_range",
+              "page_start": 9,
+              "page_end": 9
+            },
+            "stage_status": "evaluated",
+            "execution_error": null,
+            "batch_summary": {
+              "batch_count": 12,
+              "parse_success_count": 12,
+              "parse_failure_count": 0,
+              "dropped_empty_count": 0,
+              "invalid_source_chunk_id_event_count": 0
+            },
+            "applicability_declarations": [],
+            "matches": [
+              {
+                "outcome": "unmatched_expected",
+                "entity_type": "safety_warning",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": "extr_core_fwc12_safety_warning_biohazard",
+                "actual_entity_id": null,
+                "identity_fields_used": [
+                  "message"
+                ],
+                "differing_fields": [],
+                "normalized_expected": {
+                  "warning_type": null,
+                  "message": "Biohazard",
+                  "component_name": null
+                },
+                "normalized_actual": null,
+                "match_reason": "ambiguous: multiple actual entities equally match identity fields - not silently resolved",
+                "ambiguous_actual_entity_ids": [
+                  "safety_warning_6c853fc1747b4d41a551a689601f6398",
+                  "safety_warning_dbc8ff24c24f4cca8c995c4d0288a87c"
+                ],
+                "evidence_correct": null,
+                "evidence_detail": null
+              }
+            ]
+          },
+          {
+            "scope": {
+              "scope_type": "page_range",
+              "page_start": 12,
+              "page_end": 12
+            },
+            "stage_status": "evaluated",
+            "execution_error": null,
+            "batch_summary": {
+              "batch_count": 7,
+              "parse_success_count": 7,
+              "parse_failure_count": 0,
+              "dropped_empty_count": 0,
+              "invalid_source_chunk_id_event_count": 0
+            },
+            "applicability_declarations": [],
+            "matches": [
+              {
+                "outcome": "matched",
+                "entity_type": "specification",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": "extr_core_fwc12_specification_tank_capacity",
+                "actual_entity_id": "specification_4963689ec25b4af1b63f9aa959d36108",
+                "identity_fields_used": [
+                  "parameter"
+                ],
+                "differing_fields": [],
+                "normalized_expected": {
+                  "parameter": "Tank Capacity",
+                  "value": "1200",
+                  "unit": "L",
+                  "component_name": null
+                },
+                "normalized_actual": {
+                  "parameter": "Tank Capacity",
+                  "value": "1,200",
+                  "unit": "L",
+                  "component_name": null
+                },
+                "match_reason": "identity fields matched",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": true,
+                "evidence_detail": "evidence matched"
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "specification",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "specification_c80d6603057545419dd02b48a85c707b",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "parameter": "Pump Capacity",
+                  "value": "16,000",
+                  "unit": "L/hr",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "specification",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "specification_04a77e951eb84f7aae745d1bf846b4de",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "parameter": "Dewatering Capacity",
+                  "value": "20,000",
+                  "unit": "L/hr",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "specification",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "specification_b5278d45c01b4f11a64142fd5928688d",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "parameter": "Voltage",
+                  "value": "400V",
+                  "unit": "50Hz",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              },
+              {
+                "outcome": "unmatched_actual",
+                "entity_type": "specification",
+                "group_completeness": "presence_only",
+                "group_review_status": "reviewed",
+                "case_id": null,
+                "actual_entity_id": "specification_2e6260675ea843828ef55d074b7dce0d",
+                "identity_fields_used": [],
+                "differing_fields": [],
+                "normalized_expected": {},
+                "normalized_actual": {
+                  "parameter": "Installed Power",
+                  "value": "~5",
+                  "unit": "kW",
+                  "component_name": null
+                },
+                "match_reason": "no expectation matched this actual entity",
+                "ambiguous_actual_entity_ids": [],
+                "evidence_correct": null,
+                "evidence_detail": null
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

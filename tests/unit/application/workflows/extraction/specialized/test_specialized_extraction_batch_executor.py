@@ -1,3 +1,4 @@
+import hashlib
 import json
 
 import pytest
@@ -209,3 +210,65 @@ def test_specialized_executor_accepts_a_single_family_only_json_response() -> No
     assert result.specifications[0].parameter == "Tank Capacity"
     assert not result.maintenance_tasks
     assert not result.safety_warnings
+
+
+def test_diagnostics_record_the_exact_rendered_prompts_sha256() -> None:
+    chunk = _make_chunk("c1", "Tank Capacity is 1200 L.", ChunkType.TECHNICAL_SPECIFICATION)
+    batch = _make_batch([chunk])
+    llm_service = FakeLLMService(response='{"confidence_score": 0.9}')
+    executor = _make_executor(ExtractionPromptType.SPECIFICATION, llm_service)
+    diagnostics_sink: list = []
+
+    executor.execute_once(
+        document_id="doc_001",
+        batch=batch,
+        activity_context=None,
+        progress_callback=None,
+        previous_error=None,
+        diagnostics_sink=diagnostics_sink,
+    )
+
+    actual_prompt = llm_service.calls[0]["prompt"]
+    expected_hash = hashlib.sha256(actual_prompt.encode("utf-8")).hexdigest()
+    assert len(diagnostics_sink) == 1
+    assert diagnostics_sink[0].prompt_sha256 == expected_hash
+
+
+def test_accepts_but_ignores_candidate_routing_diagnostics_sink(
+) -> None:
+    """SPECIALIZED_FAMILY's candidate routing decision already happened once
+    at plan-build time (build_extraction_plan), not per executor call --
+    this parameter must still be accepted (duck typing with
+    ExtractionBatchExecutor via ExtractionBatchRetryCoordinator) and must
+    not change the call's outcome."""
+    chunk = _make_chunk(
+        "c1", "Tank Capacity is 1200 L.", ChunkType.TECHNICAL_SPECIFICATION
+    )
+    batch = _make_batch([chunk])
+    response = json.dumps(
+        {
+            "confidence_score": 0.9,
+            "specifications": [
+                {
+                    "parameter": "Tank Capacity",
+                    "value": "1200",
+                    "unit": "L",
+                    "source_chunk_id": "c1",
+                }
+            ],
+        }
+    )
+    llm_service = FakeLLMService(response=response)
+    executor = _make_executor(ExtractionPromptType.SPECIFICATION, llm_service)
+
+    result = executor.execute_once(
+        document_id="doc_001",
+        batch=batch,
+        activity_context=None,
+        progress_callback=None,
+        previous_error=None,
+        diagnostics_sink=[],
+        candidate_routing_diagnostics_sink=[],
+    )
+
+    assert len(result.specifications) == 1

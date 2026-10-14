@@ -50,10 +50,18 @@ def _selector() -> ExtractionCandidateSelector:
 def test_build_extraction_plan_signature_has_no_golden_expectation_parameter() -> None:
     """Deterministic guard for task requirement: the planner must never be
     given access to golden/expected extraction data -- it only ever takes
-    the batches it was asked to extract from and the (existing, production)
-    candidate selector."""
+    the batches it was asked to extract from, the (existing, production)
+    candidate selector, and purely observational diagnostics parameters
+    (document_id, candidate_routing_diagnostics_sink) that carry no
+    golden/expected data and never affect routing decisions or work items
+    (see extraction_candidate_routing_diagnostics.py)."""
     params = set(inspect.signature(build_extraction_plan).parameters)
-    assert params == {"batches", "candidate_selector"}
+    assert params == {
+        "batches",
+        "candidate_selector",
+        "document_id",
+        "candidate_routing_diagnostics_sink",
+    }
 
 
 def test_one_selected_family_produces_exactly_one_work_item() -> None:

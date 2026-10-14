@@ -6,7 +6,11 @@ from src.application.services.ai import LLMService
 from src.application.workflows.extraction.batching.extraction_batch import ExtractionBatch
 from src.application.workflows.extraction.batching.extraction_batch_diagnostics import (
     ExtractionBatchDiagnostics,
+    hash_prompt,
     safe_response_preview,
+)
+from src.application.workflows.extraction.candidates.extraction_candidate_routing_diagnostics import (
+    ExtractionCandidateRoutingDiagnostics,
 )
 from src.application.workflows.extraction.candidates.extraction_prompt_narrowing_service import (
     ExtractionPromptNarrowingService,
@@ -56,6 +60,9 @@ class ExtractionBatchExecutor:
         progress_callback: Callable[[str], None] | None,
         previous_error: str | None,
         diagnostics_sink: list[ExtractionBatchDiagnostics],
+        candidate_routing_diagnostics_sink: (
+            list[ExtractionCandidateRoutingDiagnostics] | None
+        ) = None,
     ) -> ExtractionResult:
         emit_progress(
             progress_callback,
@@ -69,7 +76,9 @@ class ExtractionBatchExecutor:
             document_id=document_id,
             batch=batch,
             previous_error=previous_error,
+            candidate_routing_diagnostics_sink=candidate_routing_diagnostics_sink,
         )
+        prompt_sha256 = hash_prompt(prompt)
         if requested_types is not None:
             emit_progress(
                 progress_callback,
@@ -122,6 +131,7 @@ class ExtractionBatchExecutor:
                 parse_success=False,
                 parse_error=str(exc),
                 raw_response_preview=preview,
+                prompt_sha256=prompt_sha256,
             )
             diagnostics_sink.append(diagnostics)
             compact_preview = " ".join(preview.split())
@@ -159,6 +169,7 @@ class ExtractionBatchExecutor:
                 word_count=batch.word_count,
                 model_name=self.extraction_model,
                 parse_success=True,
+                prompt_sha256=prompt_sha256,
             )
         )
         return extraction_result

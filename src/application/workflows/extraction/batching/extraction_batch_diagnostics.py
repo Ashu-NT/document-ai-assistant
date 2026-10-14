@@ -1,4 +1,5 @@
 from dataclasses import asdict, dataclass
+import hashlib
 import re
 
 
@@ -17,9 +18,18 @@ class ExtractionBatchDiagnostics:
     parse_success: bool
     parse_error: str | None = None
     raw_response_preview: str | None = None
+    # SHA-256 of the exact rendered prompt text sent to the model for this
+    # attempt -- lets two runs be compared for "did the prompt actually
+    # differ" without storing the prompt's full (potentially large, and
+    # source-document-derived) content.
+    prompt_sha256: str | None = None
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
+
+
+def hash_prompt(prompt: str) -> str:
+    return hashlib.sha256(prompt.encode("utf-8")).hexdigest()
 
 
 def safe_response_preview(response: str, *, max_chars: int) -> str:

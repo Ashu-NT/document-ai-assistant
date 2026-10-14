@@ -36,7 +36,7 @@ class _SingleFamilyCandidateSelector:
     requiring extra queued responses unrelated to what this test file is
     verifying)."""
 
-    def select_for_chunk(self, chunk):
+    def select_for_chunk(self, chunk, **_kwargs):
         return frozenset({ExtractionPromptType.MAINTENANCE_TASK})
 
 

@@ -8,6 +8,10 @@ from src.application.workflows.extraction.candidates.extraction_candidate_router
 from src.application.workflows.extraction.candidates.extraction_candidate_router_schema import (
     build_extraction_candidate_router_json_schema,
 )
+from src.application.workflows.extraction.candidates.extraction_candidate_routing_diagnostics import (
+    LLMRoutingInvocationDiagnostics,
+    sorted_type_values,
+)
 from src.domain.document import DocumentChunk
 from src.shared.exceptions import SchemaValidationError
 
@@ -62,10 +66,23 @@ class ExtractionCandidateLLMRouter:
     def is_available(self) -> bool:
         return self._enabled and self._llm_service is not None
 
-    def route(self, chunk: DocumentChunk) -> frozenset[ExtractionPromptType] | None:
-        if not self.is_available():
-            return None
-        if not chunk.content or not chunk.content.strip():
+    def route(
+        self,
+        chunk: DocumentChunk,
+        *,
+        diagnostics_sink: list[LLMRoutingInvocationDiagnostics] | None = None,
+    ) -> frozenset[ExtractionPromptType] | None:
+        available = self.is_available()
+        had_content = bool(chunk.content and chunk.content.strip())
+        if not available or not had_content:
+            self._record(
+                diagnostics_sink,
+                available=available,
+                had_content=had_content,
+                invoked_llm=False,
+                schema_valid=None,
+                resolved_types=None,
+            )
             return None
 
         prompt = self._prompt_builder.build(chunk.content)
@@ -77,7 +94,33 @@ class ExtractionCandidateLLMRouter:
         try:
             payload = self._response_parser.parse(response)
         except SchemaValidationError:
+            self._record(
+                diagnostics_sink,
+                available=True,
+                had_content=True,
+                invoked_llm=True,
+                schema_valid=False,
+                resolved_types=None,
+            )
             return None
 
         resolved = payload.resolved_types()
-        return resolved or None
+        result = resolved or None
+        self._record(
+            diagnostics_sink,
+            available=True,
+            had_content=True,
+            invoked_llm=True,
+            schema_valid=True,
+            resolved_types=sorted_type_values(result) if result else None,
+        )
+        return result
+
+    @staticmethod
+    def _record(
+        diagnostics_sink: list[LLMRoutingInvocationDiagnostics] | None,
+        **fields: object,
+    ) -> None:
+        if diagnostics_sink is None:
+            return
+        diagnostics_sink.append(LLMRoutingInvocationDiagnostics(**fields))

@@ -15,7 +15,7 @@ class FakeLLMRouter:
         self.result = result
         self.calls: list[DocumentChunk] = []
 
-    def route(self, chunk: DocumentChunk):
+    def route(self, chunk: DocumentChunk, *, diagnostics_sink=None):
         self.calls.append(chunk)
         return self.result
 

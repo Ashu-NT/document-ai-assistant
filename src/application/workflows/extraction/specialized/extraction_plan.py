@@ -4,6 +4,9 @@ from dataclasses import dataclass, field
 
 from src.application.prompts.extraction import ExtractionPromptType
 from src.application.workflows.extraction.batching.extraction_batch import ExtractionBatch
+from src.application.workflows.extraction.candidates.extraction_candidate_routing_diagnostics import (
+    ExtractionCandidateRoutingDiagnostics,
+)
 from src.application.workflows.extraction.candidates.extraction_candidate_selector import (
     ExtractionCandidateSelector,
 )
@@ -39,15 +42,28 @@ def build_extraction_plan(
     batches: list[ExtractionBatch],
     *,
     candidate_selector: ExtractionCandidateSelector,
+    document_id: str | None = None,
+    candidate_routing_diagnostics_sink: (
+        list[ExtractionCandidateRoutingDiagnostics] | None
+    ) = None,
 ) -> ExtractionPlan:
     """Expands each batch into one ExtractionWorkItem per candidate-narrowed
     entity family. Deterministic: for the same batches and selector, always
     produces the same work items in the same order (families sorted by
     their string value within each batch).
+
+    `document_id`/`candidate_routing_diagnostics_sink` are purely
+    observational and default to None, reproducing this function's exact
+    prior behavior and return value.
     """
     work_items: list[ExtractionWorkItem] = []
     for batch in batches:
-        requested_types = resolve_requested_types(batch, candidate_selector)
+        requested_types = resolve_requested_types(
+            batch,
+            candidate_selector,
+            document_id=document_id,
+            diagnostics_sink=candidate_routing_diagnostics_sink,
+        )
         for entity_type in sorted(requested_types, key=lambda t: t.value):
             work_items.append(
                 ExtractionWorkItem(entity_type=entity_type, batch=batch)

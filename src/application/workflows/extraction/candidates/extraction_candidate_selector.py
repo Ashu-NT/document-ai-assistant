@@ -2,6 +2,11 @@ from src.application.prompts.extraction import ExtractionPromptType
 from src.application.workflows.extraction.candidates.extraction_candidate_llm_router import (
     ExtractionCandidateLLMRouter,
 )
+from src.application.workflows.extraction.candidates.extraction_candidate_routing_diagnostics import (
+    ExtractionCandidateRoutingDiagnostics,
+    LLMRoutingInvocationDiagnostics,
+    sorted_type_values,
+)
 from src.application.workflows.extraction.candidates.extraction_cross_signal_detector import (
     ExtractionCrossSignalDetector,
 )
@@ -137,21 +142,101 @@ class ExtractionCandidateSelector:
         return _CHUNK_TYPE_CANDIDATES[chunk_type] | _ALWAYS_CANDIDATE
 
     def select_for_chunk(
-        self, chunk: DocumentChunk
+        self,
+        chunk: DocumentChunk,
+        *,
+        diagnostics_sink: list[ExtractionCandidateRoutingDiagnostics] | None = None,
+        document_id: str | None = None,
+        batch_index: int | None = None,
+        batch_count: int | None = None,
     ) -> frozenset[ExtractionPromptType]:
         cross_signals = self._cross_signal_detector.detect(chunk)
+        is_ungated = chunk.chunk_type in _UNGATED_CHUNK_TYPES
 
-        if chunk.chunk_type in _UNGATED_CHUNK_TYPES:
+        llm_routing_diag: LLMRoutingInvocationDiagnostics | None = None
+        if is_ungated:
+            deterministic_candidates: frozenset[ExtractionPromptType] = frozenset()
+            router_diag_sink: list[LLMRoutingInvocationDiagnostics] = []
             router_result = (
-                self._llm_router.route(chunk)
+                self._llm_router.route(chunk, diagnostics_sink=router_diag_sink)
                 if self._llm_router is not None
                 else None
             )
+            llm_routing_diag = router_diag_sink[0] if router_diag_sink else None
             base = router_result if router_result is not None else _ALL_CANDIDATES
         else:
+            deterministic_candidates = _CHUNK_TYPE_CANDIDATES.get(
+                chunk.chunk_type, _ALL_CANDIDATES
+            )
             base = self.select(chunk.chunk_type)
 
-        return base | _ALWAYS_CANDIDATE | cross_signals
+        final = base | _ALWAYS_CANDIDATE | cross_signals
+
+        if diagnostics_sink is not None:
+            diagnostics_sink.append(
+                self._build_diagnostics(
+                    chunk=chunk,
+                    document_id=document_id,
+                    batch_index=batch_index,
+                    batch_count=batch_count,
+                    is_ungated=is_ungated,
+                    deterministic_candidates=deterministic_candidates,
+                    llm_routing_diag=llm_routing_diag,
+                    cross_signals=cross_signals,
+                    final=final,
+                )
+            )
+
+        return final
+
+    @staticmethod
+    def _build_diagnostics(
+        *,
+        chunk: DocumentChunk,
+        document_id: str | None,
+        batch_index: int | None,
+        batch_count: int | None,
+        is_ungated: bool,
+        deterministic_candidates: frozenset[ExtractionPromptType],
+        llm_routing_diag: LLMRoutingInvocationDiagnostics | None,
+        cross_signals: frozenset[ExtractionPromptType],
+        final: frozenset[ExtractionPromptType],
+    ) -> ExtractionCandidateRoutingDiagnostics:
+        router_types = (
+            frozenset(llm_routing_diag.resolved_types)
+            if llm_routing_diag is not None and llm_routing_diag.resolved_types
+            else frozenset()
+        )
+        reasons: dict[str, set[str]] = {}
+        for prompt_type in _ALL_CANDIDATES:
+            sources: set[str] = set()
+            if prompt_type in deterministic_candidates:
+                sources.add("deterministic")
+            if prompt_type.value in router_types:
+                sources.add("llm_router")
+            if prompt_type in _ALWAYS_CANDIDATE:
+                sources.add("always")
+            if prompt_type in cross_signals:
+                sources.add("cross_signal")
+            reasons[prompt_type.value] = sources
+
+        return ExtractionCandidateRoutingDiagnostics(
+            document_id=document_id,
+            batch_index=batch_index,
+            batch_count=batch_count,
+            chunk_id=chunk.chunk_id,
+            chunk_type=chunk.chunk_type.value,
+            is_ungated=is_ungated,
+            deterministic_candidate_types=sorted_type_values(deterministic_candidates),
+            llm_routing=llm_routing_diag,
+            cross_signal_types=sorted_type_values(cross_signals),
+            always_candidate_types=sorted_type_values(_ALWAYS_CANDIDATE),
+            requested_types=sorted_type_values(final),
+            inclusion_reasons=tuple(
+                (type_value, tuple(sorted(sources)))
+                for type_value, sources in sorted(reasons.items())
+            ),
+        )
 
     @staticmethod
     def all_types() -> frozenset[ExtractionPromptType]:

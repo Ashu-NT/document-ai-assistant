@@ -7,6 +7,9 @@ from src.application.prompts.extraction import (
 from src.application.prompts.extraction.narrowed import ExtractionNarrowedPromptBuilder
 from src.application.workflows.common.concurrent_chunk_runner import run_bounded_concurrent_map
 from src.application.workflows.extraction.batching.extraction_batch import ExtractionBatch
+from src.application.workflows.extraction.candidates.extraction_candidate_routing_diagnostics import (
+    ExtractionCandidateRoutingDiagnostics,
+)
 from src.application.workflows.extraction.candidates.extraction_candidate_selector import (
     ExtractionCandidateSelector,
 )
@@ -17,6 +20,9 @@ _MAX_CONCURRENT_CANDIDATE_SELECTIONS = 8
 def resolve_requested_types(
     batch: ExtractionBatch,
     candidate_selector: ExtractionCandidateSelector,
+    *,
+    document_id: str | None = None,
+    diagnostics_sink: list[ExtractionCandidateRoutingDiagnostics] | None = None,
 ) -> frozenset[ExtractionPromptType]:
     """Pure union-of-per-chunk-candidates computation: what entity families
     are worth requesting for this batch, per `candidate_selector`.
@@ -29,17 +35,28 @@ def resolve_requested_types(
     makes, instead of reimplementing or diverging from it. Returns
     `ExtractionCandidateSelector.all_types()` for an empty batch, matching
     `build_prompt`'s own empty-batch fallback.
+
+    `document_id`/`diagnostics_sink` are purely observational (see
+    `ExtractionCandidateRoutingDiagnostics`): omitting them (the default)
+    reproduces this function's exact prior behavior and return value.
     """
     if not batch.chunks:
         return ExtractionCandidateSelector.all_types()
 
-    # select_for_chunk() may call the (optional, off-by-default) LLM
-    # candidate router per GENERAL/UNKNOWN chunk -- each call is an
-    # independent, side-effect-free LLM request, so run them concurrently
-    # instead of one at a time across the batch.
+    # select_for_chunk() may call the LLM candidate router per GENERAL/
+    # UNKNOWN chunk -- each call is an independent, side-effect-free LLM
+    # request, so run them concurrently instead of one at a time across
+    # the batch. executor.map() preserves input order in its results, so
+    # `selected_types[i]` always corresponds to `batch.chunks[i]`.
     selected_types = run_bounded_concurrent_map(
         batch.chunks,
-        candidate_selector.select_for_chunk,
+        lambda chunk: candidate_selector.select_for_chunk(
+            chunk,
+            diagnostics_sink=diagnostics_sink,
+            document_id=document_id,
+            batch_index=batch.batch_index,
+            batch_count=batch.batch_count,
+        ),
         max_concurrency=_MAX_CONCURRENT_CANDIDATE_SELECTIONS,
     )
     return frozenset().union(*selected_types)
@@ -70,6 +87,9 @@ class ExtractionPromptNarrowingService:
         document_id: str,
         batch: ExtractionBatch,
         previous_error: str | None,
+        candidate_routing_diagnostics_sink: (
+            list[ExtractionCandidateRoutingDiagnostics] | None
+        ) = None,
     ) -> tuple[str, frozenset[ExtractionPromptType] | None]:
         """Returns the prompt and, when narrowing actually reduced the
         requested types below the full set, the resolved type set (None
@@ -79,7 +99,9 @@ class ExtractionPromptNarrowingService:
         Falls back to the unnarrowed prompt_builder whenever narrowing is
         disabled or the batch's union of candidate types covers everything
         anyway, so the common case renders a byte-identical prompt to
-        before this feature existed.
+        before this feature existed. `candidate_routing_diagnostics_sink`
+        is purely observational and defaults to None, reproducing this
+        method's exact prior behavior and return value.
         """
         if not self.enable_candidate_narrowing or not batch.chunks:
             return (
@@ -89,7 +111,12 @@ class ExtractionPromptNarrowingService:
                 None,
             )
 
-        requested_types = resolve_requested_types(batch, self.candidate_selector)
+        requested_types = resolve_requested_types(
+            batch,
+            self.candidate_selector,
+            document_id=document_id,
+            diagnostics_sink=candidate_routing_diagnostics_sink,
+        )
 
         if requested_types == ExtractionCandidateSelector.all_types():
             return (
