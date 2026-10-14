@@ -43,6 +43,7 @@ class SpecializedExtractionBatchExecutor:
         failure_preview_chars: int,
         result_assembler: ExtractionResultAssembler,
         num_predict: int | None = None,
+        num_ctx: int | None = None,
     ) -> None:
         self.entity_type = entity_type
         self.llm_service = llm_service
@@ -52,6 +53,7 @@ class SpecializedExtractionBatchExecutor:
         self.failure_preview_chars = failure_preview_chars
         self.result_assembler = result_assembler
         self.num_predict = num_predict
+        self.num_ctx = num_ctx
 
     def execute_once(
         self,
@@ -109,6 +111,7 @@ class SpecializedExtractionBatchExecutor:
                 json_mode=self.json_mode,
                 response_schema=build_extraction_response_json_schema(),
                 num_predict=self.num_predict,
+                num_ctx=self.num_ctx,
             )
         except LLMProviderError as exc:
             diagnostics = ExtractionBatchDiagnostics(

@@ -157,3 +157,12 @@ def _default_extraction_execution_budget_seconds() -> float | None:
         return extraction_settings.extraction_execution_budget_seconds
 
     return resolve_setting(_load, None)
+
+
+def _default_extraction_num_ctx() -> int | None:
+    def _load() -> int | None:
+        from src.config.settings import extraction_settings
+
+        return extraction_settings.extraction_num_ctx
+
+    return resolve_setting(_load, 8192)

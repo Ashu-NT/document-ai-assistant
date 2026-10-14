@@ -47,6 +47,7 @@ class ExtractionBatchExecutor:
         prompt_narrowing_service: ExtractionPromptNarrowingService,
         result_assembler: ExtractionResultAssembler,
         num_predict: int | None = None,
+        num_ctx: int | None = None,
     ) -> None:
         self.llm_service = llm_service
         self.extraction_model = extraction_model
@@ -56,6 +57,7 @@ class ExtractionBatchExecutor:
         self.prompt_narrowing_service = prompt_narrowing_service
         self.result_assembler = result_assembler
         self.num_predict = num_predict
+        self.num_ctx = num_ctx
 
     def execute_once(
         self,
@@ -111,6 +113,7 @@ class ExtractionBatchExecutor:
                 json_mode=self.json_mode,
                 response_schema=build_extraction_response_json_schema(),
                 num_predict=self.num_predict,
+                num_ctx=self.num_ctx,
             )
         except LLMProviderError as exc:
             diagnostics = ExtractionBatchDiagnostics(

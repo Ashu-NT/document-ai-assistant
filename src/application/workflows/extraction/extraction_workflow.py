@@ -52,6 +52,7 @@ from src.application.workflows.extraction.extraction_workflow_settings import (
     _default_extraction_json_mode,
     _default_extraction_max_attempts,
     _default_extraction_model,
+    _default_extraction_num_ctx,
     _default_extraction_num_predict,
     _default_extraction_require_human_review,
     _default_extraction_temperature,
@@ -113,6 +114,7 @@ class ExtractionWorkflow:
         maintenance_table_window_enabled: bool | None = None,
         maintenance_table_rows_per_window: int | None = None,
         num_predict: int | None = None,
+        num_ctx: int | None = None,
         execution_budget_seconds: float | None = None,
         clock: Callable[[], float] | None = None,
     ) -> None:
@@ -198,6 +200,7 @@ class ExtractionWorkflow:
         self.num_predict = (
             num_predict if num_predict is not None else _default_extraction_num_predict()
         )
+        self.num_ctx = num_ctx if num_ctx is not None else _default_extraction_num_ctx()
         self.execution_budget_seconds = (
             execution_budget_seconds
             if execution_budget_seconds is not None
@@ -233,6 +236,7 @@ class ExtractionWorkflow:
             prompt_narrowing_service=self._prompt_narrowing_service,
             result_assembler=self._result_assembler,
             num_predict=self.num_predict,
+            num_ctx=self.num_ctx,
         )
         self._batch_retry_coordinator = ExtractionBatchRetryCoordinator(
             max_attempts=self.max_attempts,
@@ -261,6 +265,7 @@ class ExtractionWorkflow:
             table_window_activation_policy=table_window_activation_policy,
             table_window_builder=self._table_window_builder,
             num_predict=self.num_predict,
+            num_ctx=self.num_ctx,
         )
 
     @tracked_action(

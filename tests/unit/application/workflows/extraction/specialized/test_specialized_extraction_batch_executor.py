@@ -47,7 +47,7 @@ class FakeLLMService:
         self.finish_reason = finish_reason
         self.calls: list[dict[str, object]] = []
 
-    def _record(self, prompt, model, temperature, json_mode, response_schema, num_predict):
+    def _record(self, prompt, model, temperature, json_mode, response_schema, num_predict, num_ctx=None):
         self.calls.append(
             {
                 "prompt": prompt,
@@ -56,6 +56,7 @@ class FakeLLMService:
                 "json_mode": json_mode,
                 "response_schema": response_schema,
                 "num_predict": num_predict,
+                "num_ctx": num_ctx,
             }
         )
 
@@ -69,8 +70,9 @@ class FakeLLMService:
         json_mode: bool = False,
         response_schema: dict | None = None,
         num_predict: int | None = None,
+        num_ctx: int | None = None,
     ) -> str:
-        self._record(prompt, model, temperature, json_mode, response_schema, num_predict)
+        self._record(prompt, model, temperature, json_mode, response_schema, num_predict, num_ctx)
         return self.response
 
     def generate_with_metadata(
@@ -83,8 +85,9 @@ class FakeLLMService:
         json_mode: bool = False,
         response_schema: dict | None = None,
         num_predict: int | None = None,
+        num_ctx: int | None = None,
     ) -> LLMGenerationResult:
-        self._record(prompt, model, temperature, json_mode, response_schema, num_predict)
+        self._record(prompt, model, temperature, json_mode, response_schema, num_predict, num_ctx)
         return LLMGenerationResult(
             text=self.response, provider_name="fake", finish_reason=self.finish_reason
         )

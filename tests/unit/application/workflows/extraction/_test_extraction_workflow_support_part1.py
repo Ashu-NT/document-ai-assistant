@@ -42,6 +42,7 @@ class FakeLLMService:
         json_mode: bool = False,
         response_schema: dict | None = None,
         num_predict: int | None = None,
+        num_ctx: int | None = None,
     ) -> str:
         self.calls.append(
             {
@@ -51,6 +52,7 @@ class FakeLLMService:
                 "json_mode": json_mode,
                 "response_schema": response_schema,
                 "num_predict": num_predict,
+                "num_ctx": num_ctx,
             }
         )
         return self.responses.pop(0)
@@ -65,6 +67,7 @@ class FakeLLMService:
         json_mode: bool = False,
         response_schema: dict | None = None,
         num_predict: int | None = None,
+        num_ctx: int | None = None,
     ) -> LLMGenerationResult:
         self.calls.append(
             {
@@ -74,6 +77,7 @@ class FakeLLMService:
                 "json_mode": json_mode,
                 "response_schema": response_schema,
                 "num_predict": num_predict,
+                "num_ctx": num_ctx,
             }
         )
         return LLMGenerationResult(

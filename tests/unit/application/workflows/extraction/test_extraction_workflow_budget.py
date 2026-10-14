@@ -72,6 +72,7 @@ class _ClockAdvancingLLMService:
         json_mode: bool = False,
         response_schema: dict | None = None,
         num_predict: int | None = None,
+        num_ctx: int | None = None,
     ) -> LLMGenerationResult:
         self.calls += 1
         self.clock.now += self.seconds_per_call

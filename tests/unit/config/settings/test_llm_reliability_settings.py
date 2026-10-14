@@ -114,3 +114,26 @@ def test_extraction_execution_budget_rejects_non_positive_values(monkeypatch) ->
 
     with pytest.raises(ValidationError):
         ExtractionSettings()
+
+
+def test_extraction_num_ctx_defaults_to_8192(monkeypatch) -> None:
+    monkeypatch.delenv("EXTRACTION_NUM_CTX", raising=False)
+
+    settings = ExtractionSettings()
+
+    assert settings.extraction_num_ctx == 8192
+
+
+def test_extraction_num_ctx_reads_environment(monkeypatch) -> None:
+    monkeypatch.setenv("EXTRACTION_NUM_CTX", "16384")
+
+    settings = ExtractionSettings()
+
+    assert settings.extraction_num_ctx == 16384
+
+
+def test_extraction_num_ctx_rejects_non_positive_values(monkeypatch) -> None:
+    monkeypatch.setenv("EXTRACTION_NUM_CTX", "0")
+
+    with pytest.raises(ValidationError):
+        ExtractionSettings()

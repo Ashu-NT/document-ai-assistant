@@ -60,6 +60,7 @@ class FakeSequentialLLMService:
         json_mode: bool = False,
         response_schema: dict | None = None,
         num_predict: int | None = None,
+        num_ctx: int | None = None,
     ) -> str:
         self.calls.append(prompt)
         return self.responses.pop(0)
@@ -74,6 +75,7 @@ class FakeSequentialLLMService:
         json_mode: bool = False,
         response_schema: dict | None = None,
         num_predict: int | None = None,
+        num_ctx: int | None = None,
     ) -> LLMGenerationResult:
         self.calls.append(prompt)
         return LLMGenerationResult(
