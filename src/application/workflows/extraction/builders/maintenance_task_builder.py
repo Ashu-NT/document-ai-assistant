@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace as dataclass_replace
 from typing import Any
 
 from src.application.workflows.extraction.builders.extraction_builder_support import (
@@ -8,6 +9,12 @@ from src.application.workflows.extraction.builders.extraction_builder_support im
 from src.domain.document import DocumentChunk
 from src.domain.extraction import MaintenanceTask
 from src.shared.ids import IdGenerator
+
+
+def _verify_task_code(task_code: str | None, chunk_content: str) -> bool:
+    if not task_code:
+        return False
+    return task_code in chunk_content
 
 
 class MaintenanceTaskBuilder:
@@ -47,6 +54,31 @@ class MaintenanceTaskBuilder:
             item_type="maintenance_tasks",
         )
 
+        claimed_task_code = support.optional_text(payload, "task_code", "code", "task_reference")
+        verified_task_code: str | None = None
+        code_unverified = False
+        if claimed_task_code is not None and source_chunk_id is not None and not chunk_id_invalid:
+            source_chunk = chunk_lookup.get(source_chunk_id)
+            if source_chunk is not None and _verify_task_code(claimed_task_code, source_chunk.content):
+                verified_task_code = claimed_task_code
+            else:
+                code_unverified = True
+                support.maintenance_task_unverified_code_events.append(
+                    {"source_chunk_id": source_chunk_id, "claimed_task_code": claimed_task_code}
+                )
+        elif claimed_task_code is not None:
+            code_unverified = True
+            support.maintenance_task_unverified_code_events.append(
+                {"source_chunk_id": source_chunk_id, "claimed_task_code": claimed_task_code}
+            )
+
+        source_metadata = support.build_source_metadata(
+            source_chunk_id=source_chunk_id,
+            chunk_lookup=chunk_lookup,
+        )
+        if source_metadata is not None and verified_task_code is not None:
+            source_metadata = dataclass_replace(source_metadata, table_row_id=verified_task_code)
+
         return MaintenanceTask(
             task_id=self._id_generator.new_id("task"),
             document_id=document_id,
@@ -55,15 +87,13 @@ class MaintenanceTaskBuilder:
             interval=support.optional_text(payload, "interval", "frequency"),
             component_name=support.optional_text(payload, "component_name", "component"),
             equipment_id=support.optional_text(payload, "equipment_id"),
+            task_code=verified_task_code,
             source_chunk_id=source_chunk_id,
             source=support.resolve_source_location(
                 source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
             ),
-            source_metadata=support.build_source_metadata(
-                source_chunk_id=source_chunk_id,
-                chunk_lookup=chunk_lookup,
-            ),
+            source_metadata=source_metadata,
             confidence_score=confidence_score,
             requires_human_review=(
                 support.resolve_requires_human_review(
@@ -71,5 +101,6 @@ class MaintenanceTaskBuilder:
                     confidence_score,
                 )
                 or chunk_id_invalid
+                or code_unverified
             ),
         )

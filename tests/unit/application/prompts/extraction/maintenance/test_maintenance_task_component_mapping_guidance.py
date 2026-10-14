@@ -85,10 +85,11 @@ def test_unrelated_specialized_prompts_do_not_gain_maintenance_task_guidance(
 
 def test_prompt_size_increase_from_the_guidance_is_minimal() -> None:
     # Reported, not just asserted: this is the exact per-call character
-    # overhead the new guidance adds to every specialized MaintenanceTask
-    # call (and to MULTI_FAMILY's narrowed path whenever it requests
-    # MaintenanceTask).
-    assert len(MAINTENANCE_TASK_GUIDANCE) < 400
+    # overhead the guidance adds to every specialized MaintenanceTask call
+    # (and to MULTI_FAMILY's narrowed path whenever it requests
+    # MaintenanceTask). Bound raised once, deliberately, for the task_code
+    # identity-preservation sentence (PHASE 2B task-identity fix).
+    assert len(MAINTENANCE_TASK_GUIDANCE) < 700
 
 
 def test_multi_family_narrowed_path_inherits_the_rule_when_it_requests_maintenance_task(

@@ -84,6 +84,10 @@ class ExtractionResultAssembler:
     def equipment_unsupported_evidence_events(self) -> list[dict[str, Any]]:
         return self._support.equipment_unsupported_evidence_events
 
+    @property
+    def maintenance_task_unverified_code_events(self) -> list[dict[str, Any]]:
+        return self._support.maintenance_task_unverified_code_events
+
     def build(
         self,
         document_id: str,

@@ -25,6 +25,10 @@ class MaintenanceTaskPayload(_ExtractionItemBase):
         validation_alias=AliasChoices("component_name", "component"),
     )
     equipment_id: str | None = None
+    task_code: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("task_code", "code", "task_reference"),
+    )
     source_chunk_id: str | None = Field(
         default=None,
         validation_alias=AliasChoices("source_chunk_id", "chunk_id"),

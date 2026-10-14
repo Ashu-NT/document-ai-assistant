@@ -6,6 +6,7 @@ MAINTENANCE_TASK_SCHEMA_TEXT = (
     '      "interval": "<string or null>",\n'
     '      "component_name": "<string or null>",\n'
     '      "equipment_id": "<string or null>",\n'
+    '      "task_code": "<string or null>",\n'
     '      "source_chunk_id": "<chunk id or null>",\n'
     '      "confidence_score": <float between 0 and 1 or null>,\n'
     '      "requires_human_review": <true or false>\n'
@@ -20,4 +21,8 @@ MAINTENANCE_TASK_GUIDANCE = (
     "inferring a component from the task text itself, even when the same "
     "value repeats across several consecutive rows. Do not invent "
     "component_name when the source provides none.\n"
+    "If the row has its own task/reference code (e.g. a \"Task\" column "
+    "value), copy it verbatim into task_code - never invent one. Two "
+    "different rows can have the same or very similar task text; keep "
+    "their real codes so they are not mistaken for the same task.\n"
 )

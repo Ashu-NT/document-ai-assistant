@@ -15,6 +15,7 @@ class MaintenanceTask:
 
     component_name: str | None = None
     equipment_id: str | None = None
+    task_code: str | None = None
 
     source_chunk_id: str | None = None
     source: SourceLocation = field(default_factory=SourceLocation)

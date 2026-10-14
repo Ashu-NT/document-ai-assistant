@@ -49,16 +49,13 @@ def test_distinct_source_rows_with_genuinely_different_titles_are_not_collapsed(
     assert len(merged) == 3
 
 
-def test_known_defect_model_paraphrase_collision_silently_collapses_distinct_tasks() -> None:
-    """CONFIRMED DEFECT (not yet fixed - see PHASE 2B merge-integrity audit
-    report): in the real live MTU extraction, the model paraphrased
-    WM00085's title down to match WM00086's verbatim title, and
-    ExtractionResultMerger's (title, interval, component_name) identity key
-    has no other signal (no stable table-row/task-code field exists on
-    MaintenanceTask) to tell these two genuinely distinct, separately-coded
-    maintenance obligations apart once their titles collide post-paraphrase.
-    This test pins the CURRENT (defective) behavior as a regression sensor,
-    not as an endorsement of it."""
+def test_without_a_verified_task_code_identical_paraphrased_titles_still_collapse() -> None:
+    """Documents the PRESERVED fallback behavior (title/interval/component
+    key only) whenever no verified task_code is available on either side -
+    e.g. a non-windowed extraction path, or a code that failed grounding.
+    This is a known, accepted limitation of the fallback path, not the
+    fixed path (see test_verified_task_codes_prevent_the_paraphrase_collision
+    below for the actual fix)."""
     wm00085_as_actually_paraphrased_by_the_model = _result_with_task(
         title="Replace easy-change fuel filter",
         component_name="FUEL SYSTEM (LOW PRESSURE)",
@@ -74,7 +71,90 @@ def test_known_defect_model_paraphrase_collision_silently_collapses_distinct_tas
         [wm00085_as_actually_paraphrased_by_the_model, wm00086]
     )
 
-    assert len(merged) == 1  # two distinct source rows -> one surviving task
+    assert len(merged) == 1
+
+
+def test_verified_task_codes_prevent_the_paraphrase_collision() -> None:
+    """THE FIX: same two rows, same collided title, but now with their
+    verified task_code attached (as MaintenanceTaskBuilder now produces) -
+    the two distinct source rows must both survive."""
+    wm00085 = _result_with_task(
+        title="Replace easy-change fuel filter",
+        task_code="WM00085",
+        component_name="FUEL SYSTEM (LOW PRESSURE)",
+        source_chunk_id="chunk_canonical",
+    )
+    wm00086 = _result_with_task(
+        title="Replace easy-change fuel filter",
+        task_code="WM00086",
+        component_name="FUEL SYSTEM (LOW PRESSURE)",
+        source_chunk_id="chunk_canonical",
+    )
+
+    merged = merge_tasks([wm00085, wm00086])
+
+    assert len(merged) == 2
+    assert {task.task_code for task in merged} == {"WM00085", "WM00086"}
+
+
+def test_same_verified_task_code_from_overlapping_windows_merges() -> None:
+    first_window = _result_with_task(
+        title="Check engine oil level", task_code="WM00285", source_chunk_id="chunk_canonical",
+    )
+    second_window_duplicate = _result_with_task(
+        title="Check engine oil level", task_code="WM00285", source_chunk_id="chunk_canonical",
+    )
+
+    merged = merge_tasks([first_window, second_window_duplicate])
+
+    assert len(merged) == 1
+    assert merged[0].task_code == "WM00285"
+
+
+def test_identical_task_codes_in_different_documents_are_not_merged() -> None:
+    doc_a = _result_with_task(
+        document_id="doc_a", title="Replace filter", task_code="WM00085",
+        source_chunk_id="chunk_a",
+    )
+    doc_b = _result_with_task(
+        document_id="doc_b", title="Replace filter", task_code="WM00085",
+        source_chunk_id="chunk_b",
+    )
+
+    merged = merge_tasks([doc_a, doc_b])
+
+    assert len(merged) == 2
+
+
+def test_multiple_obligations_from_one_source_row_stay_distinguishable() -> None:
+    """Same verified task_code (one source row), but two genuinely
+    different obligations described in that row's text - must not
+    collapse into one just because they share a code."""
+    obligation_one = _result_with_task(
+        title="Check valve clearance", task_code="WM00094", source_chunk_id="chunk_canonical",
+    )
+    obligation_two = _result_with_task(
+        title="Adjust valve clearance as necessary", task_code="WM00094",
+        source_chunk_id="chunk_canonical",
+    )
+
+    merged = merge_tasks([obligation_one, obligation_two])
+
+    assert len(merged) == 2
+
+
+def test_source_evidence_is_preserved_through_a_merge() -> None:
+    first = _result_with_task(
+        title="Check engine oil level", task_code="WM00285", source_chunk_id="chunk_canonical",
+    )
+    duplicate_from_another_batch = _result_with_task(
+        title="Check engine oil level", task_code="WM00285", source_chunk_id="chunk_canonical",
+    )
+
+    merged = merge_tasks([first, duplicate_from_another_batch])
+
+    assert len(merged) == 1
+    assert merged[0].source_chunk_id == "chunk_canonical"
 
 
 def test_merge_never_silently_overwrites_a_populated_field_with_a_conflicting_value() -> None:
