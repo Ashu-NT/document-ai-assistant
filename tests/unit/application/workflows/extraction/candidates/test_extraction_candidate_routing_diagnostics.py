@@ -44,7 +44,7 @@ class FakeLLMService:
         self.response = response
         self.calls: list[str] = []
 
-    def generate(self, prompt, model=None, response_schema=None):
+    def generate(self, prompt, model=None, response_schema=None, num_predict=None):
         self.calls.append(prompt)
         return self.response
 

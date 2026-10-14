@@ -99,6 +99,7 @@ class SpecializedFamilyExtractionRunner:
         result_assembler: ExtractionResultAssembler,
         table_window_activation_policy: TableWindowActivationPolicy | None = None,
         table_window_builder: TableEvidenceWindowBuilder | None = None,
+        num_predict: int | None = None,
     ) -> None:
         self.llm_service = llm_service
         self.extraction_model = extraction_model
@@ -110,6 +111,7 @@ class SpecializedFamilyExtractionRunner:
         self.chunk_batcher = chunk_batcher
         self.candidate_selector = candidate_selector
         self.result_assembler = result_assembler
+        self.num_predict = num_predict
         self.table_window_activation_policy = (
             table_window_activation_policy
             or TableWindowActivationPolicy(enabled=False, rows_per_window=10)
@@ -326,6 +328,7 @@ class SpecializedFamilyExtractionRunner:
             json_mode=self.json_mode,
             failure_preview_chars=self.failure_preview_chars,
             result_assembler=self.result_assembler,
+            num_predict=self.num_predict,
         )
         return ExtractionBatchRetryCoordinator(
             max_attempts=self.max_attempts,

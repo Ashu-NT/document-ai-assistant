@@ -12,7 +12,7 @@ class FakeLLMService:
         self.confidence = confidence
         self.calls: list[dict[str, object]] = []
 
-    def generate(self, prompt, model=None, response_schema=None):
+    def generate(self, prompt, model=None, response_schema=None, **_kwargs):
         self.calls.append(
             {
                 "prompt": prompt,

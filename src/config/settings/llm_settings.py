@@ -12,11 +12,7 @@ class LLMSettings(AppBaseSettings):
     answer_generation_llm: str | None = Field(default=None, alias="ANSWER_GENERATION_LLM")
     planning_llm: str | None = Field(default=None, alias="PLANNING_LLM")
 
-    # Grounded QA wants low-variance, mostly-deterministic output rather
-    # than running at whatever the Ollama model's bare sampling default
-    # happens to be (finding 3.2) -- deliberately not reusing
-    # extraction_temperature since extraction and answer generation have
-    # different quality tradeoffs.
+  
     answer_generation_temperature: float = Field(
         default=0.2, alias="ANSWER_GENERATION_TEMPERATURE"
     )
@@ -26,10 +22,35 @@ class LLMSettings(AppBaseSettings):
     answer_generation_num_ctx: int = Field(
         default=8192, alias="ANSWER_GENERATION_NUM_CTX"
     )
-    # Default-off diagnostics capture of the exact prompt text sent to the
-    # model (finding 3.5) -- gated so normal responses don't bloat with the
-    # full prompt by default.
+
     capture_answer_prompt_text: bool = Field(
         default=False, alias="CAPTURE_ANSWER_PROMPT_TEXT"
+    )
+
+    ollama_connect_timeout_seconds: float = Field(
+        default=10.0, alias="OLLAMA_CONNECT_TIMEOUT_SECONDS", gt=0
+    )
+    ollama_read_timeout_seconds: float = Field(
+        default=600.0, alias="OLLAMA_READ_TIMEOUT_SECONDS", gt=0
+    )
+    ollama_write_timeout_seconds: float = Field(
+        default=10.0, alias="OLLAMA_WRITE_TIMEOUT_SECONDS", gt=0
+    )
+    ollama_pool_timeout_seconds: float = Field(
+        default=10.0, alias="OLLAMA_POOL_TIMEOUT_SECONDS", gt=0
+    )
+
+    ollama_answer_max_output_tokens: int = Field(
+        default=1024, alias="OLLAMA_ANSWER_MAX_OUTPUT_TOKENS", gt=0, le=32_768
+    )
+    ollama_question_generation_max_output_tokens: int = Field(
+        default=1024, alias="OLLAMA_QUESTION_GENERATION_MAX_OUTPUT_TOKENS", gt=0, le=32_768
+    )
+    ollama_classification_max_output_tokens: int = Field(
+        default=512, alias="OLLAMA_CLASSIFICATION_MAX_OUTPUT_TOKENS", gt=0, le=32_768
+    )
+
+    ollama_answer_read_timeout_seconds: float = Field(
+        default=120.0, alias="OLLAMA_ANSWER_READ_TIMEOUT_SECONDS", gt=0
     )
 

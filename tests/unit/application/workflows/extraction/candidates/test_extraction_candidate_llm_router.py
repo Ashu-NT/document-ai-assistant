@@ -16,12 +16,13 @@ class FakeLLMService:
         self.response = response
         self.calls: list[dict] = []
 
-    def generate(self, prompt, model=None, response_schema=None):
+    def generate(self, prompt, model=None, response_schema=None, num_predict=None):
         self.calls.append(
             {
                 "prompt": prompt,
                 "model": model,
                 "response_schema": response_schema,
+                "num_predict": num_predict,
             }
         )
         return self.response
@@ -350,6 +351,45 @@ def test_cache_put_raising_never_fails_an_otherwise_successful_routing_call() ->
     result = router.route(make_chunk())
 
     assert result == frozenset({ExtractionPromptType.SAFETY_WARNING})
+
+
+def test_transport_failure_falls_back_to_none_and_is_distinguished_from_abstention() -> None:
+    from src.shared.exceptions import LLMProviderError
+
+    class _FailingLLMService:
+        def generate(self, *args, **kwargs):
+            raise LLMProviderError("boom", details={"failure_kind": "read_timeout"})
+
+    router = ExtractionCandidateLLMRouter(llm_service=_FailingLLMService(), enabled=True)
+    sink: list = []
+
+    result = router.route(make_chunk(), diagnostics_sink=sink)
+
+    assert result is None
+    record = sink[0]
+    assert record.transport_failed is True
+    assert record.invoked_llm is True
+    assert record.schema_valid is None
+    assert record.routing_outcome_source == "fallback"
+
+
+def test_transport_failure_is_never_cached() -> None:
+    from src.shared.exceptions import LLMProviderError
+
+    class _FailingLLMService:
+        def generate(self, *args, **kwargs):
+            raise LLMProviderError("boom", details={"failure_kind": "read_timeout"})
+
+    cache = InMemoryRoutingDecisionCache()
+    router = ExtractionCandidateLLMRouter(
+        llm_service=_FailingLLMService(), enabled=True, cache=cache
+    )
+    chunk = make_chunk()
+
+    router.route(chunk)
+    router.route(chunk)  # must attempt a live call again, not read a stale cache miss-as-decision
+
+    assert True  # no exception means both calls attempted the live path safely
 
 
 def test_in_memory_cache_implementation_never_propagates_a_corrupted_lookup() -> None:

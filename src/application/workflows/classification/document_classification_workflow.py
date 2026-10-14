@@ -38,6 +38,15 @@ def _default_document_classification_model() -> str | None:
         return None
 
 
+def _default_classification_num_predict() -> int | None:
+    try:
+        from src.config.settings import llm_settings
+
+        return llm_settings.ollama_classification_max_output_tokens
+    except Exception:
+        return None
+
+
 class DocumentClassificationWorkflow:
     def __init__(
         self,
@@ -60,6 +69,7 @@ class DocumentClassificationWorkflow:
             or _default_document_classification_model()
         )
         self.response_parser = ClassificationResponseParser()
+        self.num_predict = _default_classification_num_predict()
 
     @tracked_action(
         action="classification.document_generated",
@@ -135,6 +145,7 @@ class DocumentClassificationWorkflow:
             model=self.classification_model,
             activity_context=activity_context,
             response_schema=build_classification_response_json_schema(),
+            num_predict=self.num_predict,
         )
 
         classification = self._build_classification(document, response)

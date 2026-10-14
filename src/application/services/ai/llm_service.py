@@ -25,6 +25,7 @@ class LLMService:
         json_mode: bool = False,
         response_schema: dict[str, Any] | None = None,
         num_ctx: int | None = None,
+        num_predict: int | None = None,
     ) -> str:
         provider_kwargs: dict[str, Any] = {}
         if temperature is not None:
@@ -35,6 +36,8 @@ class LLMService:
             provider_kwargs["response_schema"] = response_schema
         if num_ctx is not None:
             provider_kwargs["num_ctx"] = num_ctx
+        if num_predict is not None:
+            provider_kwargs["num_predict"] = num_predict
         return self.llm_provider.generate(prompt, model=model, **provider_kwargs)
 
     @tracked_action(
@@ -53,6 +56,7 @@ class LLMService:
         json_mode: bool = False,
         response_schema: dict[str, Any] | None = None,
         num_ctx: int | None = None,
+        num_predict: int | None = None,
     ) -> LLMGenerationResult:
         """Same call as `generate()`, but returns the provider-neutral
         `LLMGenerationResult` (token counts, timing, termination reason)
@@ -68,6 +72,8 @@ class LLMService:
             provider_kwargs["response_schema"] = response_schema
         if num_ctx is not None:
             provider_kwargs["num_ctx"] = num_ctx
+        if num_predict is not None:
+            provider_kwargs["num_predict"] = num_predict
         return self.llm_provider.generate_with_metadata(
             prompt, model=model, **provider_kwargs
         )

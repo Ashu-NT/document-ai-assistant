@@ -101,6 +101,7 @@ def build_agent_services(
             OllamaLLMProvider(
                 base_url=llm_settings.ollama_base_url,
                 default_model=generation_model,
+                read_timeout_seconds=llm_settings.ollama_answer_read_timeout_seconds,
             )
         )
         answer_generation_service = AnswerGenerationService(

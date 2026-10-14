@@ -31,12 +31,14 @@ class AnswerGenerationPromptExecutor:
         model_name: str | None,
         temperature: float,
         num_ctx: int,
+        num_predict: int | None = None,
     ) -> None:
         self.llm_service = llm_service
         self.response_parser = response_parser
         self.model_name = model_name
         self.temperature = temperature
         self.num_ctx = num_ctx
+        self.num_predict = num_predict
 
     def execute(self, prompt: str) -> PromptExecutionResult:
         last_error: SchemaValidationError | None = None
@@ -52,6 +54,7 @@ class AnswerGenerationPromptExecutor:
                 response_schema=build_answer_generation_response_json_schema(),
                 temperature=self.temperature,
                 num_ctx=self.num_ctx,
+                num_predict=self.num_predict,
             )
             try:
                 return PromptExecutionResult(

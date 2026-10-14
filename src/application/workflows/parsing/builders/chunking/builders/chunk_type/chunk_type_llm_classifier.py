@@ -53,10 +53,17 @@ class ChunkTypeLLMClassifier:
                 section_path=section_path,
             )
         )
+        try:
+            from src.config.settings import llm_settings
+
+            num_predict = llm_settings.ollama_classification_max_output_tokens
+        except Exception:
+            num_predict = None
         response = self._llm_service.generate(
             prompt,
             model=self._model,
             response_schema=build_classification_response_json_schema(),
+            num_predict=num_predict,
         )
         payload = ClassificationResponseParser().parse(response)
         if payload.confidence_score < self._confidence_threshold:

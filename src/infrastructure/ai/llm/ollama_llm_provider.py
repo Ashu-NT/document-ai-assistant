@@ -1,5 +1,7 @@
 from typing import Any
 
+import httpx
+
 from src.application.contracts.ai import LLMGenerationResult, LLMProvider
 from src.config.logging import get_logger
 from src.shared.exceptions import LLMProviderError
@@ -9,12 +11,6 @@ DEFAULT_OLLAMA_MODEL = "qwen2.5:3b"
 
 _logger = get_logger(__name__)
 
-# Native Ollama /api/generate response fields already promoted to a
-# first-class LLMGenerationResult field (or to .text, via "response") -
-# excluded from provider_metadata so nothing is duplicated there. "context"
-# is also always excluded (see _as_dict's caller below) - it's Ollama's raw
-# token-id array for the whole exchange, has no durable diagnostic value at
-# this layer, and would needlessly bloat every result.
 _PROMOTED_OR_EXCLUDED_RESPONSE_KEYS = frozenset(
     {
         "response",
@@ -59,17 +55,137 @@ def _default_ollama_model() -> str:
         return DEFAULT_OLLAMA_MODEL
 
 
+_FALLBACK_CONNECT_TIMEOUT_SECONDS = 10.0
+_FALLBACK_READ_TIMEOUT_SECONDS = 600.0
+_FALLBACK_WRITE_TIMEOUT_SECONDS = 10.0
+_FALLBACK_POOL_TIMEOUT_SECONDS = 10.0
+
+
+def _resolve_timeout_setting(setting_name: str, fallback: float) -> float:
+    try:
+        from src.config.settings import llm_settings
+
+        return getattr(llm_settings, setting_name)
+    except Exception:
+        _logger.warning(
+            "ollama_provider.settings_fallback setting=%s fallback_value=%s",
+            setting_name,
+            fallback,
+        )
+        return fallback
+
+
+def _default_connect_timeout_seconds() -> float:
+    return _resolve_timeout_setting(
+        "ollama_connect_timeout_seconds", _FALLBACK_CONNECT_TIMEOUT_SECONDS
+    )
+
+
+def _default_read_timeout_seconds() -> float:
+    return _resolve_timeout_setting(
+        "ollama_read_timeout_seconds", _FALLBACK_READ_TIMEOUT_SECONDS
+    )
+
+
+def _default_write_timeout_seconds() -> float:
+    return _resolve_timeout_setting(
+        "ollama_write_timeout_seconds", _FALLBACK_WRITE_TIMEOUT_SECONDS
+    )
+
+
+def _default_pool_timeout_seconds() -> float:
+    return _resolve_timeout_setting(
+        "ollama_pool_timeout_seconds", _FALLBACK_POOL_TIMEOUT_SECONDS
+    )
+
+
+# httpx raises a SPECIFIC subclass per timeout dimension (all ultimately
+# TimeoutException -> TransportError -> RequestError) - mapped here to a
+# short, stable discriminator string stored in LLMProviderError.details
+# ["failure_kind"], so a caller (or a diagnostic record) can tell "the
+# server never even accepted a connection" apart from "it accepted the
+# request but never finished responding" apart from "something else
+# transport-level went wrong" without needing to import httpx itself or
+# catch increasingly specific exception subclasses. Order matters: each
+# entry is checked via isinstance before the next, most-specific first.
+_FAILURE_KIND_BY_EXCEPTION_TYPE: tuple[tuple[type[Exception], str], ...] = (
+    (httpx.ConnectTimeout, "connect_timeout"),
+    (httpx.ReadTimeout, "read_timeout"),
+    (httpx.WriteTimeout, "write_timeout"),
+    (httpx.PoolTimeout, "pool_timeout"),
+    (httpx.TimeoutException, "timeout"),
+    (httpx.TransportError, "transport_error"),
+)
+
+
+def _classify_failure_kind(exc: Exception) -> str:
+    for exception_type, failure_kind in _FAILURE_KIND_BY_EXCEPTION_TYPE:
+        if isinstance(exc, exception_type):
+            return failure_kind
+    return "unknown_error"
+
+
 class OllamaLLMProvider(LLMProvider):
+    """Infrastructure adapter: translates this project's provider-neutral
+    `LLMProvider` contract (prompt/temperature/json_mode/response_schema/
+    num_ctx/num_predict) into Ollama-specific request options. Application
+    and domain code only ever sees the contract's own parameter names -
+    `num_predict` is how `LLMProvider` already spells "max output tokens"
+    (matching the existing `num_ctx` precedent on the exact same
+    signature); this class is the one place that knows Ollama calls it
+    that too.
+
+    Timeout note (relevant to interactive RAG answer generation): the four
+    configured timeouts bound httpx's connect/read/write/pool-acquisition
+    phases individually - `read_timeout_seconds` is the longest allowed
+    gap WITHOUT NEW DATA on an already-open response, not a hard ceiling
+    on the request's total wall-clock duration. Ollama's non-streaming
+    `generate()` call (what this project uses) returns its socket read in
+    one shot only once the full response is ready, so in practice, for a
+    non-streaming call, the read timeout IS the effective total deadline
+    for this request. A caller that later switches to streaming would
+    need a separate, explicit wall-clock deadline on top of this - that
+    does not exist yet (see the accompanying report's known limitations).
+    """
+
     def __init__(
         self,
         *,
         base_url: str | None = None,
         default_model: str | None = None,
         client: Any | None = None,
+        connect_timeout_seconds: float | None = None,
+        read_timeout_seconds: float | None = None,
+        write_timeout_seconds: float | None = None,
+        pool_timeout_seconds: float | None = None,
     ) -> None:
         self.base_url = base_url or _default_ollama_base_url()
         self.default_model = default_model or _default_ollama_model()
         self._client = client
+        # Only consulted when `client` is None (i.e. this provider builds
+        # its own client lazily in `_get_client()`) - an explicitly
+        # supplied `client` (e.g. a test double) keeps full control of its
+        # own timeout behavior, unchanged.
+        self.connect_timeout_seconds = (
+            connect_timeout_seconds
+            if connect_timeout_seconds is not None
+            else _default_connect_timeout_seconds()
+        )
+        self.read_timeout_seconds = (
+            read_timeout_seconds
+            if read_timeout_seconds is not None
+            else _default_read_timeout_seconds()
+        )
+        self.write_timeout_seconds = (
+            write_timeout_seconds
+            if write_timeout_seconds is not None
+            else _default_write_timeout_seconds()
+        )
+        self.pool_timeout_seconds = (
+            pool_timeout_seconds
+            if pool_timeout_seconds is not None
+            else _default_pool_timeout_seconds()
+        )
 
     def generate(
         self,
@@ -80,6 +196,7 @@ class OllamaLLMProvider(LLMProvider):
         json_mode: bool = False,
         response_schema: dict[str, Any] | None = None,
         num_ctx: int | None = None,
+        num_predict: int | None = None,
     ) -> str:
         model_name, response = self._call_client(
             prompt,
@@ -88,6 +205,7 @@ class OllamaLLMProvider(LLMProvider):
             json_mode=json_mode,
             response_schema=response_schema,
             num_ctx=num_ctx,
+            num_predict=num_predict,
         )
         return self._require_response_text(response, model_name=model_name)
 
@@ -100,6 +218,7 @@ class OllamaLLMProvider(LLMProvider):
         json_mode: bool = False,
         response_schema: dict[str, Any] | None = None,
         num_ctx: int | None = None,
+        num_predict: int | None = None,
     ) -> LLMGenerationResult:
         """Same request `generate()` makes, but returns the full
         provider-neutral `LLMGenerationResult` instead of a bare string -
@@ -108,6 +227,10 @@ class OllamaLLMProvider(LLMProvider):
         has no first-class place for yet (e.g. `load_duration`,
         `created_at`) are kept in `provider_metadata`; the raw `context`
         token-id array is never retained (see module docstring note above).
+        `finish_reason == "length"` means the response was cut off by
+        `num_predict`/the context window, not a natural stop - a caller
+        that cares about truncation (as opposed to the simpler `generate()`,
+        which cannot distinguish the two) should check this field.
         """
         model_name, response = self._call_client(
             prompt,
@@ -116,6 +239,7 @@ class OllamaLLMProvider(LLMProvider):
             json_mode=json_mode,
             response_schema=response_schema,
             num_ctx=num_ctx,
+            num_predict=num_predict,
         )
         text = self._require_response_text(response, model_name=model_name)
         response_dict = self._as_dict(response)
@@ -147,6 +271,7 @@ class OllamaLLMProvider(LLMProvider):
         json_mode: bool,
         response_schema: dict[str, Any] | None,
         num_ctx: int | None,
+        num_predict: int | None = None,
     ) -> tuple[str, Any]:
         model_name = model or self.default_model
         extra_kwargs: dict[str, Any] = {}
@@ -159,6 +284,8 @@ class OllamaLLMProvider(LLMProvider):
             options["temperature"] = temperature
         if num_ctx is not None:
             options["num_ctx"] = num_ctx
+        if num_predict is not None:
+            options["num_predict"] = num_predict
         if options:
             extra_kwargs["options"] = options
 
@@ -169,13 +296,38 @@ class OllamaLLMProvider(LLMProvider):
                 **extra_kwargs,
             )
         except Exception as exc:
+            failure_kind = _classify_failure_kind(exc)
+            _logger.warning(
+                "ollama_provider.generate_failed base_url=%s model_name=%s "
+                "failure_kind=%s error=%r",
+                self.base_url,
+                model_name,
+                failure_kind,
+                exc,
+            )
             raise LLMProviderError(
                 "Failed to generate response from Ollama.",
                 details={
                     "base_url": self.base_url,
                     "model_name": model_name,
+                    "failure_kind": failure_kind,
                 },
             ) from exc
+
+        done_reason = self._as_dict(response).get("done_reason")
+        if done_reason == "length":
+            # The model's response was cut off by num_predict/the context
+            # window, not a natural stop - never raised as an error (the
+            # text up to that point may still be usable), but always
+            # logged so a truncated-but-"successful" response is never
+            # silently indistinguishable from a complete one.
+            _logger.warning(
+                "ollama_provider.response_truncated base_url=%s model_name=%s "
+                "num_predict=%s",
+                self.base_url,
+                model_name,
+                num_predict,
+            )
 
         return model_name, response
 
@@ -188,6 +340,7 @@ class OllamaLLMProvider(LLMProvider):
                 details={
                     "base_url": self.base_url,
                     "model_name": model_name,
+                    "failure_kind": "invalid_response",
                 },
             )
 
@@ -197,7 +350,15 @@ class OllamaLLMProvider(LLMProvider):
         if self._client is None:
             from ollama import Client
 
-            self._client = Client(host=self.base_url)
+            self._client = Client(
+                host=self.base_url,
+                timeout=httpx.Timeout(
+                    connect=self.connect_timeout_seconds,
+                    read=self.read_timeout_seconds,
+                    write=self.write_timeout_seconds,
+                    pool=self.pool_timeout_seconds,
+                ),
+            )
 
         return self._client
 

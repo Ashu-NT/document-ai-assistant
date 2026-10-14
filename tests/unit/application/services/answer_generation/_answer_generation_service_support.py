@@ -33,6 +33,7 @@ class FakeLLMService:
         response_schema: dict | None = None,
         temperature: float | None = None,
         num_ctx: int | None = None,
+        num_predict: int | None = None,
     ) -> str:
         self.calls.append(
             {
@@ -41,6 +42,7 @@ class FakeLLMService:
                 "response_schema": response_schema,
                 "temperature": temperature,
                 "num_ctx": num_ctx,
+                "num_predict": num_predict,
             }
         )
         if self.responses is not None:

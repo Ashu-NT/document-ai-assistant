@@ -19,7 +19,7 @@ from src.application.workflows.extraction.candidates.extraction_candidate_routin
     sorted_type_values,
 )
 from src.domain.document import DocumentChunk
-from src.shared.exceptions import SchemaValidationError
+from src.shared.exceptions import LLMProviderError, SchemaValidationError
 
 # The router's live call never pins a temperature (see route() below), so
 # routing is currently subject to whatever sampling temperature the
@@ -48,6 +48,15 @@ def _default_model() -> str | None:
         return None
 
 
+def _default_num_predict() -> int | None:
+    try:
+        from src.config.settings import extraction_settings
+
+        return extraction_settings.extraction_candidate_router_max_output_tokens
+    except Exception:
+        return None
+
+
 class ExtractionCandidateLLMRouter:
     """
     Optional LLM fallback for chunks whose ChunkType stayed GENERAL/UNKNOWN
@@ -71,12 +80,14 @@ class ExtractionCandidateLLMRouter:
         enabled: bool | None = None,
         prompt_builder: ExtractionCandidateRouterPromptBuilder | None = None,
         cache: RoutingDecisionCachePort | None = None,
+        num_predict: int | None = None,
     ) -> None:
         self._llm_service = llm_service
         self._model = model or _default_model()
         self._enabled = enabled if enabled is not None else _default_enabled()
         self._prompt_builder = prompt_builder or ExtractionCandidateRouterPromptBuilder()
         self._response_parser = ExtractionCandidateRouterResponseParser()
+        self._num_predict = num_predict if num_predict is not None else _default_num_predict()
         # Optional, versioned routing-decision cache. `None` (the default)
         # reproduces this class's exact prior behavior: every eligible
         # chunk always makes a live call, nothing is ever cached or looked
@@ -148,11 +159,30 @@ class ExtractionCandidateLLMRouter:
                 return result
 
         prompt = self._prompt_builder.build(chunk.content)
-        response = self._llm_service.generate(
-            prompt,
-            model=self._model,
-            response_schema=build_extraction_candidate_router_json_schema(),
-        )
+        try:
+            response = self._llm_service.generate(
+                prompt,
+                model=self._model,
+                response_schema=build_extraction_candidate_router_json_schema(),
+                num_predict=self._num_predict,
+            )
+        except LLMProviderError:
+            self._record(
+                diagnostics_sink,
+                available=True,
+                had_content=True,
+                invoked_llm=True,
+                schema_valid=None,
+                resolved_types=None,
+                cache_enabled=cache_enabled,
+                cache_hit=False if routing_key is not None else None,
+                routing_input_fingerprint=(
+                    routing_key.cache_key if routing_key is not None else None
+                ),
+                routing_outcome_source="fallback",
+                transport_failed=True,
+            )
+            return None
         try:
             payload = self._response_parser.parse(response)
         except SchemaValidationError:

@@ -139,3 +139,12 @@ def _default_maintenance_table_rows_per_window() -> int:
         return extraction_settings.maintenance_table_rows_per_window
 
     return resolve_setting(_load, 10)
+
+
+def _default_extraction_num_predict() -> int | None:
+    def _load() -> int:
+        from src.config.settings import extraction_settings
+
+        return extraction_settings.extraction_max_output_tokens
+
+    return resolve_setting(_load, 4096)

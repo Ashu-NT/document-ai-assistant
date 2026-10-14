@@ -13,6 +13,7 @@ class LLMProvider(Protocol):
         json_mode: bool = False,
         response_schema: dict[str, Any] | None = None,
         num_ctx: int | None = None,
+        num_predict: int | None = None,
     ) -> str:
         ...
 
@@ -25,5 +26,6 @@ class LLMProvider(Protocol):
         json_mode: bool = False,
         response_schema: dict[str, Any] | None = None,
         num_ctx: int | None = None,
+        num_predict: int | None = None,
     ) -> LLMGenerationResult:
         ...

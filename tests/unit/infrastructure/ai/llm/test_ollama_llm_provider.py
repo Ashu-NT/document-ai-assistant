@@ -1,5 +1,6 @@
 import logging
 
+import httpx
 import pytest
 
 from src.infrastructure.ai.llm import OllamaLLMProvider
@@ -477,6 +478,138 @@ def test_generate_with_metadata_passes_the_same_request_shape_as_generate() -> N
             "options": {"temperature": 0.0, "num_ctx": 8192},
         }
     ]
+
+
+def test_generate_passes_num_predict_in_options() -> None:
+    client = FakeOllamaClient(FakeOllamaResponse("{}"))
+    provider = OllamaLLMProvider(
+        base_url="http://localhost:11434", default_model="qwen3:8b", client=client
+    )
+
+    provider.generate("Extract.", temperature=0.0, num_predict=256)
+
+    assert client.calls == [
+        {
+            "model": "qwen3:8b",
+            "prompt": "Extract.",
+            "options": {"temperature": 0.0, "num_predict": 256},
+        }
+    ]
+
+
+def test_generate_omits_num_predict_when_none() -> None:
+    client = FakeOllamaClient(FakeOllamaResponse("{}"))
+    provider = OllamaLLMProvider(
+        base_url="http://localhost:11434", default_model="qwen3:8b", client=client
+    )
+
+    provider.generate("Extract.")
+
+    assert "options" not in client.calls[0]
+
+
+class TimeoutRaisingClient:
+    def __init__(self, exc: Exception) -> None:
+        self._exc = exc
+
+    def generate(self, *, model: str, prompt: str, **_kwargs):
+        raise self._exc
+
+
+@pytest.mark.parametrize(
+    "exc, expected_failure_kind",
+    [
+        (httpx.ConnectTimeout("boom"), "connect_timeout"),
+        (httpx.ReadTimeout("boom"), "read_timeout"),
+        (httpx.WriteTimeout("boom"), "write_timeout"),
+        (httpx.PoolTimeout("boom"), "pool_timeout"),
+        (httpx.ConnectError("boom"), "transport_error"),
+        (RuntimeError("boom"), "unknown_error"),
+    ],
+)
+def test_generate_classifies_failure_kind(exc, expected_failure_kind) -> None:
+    provider = OllamaLLMProvider(
+        base_url="http://localhost:11434",
+        default_model="qwen3:8b",
+        client=TimeoutRaisingClient(exc),
+    )
+
+    with pytest.raises(LLMProviderError) as exc_info:
+        provider.generate("Extract.")
+
+    assert exc_info.value.details["failure_kind"] == expected_failure_kind
+
+
+def test_generate_logs_warning_when_response_truncated_by_length(caplog) -> None:
+    client = FakeOllamaClient({"response": "partial text", "done_reason": "length"})
+    provider = OllamaLLMProvider(
+        base_url="http://localhost:11434", default_model="qwen3:8b", client=client
+    )
+
+    with caplog.at_level(logging.WARNING):
+        provider.generate("Extract.", num_predict=10)
+
+    assert any("response_truncated" in message for message in caplog.messages)
+
+
+def test_generate_does_not_warn_on_natural_stop(caplog) -> None:
+    client = FakeOllamaClient({"response": "complete text", "done_reason": "stop"})
+    provider = OllamaLLMProvider(
+        base_url="http://localhost:11434", default_model="qwen3:8b", client=client
+    )
+
+    with caplog.at_level(logging.WARNING):
+        provider.generate("Extract.")
+
+    assert not any("response_truncated" in message for message in caplog.messages)
+
+
+def test_lazily_built_client_uses_configured_timeouts(monkeypatch) -> None:
+    captured = {}
+
+    class _FakeOllamaClientClass:
+        def __init__(self, host=None, timeout=None):
+            captured["host"] = host
+            captured["timeout"] = timeout
+
+    monkeypatch.setattr("ollama.Client", _FakeOllamaClientClass)
+    provider = OllamaLLMProvider(
+        base_url="http://localhost:11434",
+        default_model="qwen3:8b",
+        connect_timeout_seconds=1.0,
+        read_timeout_seconds=2.0,
+        write_timeout_seconds=3.0,
+        pool_timeout_seconds=4.0,
+    )
+
+    provider._get_client()
+
+    timeout = captured["timeout"]
+    assert isinstance(timeout, httpx.Timeout)
+    assert timeout.connect == 1.0
+    assert timeout.read == 2.0
+    assert timeout.write == 3.0
+    assert timeout.pool == 4.0
+
+
+def test_explicitly_supplied_client_bypasses_timeout_construction() -> None:
+    client = FakeOllamaClient(FakeOllamaResponse("ok"))
+    provider = OllamaLLMProvider(
+        base_url="http://localhost:11434", default_model="qwen3:8b", client=client
+    )
+
+    assert provider._get_client() is client
+
+
+def test_timeouts_default_from_settings_when_omitted() -> None:
+    provider = OllamaLLMProvider(
+        base_url="http://localhost:11434", default_model="qwen3:8b"
+    )
+
+    assert provider.connect_timeout_seconds > 0
+    assert provider.read_timeout_seconds > 0
+    assert provider.write_timeout_seconds > 0
+    assert provider.pool_timeout_seconds > 0
 
 
 def test_generate_text_is_unaffected_by_generate_with_metadata_existing() -> None:

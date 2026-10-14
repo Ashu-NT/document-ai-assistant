@@ -56,6 +56,17 @@ def default_answer_generation_num_ctx() -> int:
     return resolve_setting(_load, fallback, on_fallback=_log_fallback)
 
 
+def default_answer_generation_max_output_tokens() -> int:
+    fallback = 1024
+
+    def _load() -> int:
+        from src.config.settings import llm_settings
+
+        return llm_settings.ollama_answer_max_output_tokens
+
+    return resolve_setting(_load, fallback)
+
+
 def default_capture_answer_prompt_text() -> bool:
     fallback = False
 

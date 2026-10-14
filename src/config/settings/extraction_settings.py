@@ -97,3 +97,13 @@ class ExtractionSettings(AppBaseSettings):
         default=10,
         alias="MAINTENANCE_TABLE_ROWS_PER_WINDOW",
     )
+
+    extraction_max_output_tokens: int = Field(
+        default=4096, alias="EXTRACTION_MAX_OUTPUT_TOKENS", gt=0, le=32_768
+    )
+    extraction_candidate_router_max_output_tokens: int = Field(
+        default=256,
+        alias="EXTRACTION_CANDIDATE_ROUTER_MAX_OUTPUT_TOKENS",
+        gt=0,
+        le=32_768,
+    )

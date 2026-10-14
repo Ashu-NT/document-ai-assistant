@@ -44,6 +44,7 @@ from src.application.workflows.extraction.extraction_workflow_settings import (
     _default_extraction_json_mode,
     _default_extraction_max_attempts,
     _default_extraction_model,
+    _default_extraction_num_predict,
     _default_extraction_require_human_review,
     _default_extraction_temperature,
     _default_failure_preview_chars,
@@ -103,6 +104,7 @@ class ExtractionWorkflow:
         execution_strategy: ExtractionExecutionStrategy | None = None,
         maintenance_table_window_enabled: bool | None = None,
         maintenance_table_rows_per_window: int | None = None,
+        num_predict: int | None = None,
     ) -> None:
         self.llm_service = llm_service
         self.extraction_service = extraction_service
@@ -183,6 +185,9 @@ class ExtractionWorkflow:
             if maintenance_table_rows_per_window is not None
             else _default_maintenance_table_rows_per_window()
         )
+        self.num_predict = (
+            num_predict if num_predict is not None else _default_extraction_num_predict()
+        )
         self.last_batch_diagnostics: list[ExtractionBatchDiagnostics] = []
         self.last_candidate_routing_diagnostics: list[
             ExtractionCandidateRoutingDiagnostics
@@ -211,6 +216,7 @@ class ExtractionWorkflow:
             failure_preview_chars=self.failure_preview_chars,
             prompt_narrowing_service=self._prompt_narrowing_service,
             result_assembler=self._result_assembler,
+            num_predict=self.num_predict,
         )
         self._batch_retry_coordinator = ExtractionBatchRetryCoordinator(
             max_attempts=self.max_attempts,
@@ -237,6 +243,7 @@ class ExtractionWorkflow:
             table_window_builder=TableEvidenceWindowBuilder(
                 rows_per_window=self.maintenance_table_rows_per_window
             ),
+            num_predict=self.num_predict,
         )
 
     @tracked_action(

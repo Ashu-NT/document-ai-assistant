@@ -25,12 +25,14 @@ class FakeLLMService:
         activity_context=None,
         *,
         response_schema: dict | None = None,
+        num_predict: int | None = None,
     ) -> str:
         self.calls.append(
             {
                 "prompt": prompt,
                 "model": model,
                 "response_schema": response_schema,
+                "num_predict": num_predict,
             }
         )
         return self.responses.pop(0)

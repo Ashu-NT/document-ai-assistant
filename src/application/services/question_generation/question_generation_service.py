@@ -35,6 +35,15 @@ def _default_question_generation_model() -> str | None:
         return None
 
 
+def _default_question_generation_num_predict() -> int | None:
+    try:
+        from src.config.settings import llm_settings
+
+        return llm_settings.ollama_question_generation_max_output_tokens
+    except Exception:
+        return None
+
+
 class QuestionGenerationService:
     def __init__(
         self,
@@ -51,6 +60,7 @@ class QuestionGenerationService:
             or _default_question_generation_model()
         )
         self.response_parser = QuestionGenerationResponseParser()
+        self.num_predict = _default_question_generation_num_predict()
 
     @tracked_action(
         action="question_generation.chunk_generated",
@@ -151,6 +161,7 @@ class QuestionGenerationService:
             prompt,
             model=self.question_generation_model,
             response_schema=build_question_generation_response_json_schema(),
+            num_predict=self.num_predict,
         )
 
         question_texts = self.response_parser.parse(response)[:max_questions]

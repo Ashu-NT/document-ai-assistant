@@ -23,6 +23,7 @@ from src.application.services.answer_generation.answer_generation_result import 
     GeneratedAnswer,
 )
 from src.application.services.answer_generation.answer_generation_service_settings import (
+    default_answer_generation_max_output_tokens,
     default_answer_generation_model,
     default_answer_generation_num_ctx,
     default_answer_generation_temperature,
@@ -86,6 +87,7 @@ class AnswerGenerationService:
         answer_generation_model: str | None = None,
         answer_generation_temperature: float | None = None,
         answer_generation_num_ctx: int | None = None,
+        answer_generation_max_output_tokens: int | None = None,
         capture_answer_prompt_text: bool | None = None,
         deterministic_dispatch_gate: DeterministicDispatchGate | None = None,
     ) -> None:
@@ -144,6 +146,11 @@ class AnswerGenerationService:
             if answer_generation_num_ctx is not None
             else default_answer_generation_num_ctx()
         )
+        self.answer_generation_max_output_tokens = (
+            answer_generation_max_output_tokens
+            if answer_generation_max_output_tokens is not None
+            else default_answer_generation_max_output_tokens()
+        )
         self.capture_answer_prompt_text = (
             capture_answer_prompt_text
             if capture_answer_prompt_text is not None
@@ -172,6 +179,7 @@ class AnswerGenerationService:
             model_name=self.answer_generation_model,
             temperature=self.answer_generation_temperature,
             num_ctx=self.answer_generation_num_ctx,
+            num_predict=self.answer_generation_max_output_tokens,
         )
         self.result_assembler = AnswerGenerationResultAssembler()
 

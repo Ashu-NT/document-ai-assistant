@@ -19,15 +19,11 @@ from src.application.workflows.extraction.candidates.extraction_candidate_routin
     ExtractionCandidateRoutingDiagnostics,
 )
 from src.shared.activity import ActivityContext
-from src.shared.exceptions import SchemaValidationError
+from src.shared.exceptions import LLMProviderError, SchemaValidationError
 from src.shared.progress.progress_emitter import emit_progress
 
-# Retries a batch attempt up to `max_attempts` times, then -- if
-# `allow_partial_batches` is enabled -- either isolates a multi-chunk
-# batch's persistently failing chunks one at a time, or marks a
-# single-chunk batch's chunk(s) as unresolved and moves on. Split out of
-# extraction_workflow.py's `_extract_batch_with_retries`/
-# `_isolate_persistently_failing_batch`.
+
+_RETRYABLE_EXCEPTIONS = (SchemaValidationError, LLMProviderError)
 
 
 class ExtractionBatchRetryCoordinator:
@@ -56,7 +52,7 @@ class ExtractionBatchRetryCoordinator:
             list[ExtractionCandidateRoutingDiagnostics] | None
         ) = None,
     ) -> ExtractionBatchOutcome:
-        last_exc: SchemaValidationError | None = None
+        last_exc: SchemaValidationError | LLMProviderError | None = None
         for attempt_index in range(1, self.max_attempts + 1):
             try:
                 return ExtractionBatchOutcome(
@@ -77,15 +73,20 @@ class ExtractionBatchRetryCoordinator:
                     ],
                     attempted_chunk_ids=list(batch.chunk_ids),
                 )
-            except SchemaValidationError as exc:
+            except _RETRYABLE_EXCEPTIONS as exc:
                 last_exc = exc
+                failure_label = (
+                    "schema parsing"
+                    if isinstance(exc, SchemaValidationError)
+                    else f"LLM call ({exc.details.get('failure_kind', 'unknown')})"
+                )
                 if attempt_index < self.max_attempts:
                     emit_progress(
                         progress_callback,
                         (
                             f"[extraction {batch.batch_index}/{batch.batch_count}] "
                             f"attempt {attempt_index}/{self.max_attempts} failed "
-                            f"schema parsing: {exc}. Retrying this batch only..."
+                            f"{failure_label}: {exc}. Retrying this batch only..."
                         ),
                     )
 
@@ -161,6 +162,8 @@ class ExtractionBatchRetryCoordinator:
         return outcome
 
     @staticmethod
-    def _describe_error_for_feedback(exc: SchemaValidationError) -> str:
+    def _describe_error_for_feedback(
+        exc: SchemaValidationError | LLMProviderError,
+    ) -> str:
         parse_error = exc.details.get("parse_error")
         return parse_error if isinstance(parse_error, str) else str(exc)

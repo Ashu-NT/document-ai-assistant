@@ -22,7 +22,7 @@ from src.application.workflows.extraction.extraction_result_assembler import (
 from src.application.workflows.extraction.response import build_extraction_response_json_schema
 from src.domain.extraction import ExtractionResult
 from src.shared.activity import ActivityContext
-from src.shared.exceptions import SchemaValidationError
+from src.shared.exceptions import LLMProviderError, SchemaValidationError
 from src.shared.progress.progress_emitter import emit_progress
 
 # A single attempt at extracting one batch: build the (possibly narrowed)
@@ -43,6 +43,7 @@ class ExtractionBatchExecutor:
         failure_preview_chars: int,
         prompt_narrowing_service: ExtractionPromptNarrowingService,
         result_assembler: ExtractionResultAssembler,
+        num_predict: int | None = None,
     ) -> None:
         self.llm_service = llm_service
         self.extraction_model = extraction_model
@@ -51,6 +52,7 @@ class ExtractionBatchExecutor:
         self.failure_preview_chars = failure_preview_chars
         self.prompt_narrowing_service = prompt_narrowing_service
         self.result_assembler = result_assembler
+        self.num_predict = num_predict
 
     def execute_once(
         self,
@@ -97,14 +99,41 @@ class ExtractionBatchExecutor:
                 f"Calling extraction model {self.extraction_model or 'default'}..."
             ),
         )
-        response = self.llm_service.generate(
-            prompt,
-            model=self.extraction_model,
-            activity_context=activity_context,
-            temperature=self.temperature,
-            json_mode=self.json_mode,
-            response_schema=build_extraction_response_json_schema(),
-        )
+        try:
+            response = self.llm_service.generate(
+                prompt,
+                model=self.extraction_model,
+                activity_context=activity_context,
+                temperature=self.temperature,
+                json_mode=self.json_mode,
+                response_schema=build_extraction_response_json_schema(),
+                num_predict=self.num_predict,
+            )
+        except LLMProviderError as exc:
+            diagnostics = ExtractionBatchDiagnostics(
+                batch_index=batch.batch_index,
+                batch_count=batch.batch_count,
+                chunk_ids=batch.chunk_ids,
+                char_count=batch.char_count,
+                word_count=batch.word_count,
+                model_name=self.extraction_model,
+                parse_success=False,
+                parse_error=str(exc),
+                prompt_sha256=prompt_sha256,
+                prompt_sha256_canonical=prompt_sha256_canonical,
+            )
+            diagnostics_sink.append(diagnostics)
+            emit_progress(
+                progress_callback,
+                (
+                    f"[extraction {batch.batch_index}/{batch.batch_count}] "
+                    f"LLM call failed ({exc.details.get('failure_kind', 'unknown')}): {exc}"
+                ),
+            )
+            raise LLMProviderError(
+                str(exc),
+                details={**exc.details, **diagnostics.to_dict()},
+            ) from exc
         emit_progress(
             progress_callback,
             (

@@ -17,6 +17,7 @@ class FakeLLMService:
         model: str | None = None,
         *,
         response_schema: dict | None = None,
+        num_predict: int | None = None,
     ) -> str:
         with self._lock:
             self.calls.append(
@@ -24,6 +25,7 @@ class FakeLLMService:
                     "prompt": prompt,
                     "model": model,
                     "response_schema": response_schema,
+                    "num_predict": num_predict,
                 }
             )
             return self.responses.pop(0)

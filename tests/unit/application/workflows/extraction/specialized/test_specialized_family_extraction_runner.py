@@ -44,6 +44,7 @@ class FakeRoutingLLMService:
         temperature: float | None = None,
         json_mode: bool = False,
         response_schema: dict | None = None,
+        num_predict: int | None = None,
     ) -> str:
         self.calls.append(prompt)
         for family_key, response in self.family_responses.items():

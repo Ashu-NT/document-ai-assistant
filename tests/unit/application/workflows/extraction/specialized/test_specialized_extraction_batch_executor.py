@@ -54,6 +54,7 @@ class FakeLLMService:
         temperature: float | None = None,
         json_mode: bool = False,
         response_schema: dict | None = None,
+        num_predict: int | None = None,
     ) -> str:
         self.calls.append(
             {
@@ -62,6 +63,7 @@ class FakeLLMService:
                 "temperature": temperature,
                 "json_mode": json_mode,
                 "response_schema": response_schema,
+                "num_predict": num_predict,
             }
         )
         return self.response
