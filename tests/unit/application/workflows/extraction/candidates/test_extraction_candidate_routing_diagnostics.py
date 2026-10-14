@@ -22,6 +22,9 @@ from src.application.workflows.extraction.batching.extraction_batch import Extra
 from src.application.workflows.extraction.candidates.extraction_candidate_llm_router import (
     ExtractionCandidateLLMRouter,
 )
+from src.application.workflows.extraction.candidates.extraction_candidate_routing_cache import (
+    InMemoryRoutingDecisionCache,
+)
 from src.application.workflows.extraction.candidates.extraction_candidate_selector import (
     ExtractionCandidateSelector,
 )
@@ -39,8 +42,10 @@ from src.domain.document import DocumentChunk
 class FakeLLMService:
     def __init__(self, response: str) -> None:
         self.response = response
+        self.calls: list[str] = []
 
     def generate(self, prompt, model=None, response_schema=None):
+        self.calls.append(prompt)
         return self.response
 
 
@@ -226,6 +231,31 @@ class TestSelectorEquivalence:
         assert record.batch_index == 3
         assert record.batch_count == 7
         assert record.chunk_id == "chunk_001"
+
+
+class TestRoutingCacheDoesNotAlterCandidateReconciliation:
+    """End-to-end, through the real ExtractionCandidateSelector: a cache
+    hit must reproduce select_for_chunk's exact prior return value, and
+    never make a second LLM call for the same content."""
+
+    def test_cache_hit_reproduces_identical_candidate_reconciliation(self) -> None:
+        llm_service = FakeLLMService(
+            json.dumps({"candidate_types": ["safety_warning", "spare_part"]})
+        )
+        cache = InMemoryRoutingDecisionCache()
+        router = ExtractionCandidateLLMRouter(
+            llm_service=llm_service, enabled=True, cache=cache
+        )
+        selector = ExtractionCandidateSelector(llm_router=router)
+        chunk = _chunk(chunk_type=ChunkType.GENERAL)
+
+        first = selector.select_for_chunk(chunk)
+        assert len(llm_service.calls) == 1
+
+        second = selector.select_for_chunk(chunk)
+
+        assert second == first
+        assert len(llm_service.calls) == 1  # cache hit - no second LLM call
 
 
 class TestResolveRequestedTypesEquivalence:

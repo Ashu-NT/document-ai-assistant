@@ -18,6 +18,14 @@ class LLMRoutingInvocationDiagnostics:
     invoked_llm: bool
     schema_valid: bool | None
     resolved_types: tuple[str, ...] | None
+    # Routing-decision-cache diagnostics. All default so every existing construction site
+    # (and every existing test) keeps working unchanged when a cache isn't
+    # configured at all.
+    cache_enabled: bool = False
+    cache_hit: bool | None = None
+    routing_input_fingerprint: str | None = None
+    routing_outcome_source: str = "fallback"
+    cache_schema_version: int | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -28,6 +36,11 @@ class LLMRoutingInvocationDiagnostics:
             "resolved_types": (
                 list(self.resolved_types) if self.resolved_types is not None else None
             ),
+            "cache_enabled": self.cache_enabled,
+            "cache_hit": self.cache_hit,
+            "routing_input_fingerprint": self.routing_input_fingerprint,
+            "routing_outcome_source": self.routing_outcome_source,
+            "cache_schema_version": self.cache_schema_version,
         }
 
 

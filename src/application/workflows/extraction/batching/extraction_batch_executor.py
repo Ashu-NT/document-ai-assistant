@@ -7,6 +7,7 @@ from src.application.workflows.extraction.batching.extraction_batch import Extra
 from src.application.workflows.extraction.batching.extraction_batch_diagnostics import (
     ExtractionBatchDiagnostics,
     hash_prompt,
+    hash_prompt_canonical,
     safe_response_preview,
 )
 from src.application.workflows.extraction.candidates.extraction_candidate_routing_diagnostics import (
@@ -79,6 +80,7 @@ class ExtractionBatchExecutor:
             candidate_routing_diagnostics_sink=candidate_routing_diagnostics_sink,
         )
         prompt_sha256 = hash_prompt(prompt)
+        prompt_sha256_canonical = hash_prompt_canonical(prompt)
         if requested_types is not None:
             emit_progress(
                 progress_callback,
@@ -132,6 +134,7 @@ class ExtractionBatchExecutor:
                 parse_error=str(exc),
                 raw_response_preview=preview,
                 prompt_sha256=prompt_sha256,
+                prompt_sha256_canonical=prompt_sha256_canonical,
             )
             diagnostics_sink.append(diagnostics)
             compact_preview = " ".join(preview.split())
@@ -170,6 +173,7 @@ class ExtractionBatchExecutor:
                 model_name=self.extraction_model,
                 parse_success=True,
                 prompt_sha256=prompt_sha256,
+                prompt_sha256_canonical=prompt_sha256_canonical,
             )
         )
         return extraction_result

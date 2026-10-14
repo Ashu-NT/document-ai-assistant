@@ -8,6 +8,14 @@ from src.application.workflows.extraction.candidates.extraction_candidate_router
     ExtractionCandidateRouterPayload,
     build_extraction_candidate_router_json_schema,
 )
+from src.application.workflows.extraction.candidates.extraction_candidate_routing_cache import (
+    ROUTING_CACHE_SCHEMA_VERSION,
+    InMemoryRoutingDecisionCache,
+    RoutingCacheEntry,
+    RoutingCacheKey,
+    RoutingDecisionCachePort,
+    compute_routing_cache_key,
+)
 from src.application.workflows.extraction.candidates.extraction_candidate_routing_diagnostics import (
     ExtractionCandidateRoutingDiagnostics,
     LLMRoutingInvocationDiagnostics,
@@ -27,6 +35,12 @@ __all__ = [
     "ExtractionCandidateRouterResponseParser",
     "ExtractionCandidateRouterPayload",
     "build_extraction_candidate_router_json_schema",
+    "ROUTING_CACHE_SCHEMA_VERSION",
+    "InMemoryRoutingDecisionCache",
+    "RoutingCacheEntry",
+    "RoutingCacheKey",
+    "RoutingDecisionCachePort",
+    "compute_routing_cache_key",
     "ExtractionCandidateRoutingDiagnostics",
     "LLMRoutingInvocationDiagnostics",
     "ExtractionCandidateSelector",
