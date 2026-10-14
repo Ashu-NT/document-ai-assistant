@@ -1,5 +1,6 @@
 import json
 
+from src.application.contracts.ai import LLMGenerationResult
 from src.application.workflows.extraction.batching.extraction_batch import ExtractionBatch
 from src.application.workflows.extraction.batching.extraction_chunk_batcher import (
     ExtractionChunkBatcher,
@@ -47,6 +48,25 @@ class FakeRoutingLLMService:
         num_predict: int | None = None,
     ) -> str:
         self.calls.append(prompt)
+        return self._match(prompt)
+
+    def generate_with_metadata(
+        self,
+        prompt: str,
+        model: str | None = None,
+        activity_context=None,
+        *,
+        temperature: float | None = None,
+        json_mode: bool = False,
+        response_schema: dict | None = None,
+        num_predict: int | None = None,
+    ) -> LLMGenerationResult:
+        self.calls.append(prompt)
+        return LLMGenerationResult(
+            text=self._match(prompt), provider_name="fake", finish_reason="stop"
+        )
+
+    def _match(self, prompt: str) -> str:
         for family_key, response in self.family_responses.items():
             if family_key in prompt:
                 return response

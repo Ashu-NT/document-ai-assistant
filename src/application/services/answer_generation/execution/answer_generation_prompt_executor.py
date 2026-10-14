@@ -22,6 +22,9 @@ def _build_corrective_note(previous_error: str) -> str:
     )
 
 
+_TRUNCATED_ERROR_TEXT = "Response was truncated by the output-length limit."
+
+
 class AnswerGenerationPromptExecutor:
     def __init__(
         self,
@@ -48,7 +51,7 @@ class AnswerGenerationPromptExecutor:
                 if last_error is None
                 else prompt + _build_corrective_note(str(last_error))
             )
-            raw_output = self.llm_service.generate(
+            generation_result = self.llm_service.generate_with_metadata(
                 attempt_prompt,
                 model=self.model_name,
                 response_schema=build_answer_generation_response_json_schema(),
@@ -56,6 +59,12 @@ class AnswerGenerationPromptExecutor:
                 num_ctx=self.num_ctx,
                 num_predict=self.num_predict,
             )
+            raw_output = generation_result.text
+            if generation_result.finish_reason == "length":
+                last_error = SchemaValidationError(_TRUNCATED_ERROR_TEXT)
+                if attempt_index >= _MAX_GENERATION_ATTEMPTS:
+                    raise last_error
+                continue
             try:
                 return PromptExecutionResult(
                     parsed_output=self.response_parser.parse(raw_output),

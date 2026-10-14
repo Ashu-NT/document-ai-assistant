@@ -1,5 +1,6 @@
 import json
 
+from src.application.contracts.ai import LLMGenerationResult
 from src.application.workflows.extraction.batching.extraction_batch import ExtractionBatch
 from src.application.workflows.extraction.batching.extraction_chunk_batcher import (
     ExtractionChunkBatcher,
@@ -62,6 +63,22 @@ class FakeSequentialLLMService:
     ) -> str:
         self.calls.append(prompt)
         return self.responses.pop(0)
+
+    def generate_with_metadata(
+        self,
+        prompt: str,
+        model: str | None = None,
+        activity_context=None,
+        *,
+        temperature: float | None = None,
+        json_mode: bool = False,
+        response_schema: dict | None = None,
+        num_predict: int | None = None,
+    ) -> LLMGenerationResult:
+        self.calls.append(prompt)
+        return LLMGenerationResult(
+            text=self.responses.pop(0), provider_name="fake", finish_reason="stop"
+        )
 
 
 def _make_table(row_count: int) -> TableAsset:

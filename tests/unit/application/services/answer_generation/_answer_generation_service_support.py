@@ -1,3 +1,4 @@
+from src.application.contracts.ai import LLMGenerationResult
 from src.application.prompts.answer_generation import ANSWER_PROMPT_VERSION
 from src.application.services.answer_generation.answer_generation_request import (
     AnswerGenerationRequest,
@@ -16,6 +17,7 @@ class FakeLLMService:
         self,
         response: str = '{"answer_text":"The answer is 1000 hours."}',
         responses: list[str] | None = None,
+        finish_reason: str = "stop",
     ) -> None:
         self.response = response
         # When provided, `responses[i]` is returned for the i-th call
@@ -23,18 +25,10 @@ class FakeLLMService:
         # test simulate "first attempt malformed, retry succeeds" without
         # needing a stateful generator.
         self.responses = list(responses) if responses is not None else None
+        self.finish_reason = finish_reason
         self.calls: list[dict] = []
 
-    def generate(
-        self,
-        prompt: str,
-        model: str | None = None,
-        *,
-        response_schema: dict | None = None,
-        temperature: float | None = None,
-        num_ctx: int | None = None,
-        num_predict: int | None = None,
-    ) -> str:
+    def _record_and_select(self, prompt, model, response_schema, temperature, num_ctx, num_predict):
         self.calls.append(
             {
                 "prompt": prompt,
@@ -51,6 +45,37 @@ class FakeLLMService:
                 return self.responses[call_index]
             return self.responses[-1]
         return self.response
+
+    def generate(
+        self,
+        prompt: str,
+        model: str | None = None,
+        *,
+        response_schema: dict | None = None,
+        temperature: float | None = None,
+        num_ctx: int | None = None,
+        num_predict: int | None = None,
+    ) -> str:
+        return self._record_and_select(
+            prompt, model, response_schema, temperature, num_ctx, num_predict
+        )
+
+    def generate_with_metadata(
+        self,
+        prompt: str,
+        model: str | None = None,
+        *,
+        response_schema: dict | None = None,
+        temperature: float | None = None,
+        num_ctx: int | None = None,
+        num_predict: int | None = None,
+    ) -> LLMGenerationResult:
+        text = self._record_and_select(
+            prompt, model, response_schema, temperature, num_ctx, num_predict
+        )
+        return LLMGenerationResult(
+            text=text, provider_name="fake", finish_reason=self.finish_reason
+        )
 
 
 class FakePromptBuilder:

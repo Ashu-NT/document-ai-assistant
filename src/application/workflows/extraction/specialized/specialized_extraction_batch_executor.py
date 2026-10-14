@@ -98,7 +98,7 @@ class SpecializedExtractionBatchExecutor:
             ),
         )
         try:
-            response = self.llm_service.generate(
+            generation_result = self.llm_service.generate_with_metadata(
                 prompt_result.prompt_text,
                 model=self.extraction_model,
                 activity_context=activity_context,
@@ -132,6 +132,35 @@ class SpecializedExtractionBatchExecutor:
                 str(exc),
                 details={**exc.details, **diagnostics.to_dict()},
             ) from exc
+
+        response = generation_result.text
+        if generation_result.finish_reason == "length":
+            preview = safe_response_preview(response, max_chars=self.failure_preview_chars)
+            diagnostics = ExtractionBatchDiagnostics(
+                batch_index=batch.batch_index,
+                batch_count=batch.batch_count,
+                chunk_ids=batch.chunk_ids,
+                char_count=batch.char_count,
+                word_count=batch.word_count,
+                model_name=self.extraction_model,
+                parse_success=False,
+                parse_error="Response truncated by output-length limit (finish_reason=length).",
+                raw_response_preview=preview,
+                prompt_sha256=prompt_sha256,
+                prompt_sha256_canonical=prompt_sha256_canonical,
+            )
+            diagnostics_sink.append(diagnostics)
+            emit_progress(
+                progress_callback,
+                (
+                    f"[extraction {batch.batch_index}/{batch.batch_count}] [{label}] "
+                    "Response truncated by output-length limit; treating as a failed attempt."
+                ),
+            )
+            raise LLMProviderError(
+                "Extraction response was truncated by the output-length limit.",
+                details={"failure_kind": "truncated", **diagnostics.to_dict()},
+            )
         emit_progress(
             progress_callback,
             (

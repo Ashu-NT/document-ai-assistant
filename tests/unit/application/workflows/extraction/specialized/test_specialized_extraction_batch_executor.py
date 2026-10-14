@@ -3,6 +3,7 @@ import json
 
 import pytest
 
+from src.application.contracts.ai import LLMGenerationResult
 from src.application.prompts.extraction import ExtractionPromptType
 from src.application.workflows.extraction.batching.extraction_batch import ExtractionBatch
 from src.application.workflows.extraction.builders.extraction_builder_support import (
@@ -41,9 +42,22 @@ _FAMILY_KEYS: dict[ExtractionPromptType, str] = {
 
 
 class FakeLLMService:
-    def __init__(self, response: str) -> None:
+    def __init__(self, response: str, finish_reason: str = "stop") -> None:
         self.response = response
+        self.finish_reason = finish_reason
         self.calls: list[dict[str, object]] = []
+
+    def _record(self, prompt, model, temperature, json_mode, response_schema, num_predict):
+        self.calls.append(
+            {
+                "prompt": prompt,
+                "model": model,
+                "temperature": temperature,
+                "json_mode": json_mode,
+                "response_schema": response_schema,
+                "num_predict": num_predict,
+            }
+        )
 
     def generate(
         self,
@@ -56,17 +70,24 @@ class FakeLLMService:
         response_schema: dict | None = None,
         num_predict: int | None = None,
     ) -> str:
-        self.calls.append(
-            {
-                "prompt": prompt,
-                "model": model,
-                "temperature": temperature,
-                "json_mode": json_mode,
-                "response_schema": response_schema,
-                "num_predict": num_predict,
-            }
-        )
+        self._record(prompt, model, temperature, json_mode, response_schema, num_predict)
         return self.response
+
+    def generate_with_metadata(
+        self,
+        prompt: str,
+        model: str | None = None,
+        activity_context=None,
+        *,
+        temperature: float | None = None,
+        json_mode: bool = False,
+        response_schema: dict | None = None,
+        num_predict: int | None = None,
+    ) -> LLMGenerationResult:
+        self._record(prompt, model, temperature, json_mode, response_schema, num_predict)
+        return LLMGenerationResult(
+            text=self.response, provider_name="fake", finish_reason=self.finish_reason
+        )
 
 
 def _make_chunk(chunk_id: str, content: str, chunk_type: ChunkType) -> DocumentChunk:
@@ -274,3 +295,46 @@ def test_accepts_but_ignores_candidate_routing_diagnostics_sink(
     )
 
     assert len(result.specifications) == 1
+
+
+def test_truncated_response_raises_llm_provider_error_instead_of_accepting_partial_json() -> None:
+    chunk = _make_chunk("c1", "Check oil level.", ChunkType.MAINTENANCE_PROCEDURE)
+    batch = _make_batch([chunk])
+    truncated_but_valid_json = json.dumps(
+        {"confidence_score": 0.9, "maintenance_tasks": []}
+    )
+    llm_service = FakeLLMService(response=truncated_but_valid_json, finish_reason="length")
+    executor = _make_executor(ExtractionPromptType.MAINTENANCE_TASK, llm_service)
+
+    from src.shared.exceptions import LLMProviderError
+
+    with pytest.raises(LLMProviderError) as exc_info:
+        executor.execute_once(
+            document_id="doc_001",
+            batch=batch,
+            activity_context=None,
+            progress_callback=None,
+            previous_error=None,
+            diagnostics_sink=[],
+        )
+
+    assert exc_info.value.details["failure_kind"] == "truncated"
+
+
+def test_non_truncated_response_is_unaffected() -> None:
+    chunk = _make_chunk("c1", "Check oil level.", ChunkType.MAINTENANCE_PROCEDURE)
+    batch = _make_batch([chunk])
+    response = json.dumps({"confidence_score": 0.9, "maintenance_tasks": []})
+    llm_service = FakeLLMService(response=response, finish_reason="stop")
+    executor = _make_executor(ExtractionPromptType.MAINTENANCE_TASK, llm_service)
+
+    result = executor.execute_once(
+        document_id="doc_001",
+        batch=batch,
+        activity_context=None,
+        progress_callback=None,
+        previous_error=None,
+        diagnostics_sink=[],
+    )
+
+    assert result.maintenance_tasks == []

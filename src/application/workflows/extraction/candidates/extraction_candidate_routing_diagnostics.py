@@ -27,6 +27,7 @@ class LLMRoutingInvocationDiagnostics:
     routing_outcome_source: str = "fallback"
     cache_schema_version: int | None = None
     transport_failed: bool = False
+    truncated: bool = False
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -42,6 +43,7 @@ class LLMRoutingInvocationDiagnostics:
             "routing_input_fingerprint": self.routing_input_fingerprint,
             "routing_outcome_source": self.routing_outcome_source,
             "transport_failed": self.transport_failed,
+            "truncated": self.truncated,
             "cache_schema_version": self.cache_schema_version,
         }
 

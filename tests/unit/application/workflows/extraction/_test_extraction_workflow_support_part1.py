@@ -1,4 +1,5 @@
 
+from src.application.contracts.ai import LLMGenerationResult
 from src.application.prompts.extraction import CombinedExtractionPromptBuilder
 
 from src.application.validation.extraction import ExtractionResultValidator
@@ -53,6 +54,31 @@ class FakeLLMService:
             }
         )
         return self.responses.pop(0)
+
+    def generate_with_metadata(
+        self,
+        prompt: str,
+        model: str | None = None,
+        activity_context=None,
+        *,
+        temperature: float | None = None,
+        json_mode: bool = False,
+        response_schema: dict | None = None,
+        num_predict: int | None = None,
+    ) -> LLMGenerationResult:
+        self.calls.append(
+            {
+                "prompt": prompt,
+                "model": model,
+                "temperature": temperature,
+                "json_mode": json_mode,
+                "response_schema": response_schema,
+                "num_predict": num_predict,
+            }
+        )
+        return LLMGenerationResult(
+            text=self.responses.pop(0), provider_name="fake", finish_reason="stop"
+        )
 
 class FakeExtractionService:
     def __init__(self) -> None:

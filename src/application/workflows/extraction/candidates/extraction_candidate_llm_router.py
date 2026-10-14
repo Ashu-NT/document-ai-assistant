@@ -160,7 +160,7 @@ class ExtractionCandidateLLMRouter:
 
         prompt = self._prompt_builder.build(chunk.content)
         try:
-            response = self._llm_service.generate(
+            generation_result = self._llm_service.generate_with_metadata(
                 prompt,
                 model=self._model,
                 response_schema=build_extraction_candidate_router_json_schema(),
@@ -183,6 +183,26 @@ class ExtractionCandidateLLMRouter:
                 transport_failed=True,
             )
             return None
+
+        response = generation_result.text
+        if generation_result.finish_reason == "length":
+            self._record(
+                diagnostics_sink,
+                available=True,
+                had_content=True,
+                invoked_llm=True,
+                schema_valid=None,
+                resolved_types=None,
+                cache_enabled=cache_enabled,
+                cache_hit=False if routing_key is not None else None,
+                routing_input_fingerprint=(
+                    routing_key.cache_key if routing_key is not None else None
+                ),
+                routing_outcome_source="fallback",
+                truncated=True,
+            )
+            return None
+
         try:
             payload = self._response_parser.parse(response)
         except SchemaValidationError:

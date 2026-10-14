@@ -13,6 +13,7 @@ rendered prompt.
 
 import json
 
+from src.application.contracts.ai import LLMGenerationResult
 from src.application.prompts.extraction import (
     CombinedExtractionPromptBuilder,
     ExtractionPromptType,
@@ -47,6 +48,10 @@ class FakeLLMService:
     def generate(self, prompt, model=None, response_schema=None, num_predict=None):
         self.calls.append(prompt)
         return self.response
+
+    def generate_with_metadata(self, prompt, model=None, response_schema=None, num_predict=None):
+        self.calls.append(prompt)
+        return LLMGenerationResult(text=self.response, provider_name="fake", finish_reason="stop")
 
 
 def _chunk(
