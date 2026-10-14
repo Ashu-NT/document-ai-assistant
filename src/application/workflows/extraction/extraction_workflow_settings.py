@@ -148,3 +148,12 @@ def _default_extraction_num_predict() -> int | None:
         return extraction_settings.extraction_max_output_tokens
 
     return resolve_setting(_load, 4096)
+
+
+def _default_extraction_execution_budget_seconds() -> float | None:
+    def _load() -> float | None:
+        from src.config.settings import extraction_settings
+
+        return extraction_settings.extraction_execution_budget_seconds
+
+    return resolve_setting(_load, None)

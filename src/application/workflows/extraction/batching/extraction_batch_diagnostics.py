@@ -43,6 +43,7 @@ class ExtractionBatchDiagnostics:
     # identical semantic input) hash identically here, while any genuine
     # content/instruction difference still changes this hash too.
     prompt_sha256_canonical: str | None = None
+    budget_exhausted: bool = False
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)

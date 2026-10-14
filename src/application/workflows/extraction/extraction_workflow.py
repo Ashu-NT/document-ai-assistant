@@ -1,3 +1,4 @@
+import time
 from dataclasses import replace as dataclass_replace
 from collections.abc import Callable
 
@@ -30,6 +31,9 @@ from src.application.workflows.extraction.candidates import (
     ExtractionPromptNarrowingService,
 )
 from src.application.workflows.extraction.context import SemanticExtractionContextBuilder
+from src.application.workflows.extraction.execution_budget import (
+    ExtractionExecutionBudget,
+)
 from src.application.workflows.extraction.extraction_execution_strategy import (
     ExtractionExecutionStrategy,
 )
@@ -40,6 +44,7 @@ from src.application.workflows.extraction.extraction_workflow_settings import (
     _default_allow_partial_batches,
     _default_candidate_narrowing_enabled,
     _default_extraction_confidence_threshold,
+    _default_extraction_execution_budget_seconds,
     _default_extraction_execution_strategy,
     _default_extraction_json_mode,
     _default_extraction_max_attempts,
@@ -105,6 +110,8 @@ class ExtractionWorkflow:
         maintenance_table_window_enabled: bool | None = None,
         maintenance_table_rows_per_window: int | None = None,
         num_predict: int | None = None,
+        execution_budget_seconds: float | None = None,
+        clock: Callable[[], float] | None = None,
     ) -> None:
         self.llm_service = llm_service
         self.extraction_service = extraction_service
@@ -188,6 +195,12 @@ class ExtractionWorkflow:
         self.num_predict = (
             num_predict if num_predict is not None else _default_extraction_num_predict()
         )
+        self.execution_budget_seconds = (
+            execution_budget_seconds
+            if execution_budget_seconds is not None
+            else _default_extraction_execution_budget_seconds()
+        )
+        self.clock = clock or time.monotonic
         self.last_batch_diagnostics: list[ExtractionBatchDiagnostics] = []
         self.last_candidate_routing_diagnostics: list[
             ExtractionCandidateRoutingDiagnostics
@@ -289,6 +302,9 @@ class ExtractionWorkflow:
             progress_callback,
             f"Prepared {len(batches)} extraction batch(es).",
         )
+        budget = ExtractionExecutionBudget.start(
+            self.execution_budget_seconds, clock=self.clock
+        )
         partial_results: list[ExtractionResult] = (
             [dataclass_replace(base_result)] if base_result is not None else []
         )
@@ -304,6 +320,7 @@ class ExtractionWorkflow:
                 diagnostics_sink=self.last_batch_diagnostics,
                 tables=tables,
                 candidate_routing_diagnostics_sink=self.last_candidate_routing_diagnostics,
+                budget=budget,
             )
             partial_results.extend(run_result.partial_results)
             attempted_chunk_ids.extend(run_result.attempted_chunk_ids)
@@ -318,6 +335,7 @@ class ExtractionWorkflow:
                     progress_callback=progress_callback,
                     diagnostics_sink=self.last_batch_diagnostics,
                     candidate_routing_diagnostics_sink=self.last_candidate_routing_diagnostics,
+                    budget=budget,
                 )
                 partial_results.extend(outcome.partial_results)
                 attempted_chunk_ids.extend(outcome.attempted_chunk_ids)

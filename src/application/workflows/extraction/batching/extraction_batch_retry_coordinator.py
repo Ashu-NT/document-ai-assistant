@@ -18,6 +18,10 @@ from src.application.workflows.extraction.batching.extraction_chunk_batcher impo
 from src.application.workflows.extraction.candidates.extraction_candidate_routing_diagnostics import (
     ExtractionCandidateRoutingDiagnostics,
 )
+from src.application.workflows.extraction.execution_budget import (
+    ExtractionExecutionBudget,
+    describe_budget_exhaustion,
+)
 from src.shared.activity import ActivityContext
 from src.shared.exceptions import LLMProviderError, SchemaValidationError
 from src.shared.progress.progress_emitter import emit_progress
@@ -51,9 +55,34 @@ class ExtractionBatchRetryCoordinator:
         candidate_routing_diagnostics_sink: (
             list[ExtractionCandidateRoutingDiagnostics] | None
         ) = None,
+        budget: ExtractionExecutionBudget | None = None,
     ) -> ExtractionBatchOutcome:
         last_exc: SchemaValidationError | LLMProviderError | None = None
         for attempt_index in range(1, self.max_attempts + 1):
+            if budget is not None and budget.is_expired():
+                last_exc = self._budget_exhausted_error(batch)
+                diagnostics_sink.append(
+                    ExtractionBatchDiagnostics(
+                        batch_index=batch.batch_index,
+                        batch_count=batch.batch_count,
+                        chunk_ids=batch.chunk_ids,
+                        char_count=batch.char_count,
+                        word_count=batch.word_count,
+                        model_name=self.batch_executor.extraction_model,
+                        parse_success=False,
+                        parse_error=str(last_exc),
+                        budget_exhausted=True,
+                    )
+                )
+                emit_progress(
+                    progress_callback,
+                    (
+                        f"[extraction {batch.batch_index}/{batch.batch_count}] "
+                        f"{describe_budget_exhaustion(budget)}; no further "
+                        "extraction attempts will be scheduled for this batch."
+                    ),
+                )
+                break
             try:
                 return ExtractionBatchOutcome(
                     partial_results=[
@@ -91,7 +120,8 @@ class ExtractionBatchRetryCoordinator:
                     )
 
         assert last_exc is not None
-        if self.allow_partial_batches and len(batch.chunks) > 1:
+        budget_expired = budget is not None and budget.is_expired()
+        if self.allow_partial_batches and len(batch.chunks) > 1 and not budget_expired:
             return self._isolate_persistently_failing_batch(
                 document_id=document_id,
                 batch=batch,
@@ -99,16 +129,21 @@ class ExtractionBatchRetryCoordinator:
                 progress_callback=progress_callback,
                 diagnostics_sink=diagnostics_sink,
                 candidate_routing_diagnostics_sink=candidate_routing_diagnostics_sink,
+                budget=budget,
             )
 
         if self.allow_partial_batches:
+            reason = (
+                describe_budget_exhaustion(budget)
+                if budget_expired and budget is not None
+                else f"failed after {self.max_attempts} attempt(s)"
+            )
             emit_progress(
                 progress_callback,
                 (
                     f"[extraction {batch.batch_index}/{batch.batch_count}] "
-                    f"failed after {self.max_attempts} attempt(s); marking chunk(s) "
-                    f"{batch.chunk_ids} as unresolved and continuing with the "
-                    "remaining batches."
+                    f"{reason}; marking chunk(s) {batch.chunk_ids} as unresolved "
+                    "and continuing with the remaining batches."
                 ),
             )
             return ExtractionBatchOutcome(
@@ -129,6 +164,7 @@ class ExtractionBatchRetryCoordinator:
         candidate_routing_diagnostics_sink: (
             list[ExtractionCandidateRoutingDiagnostics] | None
         ) = None,
+        budget: ExtractionExecutionBudget | None = None,
     ) -> ExtractionBatchOutcome:
         single_chunk_batches = self.chunk_batcher.build_single_chunk_batches(batch)
         emit_progress(
@@ -157,6 +193,7 @@ class ExtractionBatchRetryCoordinator:
                     progress_callback=progress_callback,
                     diagnostics_sink=diagnostics_sink,
                     candidate_routing_diagnostics_sink=candidate_routing_diagnostics_sink,
+                    budget=budget,
                 )
             )
         return outcome
@@ -167,3 +204,15 @@ class ExtractionBatchRetryCoordinator:
     ) -> str:
         parse_error = exc.details.get("parse_error")
         return parse_error if isinstance(parse_error, str) else str(exc)
+
+    @staticmethod
+    def _budget_exhausted_error(batch: ExtractionBatch) -> LLMProviderError:
+        return LLMProviderError(
+            "Execution budget exhausted before this batch could be attempted.",
+            details={
+                "failure_kind": "budget_exhausted",
+                "batch_index": batch.batch_index,
+                "batch_count": batch.batch_count,
+                "chunk_ids": batch.chunk_ids,
+            },
+        )

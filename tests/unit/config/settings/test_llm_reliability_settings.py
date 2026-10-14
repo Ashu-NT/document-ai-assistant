@@ -91,3 +91,26 @@ def test_extraction_output_token_settings_reject_non_positive_values(
 
     with pytest.raises(ValidationError):
         ExtractionSettings()
+
+
+def test_extraction_execution_budget_defaults_to_disabled(monkeypatch) -> None:
+    monkeypatch.delenv("EXTRACTION_EXECUTION_BUDGET_SECONDS", raising=False)
+
+    settings = ExtractionSettings()
+
+    assert settings.extraction_execution_budget_seconds is None
+
+
+def test_extraction_execution_budget_reads_environment(monkeypatch) -> None:
+    monkeypatch.setenv("EXTRACTION_EXECUTION_BUDGET_SECONDS", "1800")
+
+    settings = ExtractionSettings()
+
+    assert settings.extraction_execution_budget_seconds == 1800
+
+
+def test_extraction_execution_budget_rejects_non_positive_values(monkeypatch) -> None:
+    monkeypatch.setenv("EXTRACTION_EXECUTION_BUDGET_SECONDS", "0")
+
+    with pytest.raises(ValidationError):
+        ExtractionSettings()

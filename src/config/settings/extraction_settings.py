@@ -107,3 +107,9 @@ class ExtractionSettings(AppBaseSettings):
         gt=0,
         le=32_768,
     )
+
+    extraction_execution_budget_seconds: float | None = Field(
+        default=None,
+        alias="EXTRACTION_EXECUTION_BUDGET_SECONDS",
+        gt=0,
+    )

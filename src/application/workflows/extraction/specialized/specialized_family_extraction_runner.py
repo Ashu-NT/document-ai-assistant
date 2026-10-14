@@ -20,6 +20,10 @@ from src.application.workflows.extraction.candidates.extraction_candidate_routin
 from src.application.workflows.extraction.candidates.extraction_candidate_selector import (
     ExtractionCandidateSelector,
 )
+from src.application.workflows.extraction.execution_budget import (
+    ExtractionExecutionBudget,
+    describe_budget_exhaustion,
+)
 from src.application.workflows.extraction.extraction_execution_strategy import (
     ExtractionExecutionStrategy,
 )
@@ -48,6 +52,9 @@ from src.application.workflows.extraction.table_windowing import (
 from src.domain.assets import TableAsset
 from src.domain.extraction import ExtractionResult, UnresolvedExtractionWork
 from src.shared.activity import ActivityContext
+from src.shared.progress.progress_emitter import emit_progress
+
+_BUDGET_EXHAUSTED_ENTITY_TYPE = "budget_exhausted"
 
 # Top-level SPECIALIZED_FAMILY composition: given the SAME batches
 # ExtractionChunkBatcher already built for MULTI_FAMILY, expands them into an
@@ -132,38 +139,60 @@ class SpecializedFamilyExtractionRunner:
         candidate_routing_diagnostics_sink: (
             list[ExtractionCandidateRoutingDiagnostics] | None
         ) = None,
+        budget: ExtractionExecutionBudget | None = None,
     ) -> SpecializedFamilyExtractionRunResult:
-        plan = build_extraction_plan(
-            batches,
-            candidate_selector=self.candidate_selector,
-            document_id=document_id,
-            candidate_routing_diagnostics_sink=candidate_routing_diagnostics_sink,
-        )
         result = SpecializedFamilyExtractionRunResult()
+        for batch in batches:
+            if budget is not None and budget.is_expired():
+                emit_progress(
+                    progress_callback,
+                    (
+                        f"[extraction {batch.batch_index}/{batch.batch_count}] "
+                        f"{describe_budget_exhaustion(budget)}; skipping "
+                        "candidate-family selection and marking chunk(s) "
+                        f"{batch.chunk_ids} as unresolved."
+                    ),
+                )
+                result.unresolved_chunk_ids.extend(batch.chunk_ids)
+                result.unresolved_extraction_work.extend(
+                    UnresolvedExtractionWork(
+                        chunk_id=chunk_id, entity_type=_BUDGET_EXHAUSTED_ENTITY_TYPE
+                    )
+                    for chunk_id in batch.chunk_ids
+                )
+                continue
 
-        for work_item in plan.work_items:
-            resolved = self._resolve_windows(work_item, tables=tables or {})
-            if resolved is None:
-                self._run_single_work_item(
-                    document_id=document_id,
-                    work_item=work_item,
-                    activity_context=activity_context,
-                    progress_callback=progress_callback,
-                    diagnostics_sink=diagnostics_sink,
-                    result=result,
-                )
-            else:
-                windows, composed_table = resolved
-                self._run_windowed_work_item(
-                    document_id=document_id,
-                    work_item=work_item,
-                    windows=windows,
-                    composed_table=composed_table,
-                    activity_context=activity_context,
-                    progress_callback=progress_callback,
-                    diagnostics_sink=diagnostics_sink,
-                    result=result,
-                )
+            plan = build_extraction_plan(
+                [batch],
+                candidate_selector=self.candidate_selector,
+                document_id=document_id,
+                candidate_routing_diagnostics_sink=candidate_routing_diagnostics_sink,
+            )
+            for work_item in plan.work_items:
+                resolved = self._resolve_windows(work_item, tables=tables or {})
+                if resolved is None:
+                    self._run_single_work_item(
+                        document_id=document_id,
+                        work_item=work_item,
+                        activity_context=activity_context,
+                        progress_callback=progress_callback,
+                        diagnostics_sink=diagnostics_sink,
+                        result=result,
+                        budget=budget,
+                    )
+                else:
+                    windows, composed_table = resolved
+                    self._run_windowed_work_item(
+                        document_id=document_id,
+                        work_item=work_item,
+                        windows=windows,
+                        composed_table=composed_table,
+                        activity_context=activity_context,
+                        progress_callback=progress_callback,
+                        diagnostics_sink=diagnostics_sink,
+                        result=result,
+                        budget=budget,
+                    )
 
         return result
 
@@ -216,7 +245,19 @@ class SpecializedFamilyExtractionRunner:
         progress_callback: Callable[[str], None] | None,
         diagnostics_sink: list[ExtractionBatchDiagnostics],
         result: SpecializedFamilyExtractionRunResult,
+        budget: ExtractionExecutionBudget | None = None,
     ) -> None:
+        if budget is not None and budget.is_expired():
+            emit_progress(
+                progress_callback,
+                (
+                    f"[extraction {work_item.batch.batch_index}/"
+                    f"{work_item.batch.batch_count}] "
+                    f"[specialized:{work_item.entity_type.value}] "
+                    f"{describe_budget_exhaustion(budget)}; skipping this "
+                    "family's extraction call."
+                ),
+            )
         coordinator = self._build_coordinator(work_item.entity_type)
         outcome = coordinator.run(
             document_id=document_id,
@@ -224,6 +265,7 @@ class SpecializedFamilyExtractionRunner:
             activity_context=activity_context,
             progress_callback=progress_callback,
             diagnostics_sink=diagnostics_sink,
+            budget=budget,
         )
         result.partial_results.extend(outcome.partial_results)
         result.attempted_chunk_ids.extend(outcome.attempted_chunk_ids)
@@ -246,11 +288,24 @@ class SpecializedFamilyExtractionRunner:
         progress_callback: Callable[[str], None] | None,
         diagnostics_sink: list[ExtractionBatchDiagnostics],
         result: SpecializedFamilyExtractionRunResult,
+        budget: ExtractionExecutionBudget | None = None,
     ) -> None:
         canonical_chunk = work_item.batch.chunks[0]
         original_batch = work_item.batch
 
         for window in windows:
+            if budget is not None and budget.is_expired():
+                emit_progress(
+                    progress_callback,
+                    (
+                        f"[extraction {original_batch.batch_index}/"
+                        f"{original_batch.batch_count}] "
+                        f"[specialized:{work_item.entity_type.value}] "
+                        f"{describe_budget_exhaustion(budget)}; skipping window "
+                        f"{window.window_index}/{window.window_count} "
+                        f"(rows {window.row_start}-{window.row_end})."
+                    ),
+                )
             # The view-chunk keeps the REAL canonical chunk_id - the model
             # is told (and reports back) this same real id, so existing
             # provenance resolution (chunk_lookup keyed by chunk_id) needs
@@ -281,6 +336,7 @@ class SpecializedFamilyExtractionRunner:
                 activity_context=activity_context,
                 progress_callback=progress_callback,
                 diagnostics_sink=diagnostics_sink,
+                budget=budget,
             )
 
             # PHASE 2B MAINTENANCE TASK COMPONENT GROUNDING FIX: a narrow,
