@@ -113,3 +113,9 @@ class ExtractionSettings(AppBaseSettings):
         alias="EXTRACTION_EXECUTION_BUDGET_SECONDS",
         gt=0,
     )
+
+    extraction_num_ctx: int | None = Field(
+        default=8192,
+        alias="EXTRACTION_NUM_CTX",
+        gt=0,
+    )

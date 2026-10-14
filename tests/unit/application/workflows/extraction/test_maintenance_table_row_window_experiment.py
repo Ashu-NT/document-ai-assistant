@@ -53,7 +53,61 @@ def _spec_response() -> str:
     )
 
 
-def test_multi_family_execution_is_completely_unaffected_by_windowing_being_enabled(
+def test_multi_family_small_table_is_completely_unaffected_by_windowing_being_enabled(
+    sample_chunk,
+) -> None:
+    table_chunk = clone_chunk(sample_chunk, chunk_id="chunk_001", content="irrelevant raw content")
+    table_chunk.table_ids = ["table_001"]
+    table = _make_table(5)
+
+    fake_llm_service = FakeLLMService([_empty_extraction_response()])
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(
+        fake_llm_service,
+        fake_extraction_service,
+        execution_strategy=ExtractionExecutionStrategy.MULTI_FAMILY,
+        maintenance_table_window_enabled=True,
+        maintenance_table_rows_per_window=10,
+    )
+
+    workflow.extract("doc_001", [table_chunk], tables={"table_001": table})
+
+    assert len(fake_llm_service.calls) == 1
+
+
+def test_multi_family_oversized_table_is_windowed_into_bounded_calls(
+    sample_chunk,
+) -> None:
+    table_chunk = clone_chunk(sample_chunk, chunk_id="chunk_001", content="irrelevant raw content")
+    table_chunk.table_ids = ["table_001"]
+    table = _make_table(39)
+
+    fake_llm_service = FakeLLMService(
+        [
+            _task_response("Task 1", "Task 2"),
+            _task_response("Task 11"),
+            _task_response("Task 21"),
+            _task_response("Task 31"),
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(
+        fake_llm_service,
+        fake_extraction_service,
+        execution_strategy=ExtractionExecutionStrategy.MULTI_FAMILY,
+        maintenance_table_window_enabled=True,
+        maintenance_table_rows_per_window=10,
+    )
+
+    result = workflow.extract("doc_001", [table_chunk], tables={"table_001": table})
+
+    assert len(fake_llm_service.calls) == 4
+    assert {task.title for task in result.maintenance_tasks} == {
+        "Task 1", "Task 2", "Task 11", "Task 21", "Task 31",
+    }
+
+
+def test_multi_family_oversized_table_windowing_disabled_sends_one_unbounded_call(
     sample_chunk,
 ) -> None:
     table_chunk = clone_chunk(sample_chunk, chunk_id="chunk_001", content="irrelevant raw content")
@@ -66,8 +120,7 @@ def test_multi_family_execution_is_completely_unaffected_by_windowing_being_enab
         fake_llm_service,
         fake_extraction_service,
         execution_strategy=ExtractionExecutionStrategy.MULTI_FAMILY,
-        maintenance_table_window_enabled=True,
-        maintenance_table_rows_per_window=10,
+        maintenance_table_window_enabled=False,
     )
 
     workflow.extract("doc_001", [table_chunk], tables={"table_001": table})

@@ -10,6 +10,9 @@ from src.application.workflows.extraction.batching.extraction_batch_diagnostics 
     hash_prompt_canonical,
     safe_response_preview,
 )
+from src.application.workflows.extraction.batching.extraction_family_response_keys import (
+    omitted_requested_family_keys,
+)
 from src.application.workflows.extraction.candidates.extraction_candidate_routing_diagnostics import (
     ExtractionCandidateRoutingDiagnostics,
 )
@@ -232,6 +235,9 @@ class ExtractionBatchExecutor:
                 parse_success=True,
                 prompt_sha256=prompt_sha256,
                 prompt_sha256_canonical=prompt_sha256_canonical,
+                omitted_requested_family_keys=omitted_requested_family_keys(
+                    requested_types, response
+                ),
             )
         )
         return extraction_result

@@ -18,6 +18,9 @@ from src.application.workflows.extraction.batching.extraction_batch_executor imp
 from src.application.workflows.extraction.batching.extraction_batch_retry_coordinator import (
     ExtractionBatchRetryCoordinator,
 )
+from src.application.workflows.extraction.batching.extraction_oversized_table_batch_expander import (
+    expand_oversized_table_batch,
+)
 from src.application.workflows.extraction.batching.extraction_table_chunk_hydrator import (
     hydrate_table_chunks,
 )
@@ -241,6 +244,9 @@ class ExtractionWorkflow:
             enabled=self.maintenance_table_window_enabled,
             rows_per_window=self.maintenance_table_rows_per_window,
         )
+        self._table_window_builder = TableEvidenceWindowBuilder(
+            rows_per_window=self.maintenance_table_rows_per_window
+        )
         self._specialized_runner = SpecializedFamilyExtractionRunner(
             llm_service=self.llm_service,
             extraction_model=self.extraction_model,
@@ -253,9 +259,7 @@ class ExtractionWorkflow:
             candidate_selector=self.candidate_selector,
             result_assembler=self._result_assembler,
             table_window_activation_policy=table_window_activation_policy,
-            table_window_builder=TableEvidenceWindowBuilder(
-                rows_per_window=self.maintenance_table_rows_per_window
-            ),
+            table_window_builder=self._table_window_builder,
             num_predict=self.num_predict,
         )
 
@@ -328,18 +332,59 @@ class ExtractionWorkflow:
             unresolved_extraction_work.extend(run_result.unresolved_extraction_work)
         else:
             for batch in batches:
-                outcome = self._batch_retry_coordinator.run(
-                    document_id=document_id,
-                    batch=batch,
-                    activity_context=activity_context,
-                    progress_callback=progress_callback,
-                    diagnostics_sink=self.last_batch_diagnostics,
-                    candidate_routing_diagnostics_sink=self.last_candidate_routing_diagnostics,
-                    budget=budget,
+                window_batches = (
+                    expand_oversized_table_batch(
+                        batch, tables=tables or {}, window_builder=self._table_window_builder
+                    )
+                    if self.maintenance_table_window_enabled
+                    else None
                 )
-                partial_results.extend(outcome.partial_results)
-                attempted_chunk_ids.extend(outcome.attempted_chunk_ids)
-                unresolved_chunk_ids.extend(outcome.unresolved_chunk_ids)
+                if window_batches is None:
+                    sub_batches = [batch]
+                elif not window_batches:
+                    emit_progress(
+                        progress_callback,
+                        (
+                            f"[extraction {batch.batch_index}/{batch.batch_count}] "
+                            "Oversized table chunk could not be safely windowed; "
+                            "marking as unresolved instead of sending an unbounded "
+                            "prompt."
+                        ),
+                    )
+                    unresolved_chunk_ids.extend(batch.chunk_ids)
+                    unresolved_extraction_work.extend(
+                        UnresolvedExtractionWork(
+                            chunk_id=chunk_id, entity_type="oversized_table_unwindowable"
+                        )
+                        for chunk_id in batch.chunk_ids
+                    )
+                    sub_batches = []
+                else:
+                    sub_batches = window_batches
+
+                for sub_batch in sub_batches:
+                    outcome = self._batch_retry_coordinator.run(
+                        document_id=document_id,
+                        batch=sub_batch,
+                        activity_context=activity_context,
+                        progress_callback=progress_callback,
+                        diagnostics_sink=self.last_batch_diagnostics,
+                        candidate_routing_diagnostics_sink=self.last_candidate_routing_diagnostics,
+                        budget=budget,
+                    )
+                    partial_results.extend(outcome.partial_results)
+                    attempted_chunk_ids.extend(outcome.attempted_chunk_ids)
+                    unresolved_chunk_ids.extend(outcome.unresolved_chunk_ids)
+                    if window_batches is not None:
+                        unresolved_extraction_work.extend(
+                            UnresolvedExtractionWork(
+                                chunk_id=chunk_id,
+                                entity_type="multi_family_table_window",
+                                row_start=sub_batch.chunks[0].table_row_start,
+                                row_end=sub_batch.chunks[0].table_row_end,
+                            )
+                            for chunk_id in outcome.unresolved_chunk_ids
+                        )
 
         if not partial_results:
             raise SchemaValidationError(

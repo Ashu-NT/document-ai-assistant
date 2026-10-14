@@ -44,6 +44,7 @@ class ExtractionBatchDiagnostics:
     # content/instruction difference still changes this hash too.
     prompt_sha256_canonical: str | None = None
     budget_exhausted: bool = False
+    omitted_requested_family_keys: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
