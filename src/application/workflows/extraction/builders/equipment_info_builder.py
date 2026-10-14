@@ -11,6 +11,23 @@ from src.shared.exceptions import SchemaValidationError
 from src.shared.ids import IdGenerator
 
 
+def _normalize_for_grounding(text: str) -> str:
+    return " ".join(text.split()).casefold()
+
+
+def _designators_supported_by_chunk(
+    *,
+    model_number: str | None,
+    serial_number: str | None,
+    chunk_content: str,
+) -> bool:
+    normalized_content = _normalize_for_grounding(chunk_content)
+    for designator in (model_number, serial_number):
+        if designator and _normalize_for_grounding(designator) not in normalized_content:
+            return False
+    return True
+
+
 class EquipmentInfoBuilder:
     def __init__(
         self,
@@ -65,6 +82,23 @@ class EquipmentInfoBuilder:
             item_type="equipment",
         )
 
+        evidence_unsupported = False
+        if source_chunk_id is not None and not chunk_id_invalid:
+            source_chunk = chunk_lookup.get(source_chunk_id)
+            if source_chunk is not None and not _designators_supported_by_chunk(
+                model_number=model_number,
+                serial_number=serial_number,
+                chunk_content=source_chunk.content,
+            ):
+                evidence_unsupported = True
+                support.equipment_unsupported_evidence_events.append(
+                    {
+                        "source_chunk_id": source_chunk_id,
+                        "model_number": model_number,
+                        "serial_number": serial_number,
+                    }
+                )
+
         return EquipmentInfo(
             equipment_id=self._id_generator.new_id("equipment"),
             document_id=document_id,
@@ -88,5 +122,6 @@ class EquipmentInfoBuilder:
                     confidence_score,
                 )
                 or chunk_id_invalid
+                or evidence_unsupported
             ),
         )

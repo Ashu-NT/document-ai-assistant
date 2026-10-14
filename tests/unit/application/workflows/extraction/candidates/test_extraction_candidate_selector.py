@@ -218,3 +218,28 @@ def test_select_for_chunk_router_is_not_consulted_for_resolved_chunk_types() -> 
     selector.select_for_chunk(chunk)
 
     assert router.calls == []
+
+
+def test_equipment_cross_signal_adds_equipment_even_when_router_omits_it() -> None:
+    router = FakeLLMRouter(
+        frozenset({ExtractionPromptType.MANUFACTURER, ExtractionPromptType.SUPPLIER})
+    )
+    selector = ExtractionCandidateSelector(llm_router=router)
+    chunk = DocumentChunk(
+        chunk_id="chunk_001",
+        document_id="document_001",
+        section_id="section_001",
+        content=(
+            "Marine engine-generator set with 20V4000M53B engine "
+            "Application group 3B"
+        ),
+        chunk_type=ChunkType.GENERAL,
+        source=SourceLocation(),
+    )
+
+    result = selector.select_for_chunk(chunk)
+
+    assert ExtractionPromptType.EQUIPMENT in result
+    assert ExtractionPromptType.MANUFACTURER in result
+    assert ExtractionPromptType.SUPPLIER in result
+    assert router.calls == [chunk]

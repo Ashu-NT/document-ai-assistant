@@ -39,6 +39,7 @@ class ExtractionBuilderSupport:
         self.require_human_review_default = require_human_review_default
         self.semantic_contexts: dict[str, SemanticExtractionContext] = {}
         self.invalid_source_chunk_id_events: list[dict[str, Any]] = []
+        self.equipment_unsupported_evidence_events: list[dict[str, Any]] = []
 
     def set_semantic_contexts(
         self, semantic_contexts: dict[str, SemanticExtractionContext]
@@ -47,6 +48,7 @@ class ExtractionBuilderSupport:
 
     def reset_invalid_source_chunk_id_events(self) -> None:
         self.invalid_source_chunk_id_events = []
+        self.equipment_unsupported_evidence_events = []
 
     @staticmethod
     def pick(payload: dict[str, Any], *keys: str) -> Any:

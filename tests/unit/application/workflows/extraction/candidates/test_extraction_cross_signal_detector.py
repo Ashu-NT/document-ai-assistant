@@ -142,6 +142,135 @@ def test_table_presence_bumps_spare_part_and_specification() -> None:
     assert ExtractionPromptType.SPECIFICATION in detected
 
 
+def test_mtu_cover_page_equipment_phrase_detected() -> None:
+    chunk = make_chunk(
+        content=(
+            "Marine engine-generator set with 20V4000M53B engine "
+            "Application group 3B"
+        )
+    )
+
+    detected = ExtractionCrossSignalDetector().detect(chunk)
+
+    assert ExtractionPromptType.EQUIPMENT in detected
+
+
+def test_equivalent_generator_set_with_code_expression_detected() -> None:
+    chunk = make_chunk(content="Generator set with XY12345AB installed on site.")
+
+    detected = ExtractionCrossSignalDetector().detect(chunk)
+
+    assert ExtractionPromptType.EQUIPMENT in detected
+
+
+def test_equivalent_genset_model_expression_detected() -> None:
+    chunk = make_chunk(content="Genset model AB987654 was commissioned in 2024.")
+
+    detected = ExtractionCrossSignalDetector().detect(chunk)
+
+    assert ExtractionPromptType.EQUIPMENT in detected
+
+
+def test_code_before_engine_noun_detected() -> None:
+    chunk = make_chunk(content="The 20V4000M53B engine was inspected on site.")
+
+    detected = ExtractionCrossSignalDetector().detect(chunk)
+
+    assert ExtractionPromptType.EQUIPMENT in detected
+
+
+def test_differently_formatted_model_code_detected() -> None:
+    chunk = make_chunk(content="Equipment model abc123xyz is installed here.")
+
+    detected = ExtractionCrossSignalDetector().detect(chunk)
+
+    assert ExtractionPromptType.EQUIPMENT in detected
+
+
+def test_certificate_number_near_engine_not_detected_as_equipment() -> None:
+    chunk = make_chunk(
+        content="Certificate No. SA18000AB was issued for this engine."
+    )
+
+    detected = ExtractionCrossSignalDetector().detect(chunk)
+
+    assert ExtractionPromptType.EQUIPMENT not in detected
+
+
+def test_order_number_near_engine_not_detected_as_equipment() -> None:
+    chunk = make_chunk(content="Order No. AB111777 engine spare kit shipped.")
+
+    detected = ExtractionCrossSignalDetector().detect(chunk)
+
+    assert ExtractionPromptType.EQUIPMENT not in detected
+
+
+def test_document_reference_near_engine_not_detected_as_equipment() -> None:
+    chunk = make_chunk(
+        content="Document No. SA18000434E engine type approval record."
+    )
+
+    detected = ExtractionCrossSignalDetector().detect(chunk)
+
+    assert ExtractionPromptType.EQUIPMENT not in detected
+
+
+def test_serial_number_near_engine_not_detected_as_equipment() -> None:
+    chunk = make_chunk(content="Serial Number AB123456 fitted to the engine.")
+
+    detected = ExtractionCrossSignalDetector().detect(chunk)
+
+    assert ExtractionPromptType.EQUIPMENT not in detected
+
+
+def test_spare_part_number_near_engine_not_detected_as_equipment() -> None:
+    chunk = make_chunk(content="Spare part AB123456 for the engine is in stock.")
+
+    detected = ExtractionCrossSignalDetector().detect(chunk)
+
+    assert ExtractionPromptType.EQUIPMENT not in detected
+
+
+def test_bare_alphanumeric_code_without_equipment_context_not_detected() -> None:
+    chunk = make_chunk(content="Reference code AB123456XY appears in this document.")
+
+    detected = ExtractionCrossSignalDetector().detect(chunk)
+
+    assert ExtractionPromptType.EQUIPMENT not in detected
+
+
+def test_generic_pump_model_expression_detected() -> None:
+    chunk = make_chunk(content="Centrifugal pump with XR4500KL installed in bay 3.")
+
+    detected = ExtractionCrossSignalDetector().detect(chunk)
+
+    assert ExtractionPromptType.EQUIPMENT in detected
+
+
+def test_generic_motor_model_expression_detected() -> None:
+    chunk = make_chunk(content="The QM2200AB motor drives the main conveyor.")
+
+    detected = ExtractionCrossSignalDetector().detect(chunk)
+
+    assert ExtractionPromptType.EQUIPMENT in detected
+
+
+def test_generic_compressor_model_expression_detected() -> None:
+    chunk = make_chunk(content="Compressor with CP900XJ handles the air supply.")
+
+    detected = ExtractionCrossSignalDetector().detect(chunk)
+
+    assert ExtractionPromptType.EQUIPMENT in detected
+
+
+def test_engine_keyword_without_any_model_code_not_detected() -> None:
+    chunk = make_chunk(content="Check the engine oil level before starting.")
+
+    detected = ExtractionCrossSignalDetector().detect(chunk)
+
+    assert ExtractionPromptType.EQUIPMENT not in detected
+
+
 def test_multiple_signals_can_be_detected_at_once() -> None:
     chunk = make_chunk(
         content=(

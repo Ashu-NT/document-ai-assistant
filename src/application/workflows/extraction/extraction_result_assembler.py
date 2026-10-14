@@ -80,6 +80,10 @@ class ExtractionResultAssembler:
     def invalid_source_chunk_id_events(self) -> list[dict[str, Any]]:
         return self._support.invalid_source_chunk_id_events
 
+    @property
+    def equipment_unsupported_evidence_events(self) -> list[dict[str, Any]]:
+        return self._support.equipment_unsupported_evidence_events
+
     def build(
         self,
         document_id: str,

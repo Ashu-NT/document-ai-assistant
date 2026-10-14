@@ -143,6 +143,60 @@ _INTERVAL_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+_EQUIPMENT_MODEL_NOUN = (
+    r"(?:generator\s+set|genset|engine|generator|motor|pump|compressor|"
+    r"turbine|alternator|gearbox|machine)"
+)
+_EQUIPMENT_MODEL_CODE_TOKEN = r"[A-Za-z0-9]{5,15}"
+_EQUIPMENT_MODEL_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(
+        rf"\b{_EQUIPMENT_MODEL_NOUN}\s+with\s+({_EQUIPMENT_MODEL_CODE_TOKEN})\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        rf"\b({_EQUIPMENT_MODEL_CODE_TOKEN})\s+{_EQUIPMENT_MODEL_NOUN}\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        rf"\b(?:equipment\s+model|unit\s+model|model)\s*(?:no\.?|number|:)?\s*"
+        rf"({_EQUIPMENT_MODEL_CODE_TOKEN})\b",
+        re.IGNORECASE,
+    ),
+)
+_EQUIPMENT_MODEL_EXCLUDED_PRECEDING_CONTEXT = re.compile(
+    r"\b(?:certificate|cert\.?|order\s*no\.?|part\s*no\.?|spare\s*part|"
+    r"serial\s*no\.?|serial\s*number|document\s*no\.?|doc\.?\s*no\.?|"
+    r"reference\s*no\.?|ref\.?)\b",
+    re.IGNORECASE,
+)
+_EQUIPMENT_MODEL_EXCLUSION_WINDOW = 30
+
+
+def _looks_like_equipment_model_code(candidate: str) -> bool:
+    has_letter = any(char.isalpha() for char in candidate)
+    has_digit = any(char.isdigit() for char in candidate)
+    return has_letter and has_digit
+
+
+def _has_excluded_preceding_context(raw_content: str, match_start: int) -> bool:
+    window_start = max(0, match_start - _EQUIPMENT_MODEL_EXCLUSION_WINDOW)
+    preceding = raw_content[window_start:match_start]
+    return bool(_EQUIPMENT_MODEL_EXCLUDED_PRECEDING_CONTEXT.search(preceding))
+
+
+def _has_equipment_model_reference(raw_content: str) -> bool:
+    if not raw_content:
+        return False
+    for pattern in _EQUIPMENT_MODEL_PATTERNS:
+        for match in pattern.finditer(raw_content):
+            candidate = match.group(1)
+            if not _looks_like_equipment_model_code(candidate):
+                continue
+            if _has_excluded_preceding_context(raw_content, match.start()):
+                continue
+            return True
+    return False
+
 
 class ExtractionCrossSignalDetector:
     """
@@ -193,6 +247,9 @@ class ExtractionCrossSignalDetector:
 
         if _INTERVAL_PATTERN.search(raw_content):
             detected.add(ExtractionPromptType.MAINTENANCE_INTERVAL)
+
+        if _has_equipment_model_reference(raw_content):
+            detected.add(ExtractionPromptType.EQUIPMENT)
 
         if chunk.table_ids:
             detected.add(ExtractionPromptType.SPARE_PART)
